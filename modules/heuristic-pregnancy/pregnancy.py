@@ -31,7 +31,7 @@ from ESP.hef.base import Event
 from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.base import BaseTimespanHeuristic
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.hef.models import Timespan
 
 
@@ -131,13 +131,14 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( EDDHeuristic() )
         #
-        # ICD9
+        # dianosis
         #
+        #TODO add icd10
         heuristics.append( DiagnosisHeuristic(
-            name = 'pregnancy:onset', # date of icd9 - 30 days
-            icd9_queries = [
-                Icd9Query(starts_with = 'V22.'),
-                Icd9Query(starts_with = 'V23.'),
+            name = 'pregnancy:onset', # date of dx - 30 days
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = 'V22.', type='icd9'),
+                Dx_CodeQuery(starts_with = 'V23.', type='icd9'),
                 ]
             ) )
         #-------------------------------------------------------------------------------
@@ -150,8 +151,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:delivery-outcome',
-            icd9_queries = [
-                Icd9Query(starts_with = 'V27.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = 'V27.', type='icd9'),
                 ]
             ) )
         return heuristics
@@ -160,8 +161,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:postpartum-care',
-            icd9_queries = [
-                Icd9Query(starts_with = 'V24.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = 'V24.', type='icd9'),
                 ]
             ) )
         #
@@ -169,11 +170,11 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:ectopic-molar',
-            icd9_queries = [
-                Icd9Query(starts_with = '630.'),
-                Icd9Query(starts_with = '631.'),
-                Icd9Query(starts_with = '632.'),
-                Icd9Query(starts_with = '633.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '630.', type='icd9'),
+                Dx_CodeQuery(starts_with = '631.', type='icd9'),
+                Dx_CodeQuery(starts_with = '632.', type='icd9'),
+                Dx_CodeQuery(starts_with = '633.', type='icd9'),
                 ]
             ) )
         #
@@ -181,18 +182,18 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:abortion-spontaneous',
-            icd9_queries = [
-                Icd9Query(starts_with = '634.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '634.', type='icd9'),
                 ]
             ) )
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:abortion',
-            icd9_queries = [
-                Icd9Query(starts_with = '635.'),
-                Icd9Query(starts_with = '636.'),
-                Icd9Query(starts_with = '637.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '635.', type='icd9'),
+                Dx_CodeQuery(starts_with = '636.', type='icd9'),
+                Dx_CodeQuery(starts_with = '637.', type='icd9'),
                 # No 638.
-                Icd9Query(starts_with = '639.'),
+                Dx_CodeQuery(starts_with = '639.', type='icd9'),
                 ]
             ) )
         #
@@ -200,37 +201,37 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:delivery-complications',
-            icd9_queries = [
-                Icd9Query(starts_with = '640.', ends_with = '1'),
-                Icd9Query(starts_with = '641.', ends_with = '1'),
-                Icd9Query(starts_with = '642.', ends_with = '1'),
-                Icd9Query(starts_with = '643.', ends_with = '1'),
-                Icd9Query(starts_with = '644.', ends_with = '1'),
-                Icd9Query(starts_with = '645.', ends_with = '1'),
-                Icd9Query(starts_with = '646.', ends_with = '1'),
-                Icd9Query(starts_with = '647.', ends_with = '1'),
-                Icd9Query(starts_with = '648.', ends_with = '1'),
-                Icd9Query(starts_with = '649.', ends_with = '1'),
-                Icd9Query(starts_with = '640.', ends_with = '2'),
-                Icd9Query(starts_with = '641.', ends_with = '2'),
-                Icd9Query(starts_with = '642.', ends_with = '2'),
-                Icd9Query(starts_with = '643.', ends_with = '2'),
-                Icd9Query(starts_with = '644.', ends_with = '2'),
-                Icd9Query(starts_with = '645.', ends_with = '2'),
-                Icd9Query(starts_with = '646.', ends_with = '2'),
-                Icd9Query(starts_with = '647.', ends_with = '2'),
-                Icd9Query(starts_with = '648.', ends_with = '2'),
-                Icd9Query(starts_with = '649.', ends_with = '2'),
-                Icd9Query(starts_with = '640.', ends_with = '4'),
-                Icd9Query(starts_with = '641.', ends_with = '4'),
-                Icd9Query(starts_with = '642.', ends_with = '4'),
-                Icd9Query(starts_with = '643.', ends_with = '4'),
-                Icd9Query(starts_with = '644.', ends_with = '4'),
-                Icd9Query(starts_with = '645.', ends_with = '4'),
-                Icd9Query(starts_with = '646.', ends_with = '4'),
-                Icd9Query(starts_with = '647.', ends_with = '4'),
-                Icd9Query(starts_with = '648.', ends_with = '4'),
-                Icd9Query(starts_with = '649.', ends_with = '4'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '640.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '641.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '642.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '643.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '644.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '645.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '646.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '647.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '648.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '649.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '640.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '641.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '642.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '643.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '644.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '645.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '646.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '647.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '648.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '649.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '640.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '641.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '642.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '643.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '644.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '645.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '646.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '647.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '648.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '649.', ends_with = '4', type='icd9'),
                 ]
             ) )
         #
@@ -238,37 +239,37 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:delivery-normal',
-            icd9_queries = [
-                Icd9Query(starts_with = '650.', ends_with = '1'),
-                Icd9Query(starts_with = '651.', ends_with = '1'),
-                Icd9Query(starts_with = '652.', ends_with = '1'),
-                Icd9Query(starts_with = '653.', ends_with = '1'),
-                Icd9Query(starts_with = '654.', ends_with = '1'),
-                Icd9Query(starts_with = '655.', ends_with = '1'),
-                Icd9Query(starts_with = '656.', ends_with = '1'),
-                Icd9Query(starts_with = '657.', ends_with = '1'),
-                Icd9Query(starts_with = '658.', ends_with = '1'),
-                Icd9Query(starts_with = '659.', ends_with = '1'),
-                Icd9Query(starts_with = '650.', ends_with = '2'),
-                Icd9Query(starts_with = '651.', ends_with = '2'),
-                Icd9Query(starts_with = '652.', ends_with = '2'),
-                Icd9Query(starts_with = '653.', ends_with = '2'),
-                Icd9Query(starts_with = '654.', ends_with = '2'),
-                Icd9Query(starts_with = '655.', ends_with = '2'),
-                Icd9Query(starts_with = '656.', ends_with = '2'),
-                Icd9Query(starts_with = '657.', ends_with = '2'),
-                Icd9Query(starts_with = '658.', ends_with = '2'),
-                Icd9Query(starts_with = '659.', ends_with = '2'),
-                Icd9Query(starts_with = '650.', ends_with = '4'),
-                Icd9Query(starts_with = '651.', ends_with = '4'),
-                Icd9Query(starts_with = '652.', ends_with = '4'),
-                Icd9Query(starts_with = '653.', ends_with = '4'),
-                Icd9Query(starts_with = '654.', ends_with = '4'),
-                Icd9Query(starts_with = '655.', ends_with = '4'),
-                Icd9Query(starts_with = '656.', ends_with = '4'),
-                Icd9Query(starts_with = '657.', ends_with = '4'),
-                Icd9Query(starts_with = '658.', ends_with = '4'),
-                Icd9Query(starts_with = '659.', ends_with = '4'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '650.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '651.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '652.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '653.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '654.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '655.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '656.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '657.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '658.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '659.', ends_with = '1', type='icd9'),
+                Dx_CodeQuery(starts_with = '650.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '651.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '652.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '653.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '654.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '655.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '656.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '657.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '658.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '659.', ends_with = '2', type='icd9'),
+                Dx_CodeQuery(starts_with = '650.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '651.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '652.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '653.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '654.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '655.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '656.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '657.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '658.', ends_with = '4', type='icd9'),
+                Dx_CodeQuery(starts_with = '659.', ends_with = '4', type='icd9'),
                 ]
             ) )
         #
@@ -276,17 +277,17 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         heuristics.append( DiagnosisHeuristic(
             name = 'pregnancy:labor-complications',
-            icd9_queries = [
-                Icd9Query(starts_with = '660.'),
-                Icd9Query(starts_with = '661.'),
-                Icd9Query(starts_with = '662.'),
-                Icd9Query(starts_with = '663.'),
-                Icd9Query(starts_with = '664.'),
-                Icd9Query(starts_with = '665.'),
-                Icd9Query(starts_with = '666.'),
-                Icd9Query(starts_with = '667.'),
-                Icd9Query(starts_with = '668.'),
-                Icd9Query(starts_with = '669.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '660.', type='icd9'),
+                Dx_CodeQuery(starts_with = '661.', type='icd9'),
+                Dx_CodeQuery(starts_with = '662.', type='icd9'),
+                Dx_CodeQuery(starts_with = '663.', type='icd9'),
+                Dx_CodeQuery(starts_with = '664.', type='icd9'),
+                Dx_CodeQuery(starts_with = '665.', type='icd9'),
+                Dx_CodeQuery(starts_with = '666.', type='icd9'),
+                Dx_CodeQuery(starts_with = '667.', type='icd9'),
+                Dx_CodeQuery(starts_with = '668.', type='icd9'),
+                Dx_CodeQuery(starts_with = '669.', type='icd9'),
                 ]
             ) )
         
@@ -357,6 +358,9 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                     if eop_event.content_object.ga_delivery:
                         gad = eop_event.content_object.ga_delivery
                         ts.start_date  = eop_event.content_object.actual_date - relativedelta(days=int(gad))
+                        #TODO  we need to fix this with the code below.. check later
+                        #gad_float = float(gad)
+                        #ts.start_date  = eop_event.content_object.actual_date - relativedelta(days=int(gad_float))
                         onset_pat = 'onset:ad'
                     eop_pat = 'eop:ad'
                 else:
@@ -366,7 +370,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 eop_pat = 'eop:edd'
             elif ts.start_date < ( self.latest_data_date - relativedelta(days=280) ):
                 ts.end_date = self._get_latest_preg_event_date(ts.patient, ts.start_date)
-                eop_pat = 'eop:max_icd9'
+                eop_pat = 'eop:max_dx_code'
             else:
                 continue # Nothing to do here, let's move on
             ts.pattern = '%s %s' % (onset_pat, eop_pat)
@@ -476,13 +480,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         @return: End of pregnancy date
         @rtype: Date
         '''
-        max_icd9_date = start_date + relativedelta(days=280)
+        max_dx_code_date = start_date + relativedelta(days=280)
         preg_qs = self.relevant_event_qs.filter(patient=patient)
         preg_qs = preg_qs.exclude(timespan__name='pregnancy')
         preg_qs = preg_qs.filter(date__gte=start_date)
-        preg_qs = preg_qs.filter(date__lte=max_icd9_date)
-        max_icd9_date = preg_qs.aggregate(Max('date'))['date__max']
-        return max_icd9_date
+        preg_qs = preg_qs.filter(date__lte=max_dx_code_date)
+        max_dx_code_date = preg_qs.aggregate(Max('date'))['date__max']
+        return max_dx_code_date
     
     @transaction.commit_on_success
     def pregnancies_for_patient(self, patient_pk, serial, total):
@@ -505,7 +509,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             eop_date = None
             pattern = None
             #
-            # Find the first encounter with an ICD9 for pregnancy, that is not already
+            # Find the first encounter with a diagnosis for pregnancy, that is not already
             # bound to a pregnancy timespan.
             #
             preg_qs = self.relevant_event_qs.filter(patient=patient) 
@@ -519,19 +523,23 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             first_preg_event = preg_qs[0]
             #
             # Determine if there is a plausible EDD within 280 days after 
-            # first pregnancy ICD9 date
+            # first pregnancy diagnosis date
             #
             min_edd = self._get_edd(patient, first_preg_event.date)
             #
             # Pregnancy onset is earliest plausible EDD minus 280 days.  If 
-            # no EDD, then it is 30 days prior to first ICD9 for pregnancy.
+            # no EDD, then it is 30 days prior to first diagnosis for pregnancy.
             # if the event is based on a actual date of delivery from a pregnancy object  
             # we calculate the onset based on the gestational age of delivery if it exists.
             #
             if first_preg_event.name == 'prg:pregnancy:actual_date':
                 gad = first_preg_event.content_object.ga_delivery
                 if gad:
+                    #TODO fix this code for float later
+                    #gad_float = float(gad)
+                    #onset_date = first_preg_event.date - relativedelta(days=int(gad_float))
                     onset_date = first_preg_event.date - relativedelta(days=int(gad))
+                
                 else:
                     onset_date = first_preg_event.date - relativedelta(days=280)
                 pattern = 'onset:ad '
@@ -540,7 +548,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 pattern = 'onset:edd '
             else:
                 onset_date = first_preg_event.date - relativedelta(days=30)
-                pattern = 'onset:icd9 '
+                pattern = 'onset:dx_code '
             #
             # Find an End of Pregnancy event.  
             #
@@ -566,16 +574,16 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # Patient has no EoP event, is not currently pregnant, and has no EDD in
             # any encounter,  We know pregnancy has ended, but have no real way to 
             # infer the end of pregnancy date.  Therefore we look for the 
-            # chronologically latest pregnancy-related ICD9 that falls within a 
+            # chronologically latest pregnancy-related diagnosis that falls within a 
             # plausible time window for this pregnancy, and use its date as the
             # end of pregnancy date.
             #
             else:
-                max_icd9_date = first_preg_event.date + relativedelta(days=280)
+                max_dx_code_date = first_preg_event.date + relativedelta(days=280)
                 this_preg_qs = preg_qs.filter(date__gte=onset_date)
-                this_preg_qs = this_preg_qs.filter(date__lte=max_icd9_date)
+                this_preg_qs = this_preg_qs.filter(date__lte=max_dx_code_date)
                 eop_date = self._get_latest_preg_event_date(patient, onset_date)
-                pattern += 'eop:max_icd9'
+                pattern += 'eop:max_dx_code'
             #-------------------------------------------------------------------------------
             #
             # New Pregnancy
