@@ -5,8 +5,14 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 import django, datetime
+import string
+#hl7xml class is not in utils anymore.. this feature is not working
+# existed in rev 1498 in the source repository, under nodis folder
 from ESP.utils import hl7XML
 from ESP.esp.models import *
+from ESP.emr.models import Provider
+from ESP.nodis.models import Case
+from ESP.vaers.models import Rule
 from django.db.models import Q
 import ESP.utils.localconfig as localconfig
 from ESP.settings import TOPDIR
@@ -59,19 +65,19 @@ def generateOneBatch(hl7dir,cases):
         ex = string.split(case.caseEncID,',') 
         rx = string.split(case.caseRxID,',')
         lx = string.split(case.caseLxID,',')
-        caseicd9 = string.split(case.caseICD9,',')
-        finalicd9=[]
-        for i in caseicd9:
+        casedx_code = string.split(case.casedx_code,',')
+        finaldx_code=[]
+        for i in casedx_code:
             i = i.strip()
             if not i: continue
             oneenc = string.split(i, ' ')
             for j in oneenc:
-                if j not in finalicd9: finalicd9.append(j)
+                if j not in finaldx_code: finaldx_code.append(j)
         if '' in ex: ex.remove('')
         if '' in rx: rx.remove('')
         if '' in lx: lx.remove('')
-        logging.info('Adding caseID %s, icd9:%s' % (case.id,str(finalicd9)))
-        testDoc.addCase(demog=demog,pcp=pcp,rule=rule, lx=lx, rx=rx,ex=ex,icd9=finalicd9)
+        logging.info('Adding caseID %s, dx codes:%s' % (case.id,str(finaldx_code)))
+        testDoc.addCase(demog=demog,pcp=pcp,rule=rule, lx=lx, rx=rx,ex=ex,dx_code=finaldx_code)
 
         #update caseworkflow         
         case.caseWorkflow = 'S'
@@ -83,7 +89,7 @@ def generateOneBatch(hl7dir,cases):
     f = file(hl7dir + '/hl7_%s.hl7' % today1,'w')
     f.write(s)
     f.close()
-   # print s
+    # print s
 
 
 ################################
