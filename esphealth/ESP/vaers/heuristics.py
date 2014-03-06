@@ -1,5 +1,5 @@
 # Adverse events are indicated though reports of  lab results, prescriptions, allergies
-# and icd9 codes that are present in patient encounters.
+# and dx codes that are present in patient encounters.
 import datetime, itertools
 
 from dateutil.relativedelta import relativedelta
@@ -14,7 +14,7 @@ from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription, Problem, Hospital_Problem
 from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent, ProblemEvent, HospProblemEvent
 from ESP.vaers.models import DiagnosticsEventRule
-from ESP.vaers.models import ExcludedICD9Code, Questionnaire
+from ESP.vaers.models import ExcludedDx_Code, Questionnaire
 from ESP.utils.utils import log
 from ESP.conf.models import LabTestMap, VaccineCodeMap 
 from ESP.hef.base import LabResultAnyHeuristic
@@ -80,41 +80,43 @@ class AdverseEventHeuristic(BaseHeuristic):
             this_q.save()
             this_q.create_digest()
     
+    #TODO fix for icd10 need to join with static_dx_code table where dx_code_id = combotypecode
     def exclude_at_3dig(self, qSet, type, this_diag):
         '''
         takes a qSet of prior diagnosis records 
         then depending on qSet type (encounter, problem or hospitalproblem)
-        keeps only those that match self.icd9s at the 3 digit level
-        For Any other Diagnosis heuristics, filters slef.icd9s to only those matching current diagnosis record
+        keeps only those that match self.dx_codes at the 3 digit level
+        For Any other Diagnosis heuristics, filters slef.dx_codes to only those matching current diagnosis record
         '''
         #this is a quick method to provide Mike and Meghan with data
         #on how prior-occurrence exclusion would look if we broaden exclusion
         #to all diagnoses at the 3-digit level.  
-        icd9_3dig = self.icd9s.extra(select={'icd3dig': "case when position('.' in code) > 0 then substring(code from 1 for position('.' in code)-1 ) else code end"}).values_list('icd3dig')
-        icd9_3dig = sorted(icd9_3dig.distinct())
+        dx_code_3dig = self.dx_codes.extra(select={'dx_code3dig': "case when position('.' in code) > 0 then substring(code from 1 for position('.' in code)-1 ) else code end"}).values_list('dx_code3dig')
+        dx_code_3dig = sorted(dx_code_3dig.distinct())
         if self.name=="Any other Diagnosis":
             subset=[]
-            for x in icd9_3dig:
+            for x in dx_code_3dig:
                 for y in this_diag:
                     if x[0] in y:
                         subset.append(x)
-            icd9_3dig=subset
-        if not icd9_3dig:
+            dx_code_3dig=subset
+        if not dx_code_3dig:
             return qSet.extra(where=[' 1=2 '])
         elif type=='encounter':
-            for i, x in enumerate(icd9_3dig):
+            for i, x in enumerate(dx_code_3dig):
                 if i == 0:
-                    xquery="emr_encounter.id=emr_encounter_icd9_codes.encounter_id and ( position('"+str(x[0])+"' in emr_encounter_icd9_codes.icd9_id) > 0"
+                    xquery="emr_encounter.id=emr_encounter_dx_codes.encounter_id and ( position('"+str(x[0])+"' in emr_encounter_dx_codes.dx_code_id) > 0"
                 else:
-                    xquery=xquery+" or position('"+str(x[0])+"' in emr_encounter_icd9_codes.icd9_id) > 0"
+                   
+                    xquery=xquery+" or position('"+str(x[0])+"' in emr_encounter_dx_codes.dx_code_id) > 0"
             xquery = xquery + ")"
-            return qSet.extra(tables=["emr_encounter_icd9_codes"], where=[xquery])
+            return qSet.extra(tables=["emr_encounter_dx_codes"], where=[xquery])
         else:
-            for i, x in enumerate(icd9_3dig):
+            for i, x in enumerate(dx_code_3dig):
                 if i == 0:
-                    xquery=" (position('"+str(x[0])+"' in icd9_id) > 0"
+                    xquery=" (position('"+str(x[0])+"' in dx_code_id) > 0"
                 else:
-                    xquery=xquery+" or position('"+str(x[0])+"' in icd9_id) > 0"
+                    xquery=xquery+" or position('"+str(x[0])+"' in dx_code_id) > 0"
             xquery = xquery + ")"
             return qSet.extra(where=[xquery])            
 
@@ -243,17 +245,17 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         return counter
         
 class VaersDiagnosisHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, icd9s, rule):
+    def __init__(self, event_name, dx_codes, rule):
         '''
-        @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
-        @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type dx_codes: [<Dx_code>, <Dx_code>, <Dx_code>, ...]
+        @type discarding_dx_code: [<Dx_code>, <Dx_code>, <Dx_code>, ...]
         @type verbose_name: String
         @type rule: object diagnosis event rule
         '''
                  
         self.name = event_name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
-        self.icd9s = icd9s
+        self.dx_codes = dx_codes
         self.category = rule.category
         self.source = rule.source
         self.ignore_period = rule.ignore_period  
@@ -276,7 +278,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         
         enc_qs = Encounter.objects.following_vaccination(self.risk_period,self.risk_period_start)
         
-        enc_qs = enc_qs.filter(icd9_codes__in=self.icd9s.all())
+        enc_qs = enc_qs.filter(dx_codes__in=self.dx_codes.all())
         enc_qs = enc_qs.filter(date__gte=begin, date__lte=end)
         enc_qs = enc_qs.distinct()
         return enc_qs
@@ -301,11 +303,11 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 types.append(immtype.native_code)
         
         for this_enc in self.matches(**kw):
-            #check_priors is created because self.icd9s is a @property method for any other diagnois heuristic
+            #check_priors is created because self.dx_codes is a @property method for any other diagnosis heuristic
             if self.name=="Any other Diagnosis":
-                check_priors = self.icd9s.filter(code__in=this_enc.icd9_codes.all())
+                check_priors = self.dx_codes.filter(combotypecode__in=this_enc.dx_codes.all())
             else:
-                check_priors = self.icd9s
+                check_priors = self.dx_codes
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
                 prior_enc_qs = Encounter.objects.filter(
@@ -313,35 +315,35 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_enc.patient,                     
-                    #icd9_codes__in = check_priors.all(),
+                    #dx_codes__in = check_priors.all(),
                 )
-                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',this_enc.icd9_codes.values_list('code', flat=True))
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',this_enc.dx_codes.values_list('code', flat=True))
 
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_enc.date, 
-                    #icd9__code__in = check_priors.all(),
+                    #dx__code__in = check_priors.all(),
                     patient = this_enc.patient, 
                 )
-                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',this_enc.icd9_codes.values_list('code'))
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',this_enc.dx_codes.values_list('code'))
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_enc.date, 
-                    #icd9__code__in = check_priors.all(),
+                    #dx__code__in = check_priors.all(),
                     patient = this_enc.patient, 
                 )
-                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',this_enc.icd9_codes.values_list('code'))
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',this_enc.dx_codes.values_list('code'))
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
-            #find the adverse event icd9 codes           
+            #find the adverse event dx codes           
             thisname = self.name
-            for code in this_enc.icd9_codes.filter(code__in=self.icd9s).distinct():
-                thisname += ' '+code.code
+            for code in this_enc.dx_codes.filter(combotypecode__in=self.dx_codes).distinct():
+                thisname += ' '+code.combotypecode
 
             immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.risk_period, types)
             if not immunization_qs.exists():
@@ -375,17 +377,17 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         return counter
 
 class VaersProblemHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, icd9s, rule):
+    def __init__(self, event_name, dx_codes, rule):
         '''
-        @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
-        @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type dx_codes: [<Dx_code>, <Dx_code>, <Dx_code>, ...]
+        @type discarding_dx_code: [<Dx_code>, <Dx_code>, <Dx_code>, ...]
         @type verbose_name: String
         @type rule: object diagnosis event rule
         '''
                  
         self.name = event_name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
-        self.icd9s = icd9s
+        self.dx_codes = dx_codes
         self.category = rule.category
         self.source=rule.source
         self.ignore_period = rule.ignore_period  
@@ -408,7 +410,7 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
         
         prb_qs = Problem.objects.following_vaccination(self.risk_period,self.risk_period_start)
         
-        prb_qs = prb_qs.filter(icd9__in=self.icd9s.all())
+        prb_qs = prb_qs.filter(dx_code__in=self.dx_codes.all())
         prb_qs = prb_qs.filter(date__gte=begin, date__lte=end)
         prb_qs = prb_qs.exclude(status='Deleted')
         prb_qs = prb_qs.distinct()
@@ -425,9 +427,10 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
         
         for this_prb in self.matches(**kw):
             if self.name=="Any other Diagnosis":
-                check_priors = self.icd9s.filter(code__in=[this_prb.icd9_id])
+                #TODO add type or? is the dx_code_id
+                check_priors = self.dx_codes.filter(combotypecode__in=[this_prb.dx_code_id])
             else:
-                check_priors = self.icd9s
+                check_priors = self.dx_codes
             if self.ignore_period:
                 earliest = this_prb.date - relativedelta(months=self.ignore_period)
                 prior_enc_qs = Encounter.objects.filter(
@@ -435,32 +438,32 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_prb.patient,                     
-                    #icd9_codes__in = check_priors.all(),
+                    #dx_codes__in = check_priors.all(),
                 )
-                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_prb.icd9_id])
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_prb.dx_code_id])
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    #icd9__in=check_priors.all(),
+                    #dx_code__in=check_priors.all(),
                     patient = this_prb.patient, 
                 )
-                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_prb.icd9_id])
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_prb.dx_code_id])
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    #icd9__in=check_priors.all(),
+                    #dx_code__in=check_priors.all(),
                     patient = this_prb.patient, 
                 )
-                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_prb.icd9_id])
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_prb.dx_code_id])
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
-            #find the adverse event icd9 codes           
-            thisname = self.name + ' ' + str(this_prb.icd9)
+            #find the adverse event dx codes           
+            thisname = self.name + ' ' + str(this_prb.dx_code)
 
             immunization_qs = Immunization.vaers_candidates(this_prb.patient, this_prb.date, self.risk_period,['ALL'])
             assert immunization_qs
@@ -493,17 +496,17 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
         return counter
 
 class VaersHospProbHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, icd9s, rule):
+    def __init__(self, event_name, dx_codes, rule):
         '''
-        @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
-        @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type dx_codes: [<Dx_code>, <Dx_code>, <Dx_code>, ...]
+        @type discarding_dx_code: [<Dx_code>, <Dx_code>, <Dx_code>, ...]
         @type verbose_name: String
         @type rule: object diagnosis event rule
         '''
                  
         self.name = event_name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
-        self.icd9s = icd9s
+        self.dx_codes = dx_codes
         self.category = rule.category
         self.source = rule.source
         self.ignore_period = rule.ignore_period  
@@ -526,7 +529,7 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
         
         hprb_qs = Hospital_Problem.objects.following_vaccination(self.risk_period,self.risk_period_start)
         
-        hprb_qs = hprb_qs.filter(icd9__in=self.icd9s.all())
+        hprb_qs = hprb_qs.filter(dx_code__in=self.dx_codes.all())
         hprb_qs = hprb_qs.filter(date__gte=begin, date__lte=end)
         hprb_qs = hprb_qs.exclude(status='Deleted')
         hprb_qs = hprb_qs.distinct()
@@ -554,9 +557,9 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
         
         for this_hprb in self.matches(**kw):
             if self.name=="Any other Diagnosis":
-                check_priors = self.icd9s.filter(code__in=[this_hprb.icd9_id])
+                check_priors = self.dx_codes.filter(combotypecode__in=[this_hprb.dx_code_id])
             else:
-                check_priors = self.icd9s
+                check_priors = self.dx_codes
             if self.ignore_period:
                 earliest = this_hprb.date - relativedelta(months=self.ignore_period)
                 prior_enc_qs = Encounter.objects.filter(
@@ -564,32 +567,32 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_hprb.patient,                     
-                    #icd9_codes__in = check_priors.all(),
+                    #dx_codes__in = check_priors.all(),
                 )
-                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_hprb.icd9_id])
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_hprb.dx_code_id])
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    #icd9__in=check_priors.all(),
+                    #dx_code__in=check_priors.all(),
                     patient = this_hprb.patient, 
                 )
-                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_hprb.icd9_id])
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_hprb.dx_code_id])
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    #icd9__in=check_priors.all(),
+                    #dx_code__in=check_priors.all(),
                     patient = this_hprb.patient, 
                 )
-                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_hprb.icd9_id])
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_hprb.dx_code_id])
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
-            #find the adverse event icd9 codes           
-            thisname = self.name + ' ' + str(this_hprb.icd9)
+            #find the adverse event dx codes           
+            thisname = self.name + ' ' + str(this_hprb.dx_code_id)
 
             immunization_qs = Immunization.vaers_candidates(this_hprb.patient, this_hprb.date, self.risk_period,types)
             if not immunization_qs.exists():
@@ -623,18 +626,18 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
             
         return counter
 
-class Icd9CorrelatedHeuristic(VaersDiagnosisHeuristic):
-    def __init__(self, event_name, icd9s, rule, discarding_icd9s):
-        self.discarding_icd9s = discarding_icd9s
-        super(Icd9CorrelatedHeuristic, self).__init__(event_name, icd9s, rule)
+class Dx_CodeCorrelatedHeuristic(VaersDiagnosisHeuristic):
+    def __init__(self, event_name, dx_codes, rule, discarding_dx_codes):
+        self.discarding_dx_codes = discarding_dx_codes
+        super(Dx_CodeCorrelatedHeuristic, self).__init__(event_name, dx_codes, rule)
         
     def matches(self, **kw):
-        matches = super(Icd9CorrelatedHeuristic, self).matches(**kw)
+        matches = super(Dx_CodeCorrelatedHeuristic, self).matches(**kw)
         valid_matches = []
         for this_match in matches:
             relevancy_begin = this_match.date - relativedelta(months=12)
             history = this_match.patient.has_history_of(
-                self.discarding_icd9s, 
+                self.discarding_dx_codes, 
                 begin_date=relevancy_begin, 
                 end_date=this_match.date)
             if history:
@@ -645,7 +648,7 @@ class Icd9CorrelatedHeuristic(VaersDiagnosisHeuristic):
 class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
     '''
     Any diagnosis not covered by another heuristic, or included in 
-    the ExcludedICD9Code table. Exclude if:
+    the ExcludedDx_Code table. Exclude if:
     1.Same code on patient's current problem list prior to this encounter 
     2.Encounter with same code in past 36 months
     3.Past medical history list with same code 
@@ -664,31 +667,32 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         super(VaersDiagnosisHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
     @property
-    def icd9s(self):
+    def dx_codes(self):
+        
         '''
-        All ICD9s that are not covered by another heuristic and are not 
-        included in the ExcludedICD9Code table.
-        @rtype: Icd9 QuerySet
+        All dx codes that are not covered by another heuristic and are not 
+        included in the ExcludedDx_Code table.
+        @rtype: Dx_code QuerySet
         '''
-        covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
-        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
-        #TODO: Fix ICD9 stuff here.  Patched over for now.
-        icd9_qs = Dx_code.objects.exclude(code__in=covered_icd9_codes)
-        icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
-        return icd9_qs
+        covered_dx_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
+        excluded_dx_codes = ExcludedDx_Code.objects.values('code')
+        #TODO fix icd10 patched for now
+        dx_codes_qs = Dx_code.objects.exclude(combotypecode__in=covered_dx_codes)
+        dx_codes_qs = dx_codes_qs.exclude(code__in=excluded_dx_codes, type = 'ICD9')
+        return dx_codes_qs
 
-class Icd9PCorrelatedHeuristic(VaersProblemHeuristic):
-    def __init__(self, event_name, icd9s, rule, discarding_icd9s):
-        self.discarding_icd9s = discarding_icd9s
-        super(Icd9PCorrelatedHeuristic, self).__init__(event_name, icd9s, rule)
+class Dx_codePCorrelatedHeuristic(VaersProblemHeuristic):
+    def __init__(self, event_name, dx_codes, rule, discarding_dx_codes):
+        self.discarding_dx_codes = discarding_dx_codes
+        super(Dx_codePCorrelatedHeuristic, self).__init__(event_name, dx_codes, rule)
         
     def matches(self, **kw):
-        matches = super(Icd9PCorrelatedHeuristic, self).matches(**kw)
+        matches = super(Dx_codePCorrelatedHeuristic, self).matches(**kw)
         valid_matches = []
         for this_match in matches:
             relevancy_begin = this_match.date - relativedelta(months=12)
             history = this_match.patient.has_history_of(
-                self.discarding_icd9s, 
+                self.discarding_dx_codes, 
                 begin_date=relevancy_begin, 
                 end_date=this_match.date)
             if history:
@@ -699,7 +703,7 @@ class Icd9PCorrelatedHeuristic(VaersProblemHeuristic):
 class AnyOtherProblemHeuristic(VaersProblemHeuristic):
     '''
     Any diagnosis not covered by another heuristic, or included in 
-    the ExcludedICD9Code table. Exclude if:
+    the ExcludedDx_Code table. Exclude if:
     1.Same code on patient's current problem list prior to this encounter 
     2.Encounter with same code in past 36 months
     3.Past medical history list with same code 
@@ -718,31 +722,31 @@ class AnyOtherProblemHeuristic(VaersProblemHeuristic):
         super(VaersProblemHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
     @property
-    def icd9s(self):
+    def dx_codes(self):
         '''
-        All ICD9s that are not covered by another heuristic and are not 
-        included in the ExcludedICD9Code table.
-        @rtype: Icd9 QuerySet
+        All dx codes that are not covered by another heuristic and are not 
+        included in the ExcludedDx_Code table.
+        @rtype: Dx_codes QuerySet
         '''
-        covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
-        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
-        #TODO: Fix ICD9 stuff here.  Patched over for now.
-        icd9_qs = Dx_code.objects.exclude(code__in=covered_icd9_codes)
-        icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
-        return icd9_qs
+        covered_dx_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
+        excluded_dx_codes = ExcludedDx_Code.objects.values('code')
+        #TODO fix icd10 patched  for now
+        dx_codes_qs = Dx_code.objects.exclude(combotypecode__in=covered_dx_codes)
+        dx_codes_qs = dx_codes_qs.exclude(code__in=excluded_dx_codes, type = 'ICD9')
+        return dx_codes_qs
     
-class Icd9HCorrelatedHeuristic(VaersHospProbHeuristic):
-    def __init__(self, event_name, icd9s, rule, discarding_icd9s):
-        self.discarding_icd9s = discarding_icd9s
-        super(Icd9HCorrelatedHeuristic, self).__init__(event_name, icd9s, rule)
+class Dx_CodeHCorrelatedHeuristic(VaersHospProbHeuristic):
+    def __init__(self, event_name, dx_codes, rule, discarding_dx_codes):
+        self.discarding_dx_codes = discarding_dx_codes
+        super(Dx_CodeHCorrelatedHeuristic, self).__init__(event_name, dx_codes, rule)
         
     def matches(self, **kw):
-        matches = super(Icd9HCorrelatedHeuristic, self).matches(**kw)
+        matches = super(Dx_CodeHCorrelatedHeuristic, self).matches(**kw)
         valid_matches = []
         for this_match in matches:
             relevancy_begin = this_match.date - relativedelta(months=12)
             history = this_match.patient.has_history_of(
-                self.discarding_icd9s, 
+                self.discarding_dx_codes, 
                 begin_date=relevancy_begin, 
                 end_date=this_match.date)
             if history:
@@ -753,7 +757,7 @@ class Icd9HCorrelatedHeuristic(VaersHospProbHeuristic):
 class AnyOtherHospProbHeuristic(VaersHospProbHeuristic):
     '''
     Any diagnosis not covered by another heuristic, or included in 
-    the ExcludedICD9Code table. Exclude if:
+    the ExcludedDx_Code table. Exclude if:
     1.Same code on patient's current problem list prior to this encounter 
     2.Encounter with same code in past 36 months
     3.Past medical history list with same code 
@@ -772,18 +776,20 @@ class AnyOtherHospProbHeuristic(VaersHospProbHeuristic):
         super(VaersHospProbHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
     @property
-    def icd9s(self):
+    def dx_codes(self):
         '''
-        All ICD9s that are not covered by another heuristic and are not 
-        included in the ExcludedICD9Code table.
-        @rtype: Icd9 QuerySet
-        '''
-        covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
-        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
-        #TODO: Fix ICD9 stuff here.  Patched over for now.
-        icd9_qs = Dx_code.objects.exclude(code__in=covered_icd9_codes)
-        icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
-        return icd9_qs
+        All dx codes that are not covered by another heuristic and are not 
+        included in the ExcludedDx_Code table.
+        @rtype: Dx_codes QuerySet
+        '''        
+        
+        covered_dx_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
+        excluded_dx_codes = ExcludedDx_Code.objects.values('code')
+       
+        dx_codes_qs = Dx_code.objects.exclude(combotypecode__in=covered_dx_codes)
+        #TODO fix icd10 patched  for now
+        dx_codes_qs = dx_codes_qs.exclude(code__in=excluded_dx_codes, type = 'ICD9')
+        return dx_codes_qs
 
 class VaersLxHeuristic(AdverseEventHeuristic):
     
@@ -1129,14 +1135,14 @@ def make_diagnosis_heuristic(name):
     '''
     
     rule = DiagnosticsEventRule.objects.get(name=name)
-    icd9s = rule.heuristic_defining_codes.all()
+    dx_codes = rule.heuristic_defining_codes.all()
 
-    discarding_icd9s = rule.heuristic_discarding_codes.all()
+    discarding_dx_codes = rule.heuristic_discarding_codes.all()
 
-    if discarding_icd9s:
-        return Icd9CorrelatedHeuristic(name, icd9s, rule, discarding_icd9s)
+    if discarding_dx_codes:
+        return Dx_CodeCorrelatedHeuristic(name, dx_codes, rule, discarding_dx_codes)
     else:
-        return VaersDiagnosisHeuristic(name, icd9s, rule)
+        return VaersDiagnosisHeuristic(name, dx_codes, rule)
     
 def make_problem_heuristic(name):
     '''
@@ -1144,14 +1150,14 @@ def make_problem_heuristic(name):
     '''
     
     rule = DiagnosticsEventRule.objects.get(name=name)
-    icd9s = rule.heuristic_defining_codes.all()
+    dx_codes = rule.heuristic_defining_codes.all()
 
-    discarding_icd9s = rule.heuristic_discarding_codes.all()
+    discarding_dx_codes = rule.heuristic_discarding_codes.all()
 
-    if discarding_icd9s:
-        return Icd9PCorrelatedHeuristic(name, icd9s, rule, discarding_icd9s)
+    if discarding_dx_codes:
+        return Dx_codePCorrelatedHeuristic(name, dx_codes, rule, discarding_dx_codes)
     else:
-        return VaersProblemHeuristic(name, icd9s, rule)
+        return VaersProblemHeuristic(name, dx_codes, rule)
     
 def make_hospprob_heuristic(name):
     '''
@@ -1159,14 +1165,14 @@ def make_hospprob_heuristic(name):
     '''
     
     rule = DiagnosticsEventRule.objects.get(name=name)
-    icd9s = rule.heuristic_defining_codes.all()
+    dx_codes = rule.heuristic_defining_codes.all()
 
-    discarding_icd9s = rule.heuristic_discarding_codes.all()
+    discarding_dx_codes = rule.heuristic_discarding_codes.all()
 
-    if discarding_icd9s:
-        return Icd9HCorrelatedHeuristic(name, icd9s, rule, discarding_icd9s)
+    if discarding_dx_codes:
+        return Dx_CodeHCorrelatedHeuristic(name, dx_codes, rule, discarding_dx_codes)
     else:
-        return VaersHospProbHeuristic(name, icd9s, rule)
+        return VaersHospProbHeuristic(name, dx_codes, rule)
     
 def make_lab_heuristics(lab_type):
     rule = rules.VAERS_LAB_RESULTS[lab_type]

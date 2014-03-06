@@ -36,13 +36,13 @@ HL7_MESSAGES_DIR = os.path.join(DATA_DIR, 'vaers', 'hl7_messages')
 #types of action types 
 # 1_rare: (send) Rare, severe adverse event on VSD list
 # 2_possible: (confirm) Possible novel adverse event not previously associated with vaccine
-# 3_reportable: (send) ICD9 describes vaccine reaction.
+# 3_reportable: (send) dx_code describes vaccine reaction.
 
 #TODO use this later for header in report for suggested action
 ADVERSE_EVENT_CATEGORY_ACTION = [
      ('1_rare','Automatically confirmed, rare, severe adverse event associated with vaccine.'),
      ('2_possible', 'Confirm, Possible novel adverse event not previously associated with vaccine'),
-     ('3_reportable', 'Automatically confirmed, ICD9 code describes vaccine reaction')
+     ('3_reportable', 'Automatically confirmed, dx code describes vaccine reaction')
     ]
 
 ADVERSE_EVENT_CATEGORIES = [
@@ -159,11 +159,11 @@ class AdverseEvent(models.Model):
                     temperature = encounter['temperature'])
                 event_encounter.save()
                 event.encounter = event_encounter
-
-                for code in encounter['icd9_codes']:
-                    #TODO: fix icd9 stuff here.  Patched over for now
-                    icd9_code = Dx_code.objects.get(code=code['code'])
-                    event.encounter.icd9_codes.add(icd9_code)
+                # need to parse the type 
+                for code in encounter['dx_codes']:
+                    
+                    dx_code = Dx_code.objects.get(code=code['code'], type= code['type'])
+                    event.encounter.dx_codes.add(dx_code)
                 
             if lab_result: 
                 lx_type = ContentType.objects.get_for_model(LabResultEvent)
@@ -401,25 +401,25 @@ class EncounterEvent(AdverseEvent):
         folder = make_date_folders(begin_date, end_date, root=root_folder)
         gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_EVENT)
 
-        icd9_events = EncounterEvent.objects.filter(date__gte=begin_date, 
+        dx_code_events = EncounterEvent.objects.filter(date__gte=begin_date, 
                                                                   date__lte=end_date, gap__lte=MAX_TIME_WINDOW_POST_EVENT)
 
-        within_interval = [e for e in icd9_events 
+        within_interval = [e for e in dx_code_events 
                            if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
 
-        log.info('Writing report for %d icd9 events between %s and %s' % (
+        log.info('Writing report for %d dx_code events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
 
 
-        make_clustering_event_report_file(os.path.join(folder, 'icd9_events.txt'), within_interval)
+        make_clustering_event_report_file(os.path.join(folder, 'dx_code_events.txt'), within_interval)
 
     def _deidentified_encounter(self, days_to_shift):
-        codes = [{'code':x.code} for x in self.content_object.icd9_codes.all()]
+        codes = [{'code':x.combotypecode} for x in self.content_object.dx_codes.all()]
         date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
             'date':str(date),
             'temperature':self.content_object.temperature,
-            'icd9_codes':codes
+            'dx_codes':codes
             }
     
     def complete_deidentification(self, data, **kw):
@@ -501,11 +501,11 @@ class ProblemEvent(AdverseEvent):
         make_clustering_event_report_file(os.path.join(folder, 'prob_events.txt'), within_interval)
 
     def _deidentified_prob(self, days_to_shift):
-        code = self.content_object.icd9
+        code = self.content_object.dx_code
         date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
             'date':str(date),
-            'icd9_code':code
+            'dx_code':code
             }
 
     def complete_deidentification(self, data, **kw):
@@ -542,11 +542,11 @@ class HospProblemEvent(AdverseEvent):
         make_clustering_event_report_file(os.path.join(folder, 'hprob_events.txt'), within_interval)
 
     def _deidentified_hprob(self, days_to_shift):
-        code = self.content_object.icd9
+        code = self.content_object.dx_code
         date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
             'date':str(date),
-            'icd9_code':code
+            'dx_code':code
             }
 
     def complete_deidentification(self, data, **kw):
@@ -757,18 +757,19 @@ class Report_Sent (models.Model):
     report_type = models.CharField(max_length=20, blank=False, db_index=True)
 
 
-class ExcludedICD9Code(models.Model):
+class ExcludedDx_Code(models.Model):
     '''
     Codes to be excluded by vaers diagnosis heuristics
     '''
     code = models.CharField(max_length=20, blank=False, unique=True, db_index=True)
+    type = type = models.CharField('Code type', max_length=10)
     description = models.CharField(max_length=255, blank=False )
     
     def __str__(self):  
         return self.code
     
     class Meta:
-        verbose_name = 'Excluded icd9 code'
+        verbose_name = 'Excluded dx code'
 
 
 class Rule(models.Model):
@@ -798,9 +799,8 @@ class DiagnosticsEventRule(Rule):
 
     source = models.CharField(max_length=30, null=True)
     ignore_period = models.PositiveIntegerField(null=True)
-    #TODO: fix icd9 stuff here.  Patched over for now
-    heuristic_defining_codes = models.ManyToManyField(Dx_code, related_name='defining_icd9_code_set')
-    heuristic_discarding_codes = models.ManyToManyField(Dx_code, related_name='discarding_icd9_code_set')
+    heuristic_defining_codes = models.ManyToManyField(Dx_code, related_name='defining_dx_code_set')
+    heuristic_discarding_codes = models.ManyToManyField(Dx_code, related_name='discarding_dx_code_set')
     risk_period = models.IntegerField(blank=False, null=False, 
         help_text='MAX Risk period in days following vaccination')
     risk_period_start = models.IntegerField( default=1,
