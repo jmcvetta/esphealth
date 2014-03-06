@@ -15,7 +15,7 @@ from dateutil.relativedelta import relativedelta
 from ESP.utils import log
 from ESP.nodis.base import DiseaseDefinition
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.hef.base import Event
 from ESP.nodis.base import Case
 from django.db.models import F
@@ -42,9 +42,9 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
         #
         heuristic_list.append( DiagnosisHeuristic(
             name = 'pelvic_inflammatory_disease',
-            icd9_queries = [
-                Icd9Query(starts_with='614.'),
-                Icd9Query(exact='099.56'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='614.', type='icd9'),
+                Dx_CodeQuery(exact='099.56', type='icd9'),
                ]
             ))
         return heuristic_list
