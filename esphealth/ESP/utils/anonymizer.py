@@ -7,6 +7,7 @@ import os
 import shutil
 import StringIO
 import traceback
+#TODO this is not working because fakename is not in the code.
 from makeESPdata import fakename
 import random,datetime
 
@@ -69,39 +70,38 @@ def parseDemog(fname,fh):
         
 ################################
 def parseEnc(fname,fh):
-       for items in getlines(fname):
-           #print items 
-           pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,dxcode=items
-           newpid, newmrn, newphy = getfakeinfo(pid, phy)
-           if newpid=='':
-               print 'NO patient in Enc: %s' % pid
-               continue
+    for items in getlines(fname):
+        #print items 
+        pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,dx_code=items
+        newpid, newmrn, newphy = getfakeinfo(pid, phy)
+        if newpid=='':
+            print 'NO patient in Enc: %s' % pid
+            continue
                
-           newl = "^".join((newpid,newmrn,encid,encd,close,closed,newphy,deptid,dept,enctp,edc,temp,cpt,dxcode))
-           fh.write(newl+"\n")
-
+        newl = "^".join((newpid,newmrn,encid,encd,close,closed,newphy,deptid,dept,enctp,edc,temp,cpt,dx_code))
+        fh.write(newl+"\n")
 
            
 ################################
 def parseLxRes(fname,fh):
  
-       for items in getlines(fname):
-           try:
-               pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre = items
-           except:
-               try:
-                   pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre = items
-                   comp=compname=res=normalf=refl=refh=refu=status=''
-               except:
-                   logging.error('In LXRES: %s\n' % str(items))
-                   continue
+    for items in getlines(fname):
+        try:
+            pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre = items
+        except:
+            try:
+                pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre = items
+                comp=compname=res=normalf=refl=refh=refu=status=''
+            except:
+                logging.error('In LXRES: %s\n' % str(items))
+                continue
 
-           newpid, newmrn, newphy = getfakeinfo(pid, phy)
-           if newpid=='':
-               print 'NO patient in LxREs: %s' % pid
-               continue
-           newl = "^".join((newpid,newmrn,orderid,orderd,resd,newphy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre))
-           fh.write(newl+"\n")
+        newpid, newmrn, newphy = getfakeinfo(pid, phy)
+        if newpid=='':
+            print 'NO patient in LxREs: %s' % pid
+            continue
+        newl = "^".join((newpid,newmrn,orderid,orderd,resd,newphy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre))
+        fh.write(newl+"\n")
          
            
 ################################
