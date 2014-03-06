@@ -844,9 +844,9 @@ localSiteZips = dict(zip(localSiteUseCodes,localSiteZ))
 
 
 ## Fever codes
-# List of icd9 codes that indicate a fever event, regardless of measured temperature
+# List of dx codes that indicate a fever event, regardless of measured temperature
 # TODO spec only includes 780.6 checking with Mike
-ICD9_FEVER_CODES = ['780.6','780.31']
+DX_FEVER_CODES = ['780.6','780.31']
 
 # atrius sites list code,name,ignore
 
@@ -855,9 +855,9 @@ ICD9_FEVER_CODES = ['780.6','780.31']
 2) One of the following under the conditions specified:
 a) Measured fever of at least 100F (in temperature field of database)
 OR, if and only if there is no valid measured temperature of any magnitude,
-b) ICD9 code of 780.6 (fever)
+b) dx code of 780.6 (fever)
 Note febrile convulsion added sometimes?
-ICD9 code 780.31 (Febrile Convulsions)
+dx code 780.31 (Febrile Convulsions)
 """
 influenza_like_illness="""079.3	RHINOVIRUS INFECT NOS
 079.89	OTHER SPECIFIED VIRAL INFECTION

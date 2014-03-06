@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter, Patient
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.hef.models import Event
 from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
 from ESP.ss.utils import report_folder
@@ -19,25 +19,25 @@ from ESP.ss.models import NonSpecialistVisitEvent, Site
 from definitions import AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME, AGGREGATE_BY_SITE_ZIP_FILENAME
 from definitions import INDIVIDUAL_BY_SYNDROME_FILENAME
 from definitions import AGE_GROUP_INTERVAL, AGE_GROUP_CAP, AGE_GROUPS
-from definitions import ICD9_FEVER_CODES
+from definitions import DX_FEVER_CODES
 from definitions import influenza_like_illness, haematological, lesions, rash
 from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 # According to the specs, all of the syndromes have their specific
-# lists of icd9 codes that are always required as part of the
+# lists of dx codes that are always required as part of the
 # definition. They could've been simply defined as encounter
 # heuristics, except for the fact that some might require a fever
 # measurement, and ILI always required a fever to be reported. (Either
-# through an icd9 code indicating fever, or through a measured
+# through an dx code indicating fever, or through a measured
 # temperature).
 
 # So, we're creating two classes for Syndromic
 # Surveillance. InfluenzaHeuristic is for events that are defined by a
-# set of icd9 and always a fever. OptionFeverHeuristic is for events that
-# have a set of icd9s and that a fever *may* be required, depending on
-# the icd9 code.
+# set of dx code and always a fever. OptionFeverHeuristic is for events that
+# have a set of dx codes and that a fever *may* be required, depending on
+# the dx code.
 
-# The definitions that rely only on a set of icd9s (no fever) are just
+# The definitions that rely only on a set of dx_codes (no fever) are just
 # instantiated as regular SyndromeHeuristics.
 
 
@@ -268,9 +268,9 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         folder = report_folder(date, end_date, subfolder='reports')
         
         log.info('Detailed site report for %s on %s-%s' % (self.name, date, end_date))
-        log.info('syndrome,encounter date,zip residence,zip site,age 5yrs,icd9,temperature,encounters at age and residential zip,encounters at age and site zip')
+        log.info('syndrome,encounter date,zip residence,zip site,age 5yrs,dx_code,temperature,encounters at age and residential zip,encounters at age and site zip')
        
-        header = ['syndrome', 'encounter date', 'zip residence', 'zip site', 'age 5yrs', 'icd9', 
+        header = ['syndrome', 'encounter date', 'zip residence', 'zip site', 'age 5yrs', 'dx_code', 
                   'temperature',  'encounters at age and residential zip', 
                   'encounters at age and site zip']
         
@@ -290,8 +290,8 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             
             patient_age_group = ev.patient.age_group(when=ev.date)
             
-            encounter_codes = [x.code for x in ev.encounter.icd9_codes.all()]
-            icd9_codes = ' '.join([code for code in encounter_codes if code in self.icd9_queries])
+            encounter_codes = [x.code for x in ev.encounter.dx_codes.all()]
+            dx_codes = ' '.join([code for code in encounter_codes if code in self.dx_codes_queries])
             
             count_by_locality_and_age = ev.similar_age_group().filter(
                 patient_zip_code=ev.patient_zip_code, date=ev.date).count()
@@ -301,7 +301,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
 
             line = '\t'.join([str(x) for x in [
                         self.name, str_from_date(ev.date), ev.patient_zip_code, 
-                        ev.reporting_site.zip_code, patient_age_group, icd9_codes, 
+                        ev.reporting_site.zip_code, patient_age_group, dx_codes, 
                         ev.encounter.temperature,
                         count_by_locality_and_age, count_by_site_and_age, '\n']])
             log.debug(line)
@@ -316,10 +316,11 @@ class InfluenzaHeuristic(SyndromeHeuristic):
         begin = kw.get('begin_date', EPOCH)
         end = kw.get('end_date', datetime.date.today())
         q_measured_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
-        q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
+        #TODO patched for icd9 for now
+        q_unmeasured_fever = Q(temperature__isnull=True, dx_codes__code__in=DX_FEVER_CODES, dx_codes__type__in = 'ICD9')
         
         # Make it really readable. 
-        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
+        # (dx code + measured fever) or (dx code + dx_code for fever)
         # Logically: (a&b)+(a&c) = a&(b+c)
         influenza = (q_measured_fever | q_unmeasured_fever)
         
@@ -328,13 +329,15 @@ class InfluenzaHeuristic(SyndromeHeuristic):
                 
 class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
     FEVER_TEMPERATURE = 100.0
-    def __init__(self, name, long_name, icd9_fever_map):
+    
+    def __init__(self, name, long_name, dx_code_fever_map):
         # The only reason why we are overriding __init__ is because
-        # each the heuristic depends on the icd9 as well as if a fever
-        # is required for that icd9.
-        icd9_queries = [Icd9Query(exact=icd9_str) for icd9_str in icd9_fever_map.keys()]
-        super(OptionalFeverSyndromeHeuristic, self).__init__(name, long_name, icd9_queries)
-        self.required_fevers = icd9_fever_map
+        # each the heuristic depends on the dx_code as well as if a fever
+        # is required for that dx_code.
+        #TODO fix icd10 patched  for now
+        dx_codes_queries = [Dx_CodeQuery(exact=dx_code_str, type='ICD9') for dx_code_str in dx_code_fever_map.keys()]
+        super(OptionalFeverSyndromeHeuristic, self).__init__(name, long_name, dx_codes_queries)
+        self.required_fevers = dx_code_fever_map
 
     def matches(self, **kw):
 
@@ -342,16 +345,16 @@ class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
         end = kw.get('end_date', datetime.date.today())
 
         
-        icd9_requiring_fever = [code for code, required in self.required_fevers.items() if required]
-        icd9_non_fever = [code for code, required in self.required_fevers.items() if not required]
+        dx_code_requiring_fever = [code for code, required in self.required_fevers.items() if required]
+        dx_code_non_fever = [code for code, required in self.required_fevers.items() if not required]
         
         q_measured_fever = Q(temperature__gte=OptionalFeverSyndromeHeuristic.FEVER_TEMPERATURE)
-        q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
+        q_unmeasured_fever = Q(temperature__isnull=True, dx_codes__in=DX_FEVER_CODES)
 
-        q_fever_requiring_codes = Q(icd9_codes__in=icd9_requiring_fever)
+        q_fever_requiring_codes = Q(dx_codes__in=dx_code_requiring_fever)
     
         fever_requiring = (q_fever_requiring_codes & (q_measured_fever | q_unmeasured_fever))
-        non_fever_requiring = Q(icd9_codes__in=icd9_non_fever)
+        non_fever_requiring = Q(dx_codes__in=dx_code_non_fever)
         
         return self.encounters().filter(fever_requiring | non_fever_requiring).filter(
             date__gte=begin, date__lte=end)
@@ -374,8 +377,9 @@ neuro = SyndromeHeuristic('Neurological', make_long_name('Neurological'), dict(n
 '''
 
 def syndrome_heuristics():
-    icd9_queries = [Icd9Query(exact=icd9_str) for icd9_str in dict(influenza_like_illness).keys()]
-    ili = InfluenzaHeuristic('ili',  icd9_queries)
+    
+    dx_codes_queries = [Dx_CodeQuery(exact=dx_code_str) for dx_code_str in dict(influenza_like_illness).keys()]
+    ili = InfluenzaHeuristic('ili',  dx_codes_queries)
     return {
         'ili':ili 
         #'haematological':haematological,
