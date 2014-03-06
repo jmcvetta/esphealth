@@ -991,8 +991,14 @@ def validate_exact(request, validator_run_id=None):
     if validator_run_id:
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
-        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
-    exact = validator_run.exact.order_by('ref_case__date')
+        validator_run = ValidatorRun.objects.all().order_by('-pk')
+    exact =None
+    counts = [0]
+    if validator_run:
+        validator_run = validator_run[0]
+        exact = validator_run.exact.order_by('ref_case__date')
+        counts = exact.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
+    
     condition_form = ConditionForm()
     if request.method == 'POST':
         condition_form = ConditionForm(request.POST)
@@ -1004,10 +1010,13 @@ def validate_exact(request, validator_run_id=None):
     values = {
         'title': 'Case Validator: Exact Matches',
         'run': validator_run,
-        'exact': exact.select_related(), # Is select_related() helpful here?
-        'counts': exact.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk')),
+        'counts': counts,
         'condition_form': condition_form
         }
+    if exact:            
+        values['exact'] = exact.select_related() # Is select_related() helpful here?
+    else:
+        values['exact'] = None
     return render_to_response('nodis/validator_exact.html', values, context_instance=RequestContext(request))
 
 @login_required
@@ -1015,8 +1024,13 @@ def validate_missing(request, validator_run_id=None):
     if validator_run_id:
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
-        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
-    missing = validator_run.missing.order_by('ref_case__date')
+        validator_run = ValidatorRun.objects.all().order_by('-pk')
+    missing = None
+    count = [0]
+    if validator_run:
+            validator_run = validator_run[0]
+            missing = validator_run.missing.order_by('ref_case__date')
+            count = validator_run.missing.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
     condition_form = ConditionForm()
     values = {
         'title': 'Case Validator: Missing Cases',
@@ -1029,8 +1043,11 @@ def validate_missing(request, validator_run_id=None):
             log.debug('Filtering on condition: %s' % condition)
             if not condition == '*': # Filter not applied for wildcard
                 missing = missing.filter(ref_case__condition=condition)
-    values['missing'] = missing.select_related() # Is select_related() helpful here?
-    values['counts'] = validator_run.missing.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
+    if missing:            
+        values['missing'] = missing.select_related() # Is select_related() helpful here?
+    else:
+        values['missing'] = None
+    values['counts'] = count
     values['condition_form'] = condition_form
     return render_to_response('nodis/validator_missing.html', values, context_instance=RequestContext(request))
 
@@ -1040,15 +1057,21 @@ def validate_new(request, validator_run_id=None):
     if validator_run_id:
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
-        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
+        validator_run = ValidatorRun.objects.all().order_by('-pk')
+    new_cases =None
+    counts = [0]
+    if validator_run:
+        validator_run = validator_run[0]
+        #cases = Case.objects.filter(validatorresult__run=validator_run, validatorresult__disposition='new')
+        new_cases = validator_run.new.order_by('date')
+        counts = new_cases.values('condition').annotate(Count('pk')).order_by('condition')
     values = {
         'title': 'Case Validator: New Cases',
         'run': validator_run,
         }
-    #cases = Case.objects.filter(validatorresult__run=validator_run, validatorresult__disposition='new')
-    new_cases = validator_run.new.order_by('date')
+    
     condition_form = ConditionForm()
-    values['counts'] = new_cases.values('condition').annotate(Count('pk')).order_by('condition')
+    values['counts'] = counts
     values['condition_form'] = condition_form
     if request.method == 'POST':
         condition_form = ConditionForm(request.POST)
@@ -1057,7 +1080,10 @@ def validate_new(request, validator_run_id=None):
             log.debug('Filtering on condition: %s' % condition)
             if not condition == '*': # Filter not applied for wildcard
                 new_cases = new_cases.filter(condition=condition)
-    values['cases'] = new_cases.order_by('date').select_related() # Is select_related() helpful here?
+    if new_cases:
+        values['cases'] = new_cases.order_by('date').select_related() # Is select_related() helpful here?
+    else:
+        values['cases']= None
     return render_to_response('nodis/validator_new.html', values, context_instance=RequestContext(request))
 
 
@@ -1066,8 +1092,14 @@ def validate_similar(request, validator_run_id=None):
     if validator_run_id:
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
-        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
-    similar = validator_run.similar.order_by('ref_case__date')
+        validator_run = ValidatorRun.objects.all().order_by('-pk')
+    similar =None
+    counts = [0]
+    if validator_run:
+        validator_run = validator_run[0]
+        similar = validator_run.similar.order_by('ref_case__date')
+        counts = validator_run.similar.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
+    
     condition_form = ConditionForm()
     values = {
         'title': 'Case Validator: Similar Cases',
@@ -1080,8 +1112,11 @@ def validate_similar(request, validator_run_id=None):
             log.debug('Filtering on condition: %s' % condition)
             if not condition == '*': # Filter not applied for wildcard
                 similar = similar.filter(ref_case__condition=condition)
-    values['similar'] = similar.select_related() # Is select_related() helpful here?
-    values['counts'] = validator_run.similar.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
+    if similar:
+        values['similar'] = similar.select_related() # Is select_related() helpful here?
+    else:
+        values['similar'] = None
+    values['counts'] = counts
     values['condition_form'] = condition_form
     return render_to_response('nodis/validator_similar.html', values, context_instance=RequestContext(request))
 
