@@ -4,7 +4,7 @@ import optparse
 import pdb
 
 from ESP.conf.common import EPOCH
-from ESP.static.models import Icd9, Loinc
+from ESP.static.models import Dx_code, Loinc
 from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
 from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
@@ -18,7 +18,7 @@ from rules import MAX_TIME_WINDOW_POST_RX, MAX_TIME_WINDOW_POST_LX
 
 POPULATION_SIZE = 200
 
-ICD9_EVENT_PCT = 20
+DX_CODE_EVENT_PCT = 20
 LX_EVENT_PCT = 15
 RX_EVENT_PCT = 20
 ALL_EVENT_PCT = 15
@@ -68,8 +68,8 @@ class ImmunizationHistory(object):
         return Immunization.make_mock(vaccine, self.patient, when, save_on_db=save_on_db)
 
 def check_for_reactions(imm):
-    #SHOULD WE CAUSE AN ICD9 EVENT
-    if random.randrange(100) <= ICD9_EVENT_PCT:
+    #SHOULD WE CAUSE AN DX_CODE EVENT
+    if random.randrange(100) <= DX_CODE_EVENT_PCT:
         ev = Vaers(imm)
         rule = DiagnosticsEventRule.random()
         try:
@@ -78,16 +78,16 @@ def check_for_reactions(imm):
             rules.define_active_rules()
             #rules.map_lab_tests()
 
-        ev.cause_icd9(code)
+        ev.cause_dx_code(code)
         
         # Maybe it's one that should be ignored?
         if random.randrange(100) <= IGNORE_FOR_REOCCURRENCE_PCT:
-            ev.cause_icd9_ignored_for_reoccurrence(code, 12)
+            ev.cause_dx_code_ignored_for_reoccurrence(code, 12)
         elif random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
             if len(rule.heuristic_discarding_codes.all()) > 0:
                 discarding_code = random.choice(
                     rule.heuristic_discarding_codes.all())
-                ev.cause_icd9_ignored_for_history(discarding_code)
+                ev.cause_dx_code_ignored_for_history(discarding_code)
 
     # Or a lab result event?
     elif random.randrange(100) <= LX_EVENT_PCT:
@@ -133,16 +133,16 @@ class Vaers(object):
         self.matching_encounter = encounter
 
     
-    def cause_icd9(self, code):
+    def cause_dx_code(self, code):
         encounter = self._encounter()
         encounter.save()
         encounter.temperature = randomizer.body_temperature() 
-        encounter.icd9_codes.add(code)
+        encounter.dx_codes.add(code)
         encounter.save()
         
         self.matching_encounter = encounter
 
-    def cause_icd9_ignored_for_history(self, code):
+    def cause_dx_code_ignored_for_history(self, code):
         
         
         
@@ -158,10 +158,10 @@ class Vaers(object):
         past_encounter = Encounter.make_mock(self.patient, when=when)
         past_encounter.temperature = randomizer.body_temperature()
         past_encounter.save()
-        past_encounter.icd9_codes.add(code)
+        past_encounter.dx_codes.add(code)
         past_encounter.save()
         
-    def cause_icd9_ignored_for_reoccurrence(self, code, max_period):
+    def cause_dx_code_ignored_for_reoccurrence(self, code, max_period):
         maximum_days_ago = min(
             (self.immunization_date - self.patient.date_of_birth).days,
             max_period * 30
@@ -173,7 +173,7 @@ class Vaers(object):
         past_encounter = Encounter.make_mock(self.patient, when=when)
         past_encounter.temperature = randomizer.body_temperature()
         past_encounter.save()
-        past_encounter.icd9_codes.add(code)
+        past_encounter.dx_codes.add(code)
         past_encounter.save()
 
     def cause_positive_lab_result(self, loinc, criterion):

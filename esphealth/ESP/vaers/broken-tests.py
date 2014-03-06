@@ -7,7 +7,7 @@ import pdb
 from django.db.models import Max
 
 # Models
-from ESP.static.models import Icd9, Loinc
+from ESP.static.models import Dx_code, Loinc
 from ESP.emr.models import Patient, Immunization, LabResult, Encounter
 from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 
@@ -82,7 +82,7 @@ class TestFake(unittest.TestCase):
         ev = Vaers(imm)
         rule = DiagnosticsEventRule.random()
         code = random.choice(rule.heuristic_defining_codes.all())
-        ev.cause_icd9(code)
+        ev.cause_dx_code(code)
         
         earliest_date = ev.matching_encounter.date - datetime.timedelta(days=MAX_TIME_WINDOW_POST_EVENT)
         
@@ -101,7 +101,7 @@ class TestFake(unittest.TestCase):
             ev = Vaers(imm)
             rule = DiagnosticsEventRule.random()
             code = random.choice(rule.heuristic_defining_codes.all())
-            ev.cause_icd9(code)
+            ev.cause_dx_code(code)
             
         
         expected_encounters = Encounter.objects.following_vaccination(rule.risk_period, rule.risk_period_start)
@@ -155,7 +155,7 @@ class TestRuleEngine(unittest.TestCase):
             
             # Create the adverse event
             ev = Vaers(imm)
-            ev.cause_icd9(code)
+            ev.cause_dx_code(code)
 
             matches = heuristic.matches()
   
@@ -179,12 +179,13 @@ class TestRuleEngine(unittest.TestCase):
             # Find proper patient, immunization and code
             victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
-            code = Icd9.objects.exclude(code__in=rule.heuristic_defining_codes.all()).order_by('?')[0]
+            
+            code = Dx_code.objects.exclude(combotypecode__in=rule.heuristic_defining_codes.all()).order_by('?')[0]
             
             # Add an encounter after Immunization, 
-            # but icd9 code is not part of the heuristic.
+            # but dx code is not part of the heuristic.
             ev = Vaers(imm)
-            ev.cause_icd9(code)
+            ev.cause_dx_code(code)
   
             matches = heuristic.matches()
 
@@ -211,7 +212,7 @@ class TestRuleEngine(unittest.TestCase):
             
             # Create the adverse event
             ev = Vaers(imm)
-            ev.cause_icd9(code)
+            ev.cause_dx_code(code)
 
             matches = heuristic.matches()
 
@@ -225,7 +226,7 @@ class TestRuleEngine(unittest.TestCase):
 
             # But when we add a past encounter with the same code, it
             # should not.
-            ev.cause_icd9_ignored_for_reoccurrence(code, 
+            ev.cause_dx_code_ignored_for_reoccurrence(code, 
                                                    v['ignore_period'])
             matches = heuristic.matches()
 
@@ -252,7 +253,7 @@ class TestRuleEngine(unittest.TestCase):
             
             # Create the adverse event
             ev = Vaers(imm)
-            ev.cause_icd9(code)
+            ev.cause_dx_code(code)
 
 
             matches = heuristic.matches()
@@ -265,7 +266,7 @@ class TestRuleEngine(unittest.TestCase):
             # ignorable, it no longer is a match.
             discarding_code = random.choice(
                 rule.heuristic_discarding_codes.all())
-            ev.cause_icd9_ignored_for_history(discarding_code)
+            ev.cause_dx_code_ignored_for_history(discarding_code)
 
             
 
