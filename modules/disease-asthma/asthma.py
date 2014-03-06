@@ -27,7 +27,7 @@ from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic
 
 from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
 from ESP.static.models import DrugSynonym
@@ -60,8 +60,8 @@ class Asthma(DiseaseDefinition):
         #
         heuristic_list.append( DiagnosisHeuristic(
             name = 'asthma',
-            icd9_queries = [
-                Icd9Query(starts_with='493.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='493.', type='icd9'),
                 ]
             ))
        
@@ -237,7 +237,7 @@ class Asthma(DiseaseDefinition):
     def generate_def_ab (self):
     #
     # criteria 1
-    # >=4 encounters with ICD9 code 493.xx and asthma drug prescriptions 
+    # >=4 encounters with dx code 493.xx and asthma drug prescriptions 
     # (can be >=2 scripts for the same med or scripts for 2 or more different meds)
     #
        
