@@ -17,7 +17,7 @@ from ESP.hef.base import LabResultPositiveHeuristic
 from ESP.hef.base import LabResultRatioHeuristic
 from ESP.hef.base import LabResultFixedThresholdHeuristic
 from ESP.hef.base import LabResultRangeHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
@@ -293,18 +293,18 @@ pertussis_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. E
     name = 'pertussis'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pertussis_dx,
-    icd9_exact = '033.0'
+    dx_code_exact = '033.0'
     )
 
 cough_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'cough'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = cough_dx,
-    icd9_exact = '033.9'
+    dx_code_exact = '033.9'
     )
 #
 # Prescriptions
@@ -480,32 +480,32 @@ jaundice_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Ec
     name = 'jaundice'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = jaundice_dx,
-    icd9_exact = '782.4'
+    dx_code_exact = '782.4'
     )
 
 chronic_hep_c = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'chronic_hep_c'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = chronic_hep_c,
-    icd9_exact = '070.54',
+    dx_code_exact = '070.54',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = chronic_hep_c,
-    icd9_exact = '070.70',
+    dx_code_exact = '070.70',
     )
 
 chronic_hep_b = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'chronic_hep_b'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = chronic_hep_b,
-    icd9_exact = '070.32',
+    dx_code_exact = '070.32',
     )
 
 hep_b_igm_antibody = AbstractLabTest.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
@@ -791,9 +791,9 @@ lyme_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclips
     name = 'lyme',
     )[0]
 
-foo = Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+foo = Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = lyme_dx,
-    icd9_exact = '088.81',
+    dx_code_exact = '088.81',
     )[0]
 
 
@@ -801,9 +801,9 @@ rash_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclips
     name = 'rash',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = rash_dx,
-    icd9_exact = '782.1',
+    dx_code_exact = '782.1',
     )
 
 doxycycline_rx = PrescriptionHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
@@ -827,39 +827,39 @@ pelvic_inflamatory_disease = DiagnosisHeuristic.objects.get_or_create( # @Undefi
     name = 'pelvic_inflamatory_disease',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.0',
+    dx_code_exact = '614.0',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.1',
+    dx_code_exact = '614.1',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.2',
+    dx_code_exact = '614.2',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.3',
+    dx_code_exact = '614.3',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.5',
+    dx_code_exact = '614.5',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.9',
+    dx_code_exact = '614.9',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '099.56',
+    dx_code_exact = '099.56',
     )
 
 #-------------------------------------------------------------------------------
@@ -940,49 +940,49 @@ tb_diagnosis = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. E
     name = 'tuberculosis',
     )[0]
     
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '010.',
+    dx_code_starts_with = '010.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '011.',
+    dx_code_starts_with = '011.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '012.',
+    dx_code_starts_with = '012.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '013.',
+    dx_code_starts_with = '013.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '014.',
+    dx_code_starts_with = '014.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '015.',
+    dx_code_starts_with = '015.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '016.',
+    dx_code_starts_with = '016.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '017.',
+    dx_code_starts_with = '017.',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = tb_diagnosis,
-    icd9_starts_with = '018.',
+    dx_code_starts_with = '018.',
     )[0]
 
 # lab orders for tb  
@@ -1047,44 +1047,44 @@ syphilis_diagnosis = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVaria
     name = 'syphilis',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '090.',
+    dx_code_starts_with = '090.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '091.',
+    dx_code_starts_with = '091.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '092.',
+    dx_code_starts_with = '092.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '093.',
+    dx_code_starts_with = '093.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '094.',
+    dx_code_starts_with = '094.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '095.',
+    dx_code_starts_with = '095.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '096.',
+    dx_code_starts_with = '096.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = syphilis_diagnosis,
-    icd9_starts_with = '097.',
+    dx_code_starts_with = '097.',
     )
 
 syphilis_tppa = AbstractLabTest.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
@@ -1816,14 +1816,14 @@ pregnancy_diagnosis = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVari
     name = 'pregnancy',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pregnancy_diagnosis,
-    icd9_starts_with = 'V22.',
+    dx_code_starts_with = 'V22.',
     )
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pregnancy_diagnosis,
-    icd9_starts_with = 'V23.',
+    dx_code_starts_with = 'V23.',
     )
 
 #
@@ -1836,9 +1836,9 @@ gdm_diagnosis = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. 
     name = 'gestational_diabetes',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = gdm_diagnosis,
-    icd9_starts_with = '648.8',
+    dx_code_starts_with = '648.8',
     )
 
 lancets_rx = PrescriptionHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
@@ -1886,9 +1886,9 @@ diahrrhea_diagnosis = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVari
     name = 'diarrhea',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = diahrrhea_diagnosis,
-    icd9_exact = '787.91',
+    dx_code_exact = '787.91',
     )
 
 
@@ -1902,18 +1902,18 @@ pertussis_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. E
     name = 'pertussis',
     )[0]
     
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = pertussis_dx,
-    icd9_exact = '033.0',
+    dx_code_exact = '033.0',
     )
 
 cough_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'cough',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = cough_dx,
-    icd9_exact = '033.9',
+    dx_code_exact = '033.9',
     )
 
 #
@@ -2070,58 +2070,58 @@ diabetes_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Ec
     name = 'diabetes_all_types',
     )[0]
     
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = diabetes_dx,
-    icd9_starts_with = '250.',
+    dx_code_starts_with = '250.',
     )
 
 diabetes_type_1_ns_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'diabetes_type_1_not_stated'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = diabetes_type_1_ns_dx,
-    icd9_starts_with = '250.',
-    icd9_ends_with = '1',
+    dx_code_starts_with = '250.',
+    dx_code_ends_with = '1',
     )
 
 diabetes_type_1_uncont_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'diabetes_type_1_uncontrolled'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = diabetes_type_1_uncont_dx,
-    icd9_starts_with = '250.',
-    icd9_ends_with = '3',
+    dx_code_starts_with = '250.',
+    dx_code_ends_with = '3',
     )
 
 diabetes_type_2_ns_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'diabetes_type_2_not_stated'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = diabetes_type_2_ns_dx,
-    icd9_starts_with = '250.',
-    icd9_ends_with = '0',
+    dx_code_starts_with = '250.',
+    dx_code_ends_with = '0',
     )
 
 diabetes_type_2_uncont_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'diabetes_type_2_uncontrolled'
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = diabetes_type_2_uncont_dx,
-    icd9_starts_with = '250.',
-    icd9_ends_with = '2',
+    dx_code_starts_with = '250.',
+    dx_code_ends_with = '2',
     )
 
 abnormal_glucose_dx = DiagnosisHeuristic.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     name = 'abnormal_glucose',
     )[0]
 
-Icd9Query.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
+Dx_CodeQuery.objects.get_or_create( # @UndefinedVariable. Eclipse static code analysis can't see objects
     heuristic = abnormal_glucose_dx,
-    icd9_starts_with = '648.8',
+    dx_code_starts_with = '648.8',
     )
 
 

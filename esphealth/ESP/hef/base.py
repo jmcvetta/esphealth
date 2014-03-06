@@ -6,7 +6,6 @@
 @author: Jason McVetta <jason.mcvetta@heliotropi.cc>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @contact: http://esphealth.org
-@copyright: (c) 2009-2011 Channing Laboratory
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 from types import StringType
@@ -1394,42 +1393,45 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         return count
 
 
-class Icd9Query(object):
+class Dx_CodeQuery(object):
     '''
-    A query for selecting encounters based on ICD9 codes
+    A query for selecting encounters based on dx codes
     '''
     
-    def __init__(self, exact=None, starts_with=None, ends_with=None, contains=None):
+    def __init__(self, exact=None, starts_with=None, ends_with=None, contains=None, type=None):
         '''
-        @param exact: Encounter must include this exact ICD9 code
+        @param exact: Encounter must include this exact dx code
         @type exact:  String
         #
         # We use "starts_with" instead of Django-style "startswith", to
         # discourage people from thinking this argument is case-sensistive,
         # like a Django startswith query would be.
         #
-        # Let's hope we never need to deal with case-sensitive ICD9 codes.
+        # Let's hope we never need to deal with case-sensitive dx codes.
         #
-        @param starts_with: Encounter must include an ICD9 code starting with this string
+        @param starts_with: Encounter must include an dx code starting with this string
         @type exact:  String
-        @param ends_with: Encounter must include an ICD9 code ending with this string
+        @param ends_with: Encounter must include an dx code ending with this string
         @type exact:  String
-        @param contains: Encounter must include an ICD9 code containing this string
+        @param contains: Encounter must include an dx code containing this string
+        @type exact:  String
+        @param type: Encounter must include an dx code type containing this string
         @type exact:  String
         '''
-        assert (exact or starts_with or ends_with or contains) # Sanity check
+       
+        assert (exact or starts_with or ends_with or contains and type) # Sanity check
         self.exact = exact
         self.starts_with = starts_with
         self.ends_with = ends_with
         self.contains = contains
-        
-    
+        self.type = type
+            
     @property
-    def icd9_q_obj(self):
+    def dx_code_q_obj(self):
         '''
-        Returns a Q object suitable for selecting ICD9 objects that match this query
+        Returns a Q object suitable for selecting dx objects that match this query
         issue 455, removed the i case insensitive version because load epic always 
-        loads icd9s in upper case
+        loads dx codes in upper case
         '''
         q_list = []
         if self.exact:
@@ -1440,6 +1442,7 @@ class Icd9Query(object):
             q_list.append( Q(code__endswith=self.ends_with) )
         if self.contains:
             q_list.append( Q(code__contains=self.contains) )
+        q_list.append( Q(type__exact = self.type) )
         assert q_list # This should not be empty
         q_obj = q_list[0]
         for another_q_obj in q_list[1:]:
@@ -1449,19 +1452,20 @@ class Icd9Query(object):
     @property
     def encounter_q_obj(self):
         '''
-        Returns a Q object suitable for selecting ICD9 objects that match this query
+        Returns a Q object suitable for selecting dx code objects that match this query
         issue 455, removed the i case insensitive version because load epic always 
-        loads icd9s in upper case
+        loads dx codes in upper case
         '''
         q_list = []
         if self.exact:
-            q_list.append( Q(icd9_codes__code__exact=self.exact) )
+            q_list.append( Q(dx_codes__code__exact=self.exact) )
         if self.starts_with:
-            q_list.append( Q(icd9_codes__code__startswith=self.starts_with) )
+            q_list.append( Q(dx_codes__code__startswith=self.starts_with) )
         if self.ends_with:
-            q_list.append( Q(icd9_codes__code__endswith=self.ends_with) )
+            q_list.append( Q(dx_codes__code__endswith=self.ends_with) )
         if self.contains:
-            q_list.append( Q(icd9_codes__code__contains=self.contains) )
+            q_list.append( Q(dx_codes__code__contains=self.contains) )
+        q_list.append( Q(dx_codes__type__exact = self.type) )
         assert q_list # This should not be empty
         q_obj = q_list[0]
         for another_q_obj in q_list[1:]:
@@ -1473,25 +1477,24 @@ class Icd9Query(object):
     
     @property
     def verbose_name(self):
-        return 'ICD9 Query: %s | %s | %s | %s' % (self.exact, self.starts_with, self.ends_with, self.contains),
+        return 'Dx code Query: %s | %s | %s | %s | %s' % (self.exact, self.starts_with, self.ends_with, self.contains, self.type),
 
 
 class DiagnosisHeuristic(BaseEventHeuristic):
     '''
-    A heuristic for detecting events based on one or more ICD9 diagnosis codes
+    A heuristic for detecting events based on one or more diagnosis codes
     from a physician encounter.
     '''
-    
-    def __init__(self, name, icd9_queries):
+    def __init__(self, name, dx_code_queries):
         '''
         @param name: Name of this heuristic
         @type name:  String
-        @param icd9_queries: Generate event for records matching one of these queries
-        @type icd9_queries:  List of Icd9Query objects
+        @param dx_code_queries: Generate event for records matching one of these queries
+        @type dx_code_queries:  List of dx codes Query objects
         '''
-        assert name and icd9_queries
+        assert name and dx_code_queries
         self.name = name
-        self.icd9_queries = icd9_queries
+        self.dx_code_queries = dx_code_queries
 
     @property
     def short_name(self):
@@ -1508,20 +1511,21 @@ class DiagnosisHeuristic(BaseEventHeuristic):
     
     @property
     def encounters(self):
-        enc_q = self.icd9_queries[0].encounter_q_obj
-        for query in self.icd9_queries[1:]:
+        
+        enc_q = self.dx_code_queries[0].encounter_q_obj
+        for query in self.dx_code_queries[1:]:
             enc_q |= query.encounter_q_obj
         return Encounter.objects.filter(enc_q)
     
     @property
-    #def icd9_q_obj(self):
     def junk(self):
         q_obj = None
-        for icd9_query in self.icd9_queries:
+        
+        for dx_code_query in self.dx_code_queries:
             if q_obj:
-                q_obj |= icd9_query.icd9_q_obj
+                q_obj |= dx_code_query.dx_code_q_obj
             else:
-                q_obj = icd9_query.icd9_q_obj
+                q_obj = dx_code_query.dx_code_q_obj
         return q_obj
     
     @property
