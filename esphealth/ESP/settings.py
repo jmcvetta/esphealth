@@ -742,7 +742,7 @@ POPULATION_SIZE = config['Make_Fakes']['population_size']
 MIN_ENCOUNTERS_PER_PATIENT = config['Make_Fakes']['min_encounters_per_patient']
 ENCOUNTERS_PER_PATIENT = config['Make_Fakes']['encounters_per_patient']
 
-MAXDXCODE = config['Make_Fakes']['maxdxcode']
+MAXDX_CODE = config['Make_Fakes']['maxdx_code']
 DX_CODE_PCT = config['Make_Fakes']['dx_code_pct']
 
 MIN_LAB_TESTS_PER_PATIENT = config['Make_Fakes']['min_lab_tests_per_patient']
