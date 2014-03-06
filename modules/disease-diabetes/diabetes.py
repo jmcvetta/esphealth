@@ -14,7 +14,7 @@
 from ESP.emr.models import Encounter, LabOrder, LabResult, Patient, Prescription, Pregnancy
 from ESP.conf.models import LabTestMap
 from ESP.hef.base import AbstractLabTest, BaseHeuristic, DiagnosisHeuristic, \
-    Dose, Icd9Query, LabOrderHeuristic, LabResultAnyHeuristic, \
+    Dose, Dx_CodeQuery, LabOrderHeuristic, LabResultAnyHeuristic, \
     LabResultFixedThresholdHeuristic, LabResultPositiveHeuristic, \
     LabResultRangeHeuristic, LabResultRatioHeuristic, LabResultWesternBlotHeuristic, \
     PrescriptionHeuristic, LabResultNoEventHeuristic
@@ -195,38 +195,38 @@ class Diabetes(DiseaseDefinition):
         #
         heuristics.append (DiagnosisHeuristic(
             name = 'gestational-diabetes',
-            icd9_queries = [
-                Icd9Query(starts_with = '648.8'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '648.8', type='icd9'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:all-types',
-            icd9_queries = [
-                Icd9Query(starts_with = '250.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '250.', type='icd9'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:type-1-not-stated',
-            icd9_queries = [
-                Icd9Query(starts_with = '250.', ends_with='1'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '250.', ends_with='1', type='icd9'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:type-1-uncontrolled',
-            icd9_queries = [
-                Icd9Query(starts_with = '250.', ends_with='3'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '250.', ends_with='3', type='icd9'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:type-2-not-stated',
-            icd9_queries = [
-                Icd9Query(starts_with = '250.', ends_with='0'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '250.', ends_with='0', type='icd9'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:type-2-uncontrolled',
-            icd9_queries = [
-                Icd9Query(starts_with = '250.', ends_with='2'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = '250.', ends_with='2', type='icd9'),
                 ]
             ) )
         #
@@ -501,7 +501,7 @@ class Diabetes(DiseaseDefinition):
         
         #===============================================================================
         #
-        # 4/5. Ratio of type 1 : type 2 ICD9s >50% and (never prescribed oral hypoglycemic 
+        # 4/5. Ratio of type 1 : type 2 dx_code >50% and (never prescribed oral hypoglycemic 
         #    medications OR prescription for GLUCAGON)
         #
         #-------------------------------------------------------------------------------
@@ -518,9 +518,9 @@ class Diabetes(DiseaseDefinition):
                 case_date = trigger_events_qs[0].date
                 case_events_qs = trigger_events_qs | type_1_dx | type_2_dx
                 if glucagon_rx:
-                    criteria = 'More than 50% of ICD9s are type 1, and glucagon rx: Type 1'
+                    criteria = 'More than 50% of dx_codes are type 1, and glucagon rx: Type 1'
                 else:
-                    criteria = 'More than 50% of ICD9s are type 1, and never prescribed oral hypoglycaemics: Type 1'
+                    criteria = 'More than 50% of dx_codes are type 1, and never prescribed oral hypoglycaemics: Type 1'
                 condition = 'diabetes:type-1'
                 log.debug(criteria)
                 
@@ -982,7 +982,7 @@ class GestationalDiabetesReport(Report):
         header = dict(zip(fields, fields))
         writer.writerow(header)
         #
-        # Report on all patients with GDM ICD9 or a pregnancy
+        # Report on all patients with GDM dx_codes or a pregnancy
         #
         patient_pks = set()
         patient_pks.update( Event.objects.filter(name='dx:gestational-diabetes').values_list('patient', flat=True) )
@@ -1319,25 +1319,56 @@ class GestationalDiabetesReport(Report):
                 gdm_date = None
                 ga_gdm_met = None
                
+            
             pre_eclampsia_icd9s = ['642.4','642.40','642.41','642.42','642.43','642.44',
                                    '642.5','642.50','642.51','642.52','642.53','642.54',
                                    '642.6','642.60','642.61','642.62','642.63','642.64',
                                    '642.7','642.70','642.71','642.72','642.73','642.74']
+            #TODO add real codes for icd10 
+            '''
+            pre_eclampsia_icd10s = ['642.4','642.40','642.41','642.42','642.43','642.44',
+                                   '642.5','642.50','642.51','642.52','642.53','642.54',
+                                   '642.6','642.60','642.61','642.62','642.63','642.64',
+                                   '642.7','642.70','642.71','642.72','642.73','642.74']
+            '''
+            
             pre_eclampsia = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
                 date__lte = end_date + relativedelta(days=30),
-                icd9_codes__code__in = pre_eclampsia_icd9s 
+                dx_codes__code__in = pre_eclampsia_icd9s ,
+                dx_codes__type__exact='icd9',
                 )
-           
+            #TODO check for codeset and add another query for icd10s
+            '''
+            pre_eclampsia |= Encounter.objects.filter(
+                patient = patient,
+                date__gte = preg_ts.start_date,
+                date__lte = end_date + relativedelta(days=30),
+                dx_codes__code__in = pre_eclampsia_icd10s ,
+                dx_codes__type__exact='icd10',
+                ) 
+            '''          
             hypertension_inpreg_icd9s = ['642.3','642.9']
+            # TODO 
+            #hypertension_inpreg_icd10s = ['642.3','642.9']
             hypertension = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
                 date__lte = end_date + relativedelta(days=30),
-                icd9_codes__code__in=hypertension_inpreg_icd9s 
+                dx_codes__code__in=hypertension_inpreg_icd9s, 
+                dx_codes__type__exact='icd9',
+                )
+            '''
+            hypertension |= Encounter.objects.filter(
+                patient = patient,
+                date__gte = preg_ts.start_date,
+                date__lte = end_date + relativedelta(days=30),
+                dx_codes__code__in=hypertension_inpreg_icd10s, 
+                dx_codes__type__exact='icd10',
                 )
             
+            '''
             # there is a relationship between the order by and the distinct clause
             # needed to force the order by because date is included in the meta of encounter
             # for default ordering
@@ -1345,24 +1376,29 @@ class GestationalDiabetesReport(Report):
                 patient = patient,
                 date__lte = preg_ts.start_date
             ).order_by('patient')
-                
+            
+            #TODO add code for 10 for all below
             polycystic_icd9 = '256.4'
             prior_polycystic_twice = prior_encounter.filter(
-                icd9_codes__code = polycystic_icd9 
+                dx_codes__code = polycystic_icd9,
+                dx_codes__type__exact='icd9'
                 ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
              
             prior_pre_eclampsia_twice = prior_encounter.filter(
-                icd9_codes__code__in=pre_eclampsia_icd9s
+                dx_codes__code__in=pre_eclampsia_icd9s,
+                dx_codes__type__exact='icd9'
                 ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
                     
             history_hypertension = '401'#outside pregnancy
             prior_hypertension_twice = prior_encounter.filter(
-                icd9_codes__code__startswith= history_hypertension 
+                dx_codes__code__startswith= history_hypertension ,
+                dx_codes__type__exact='icd9'
                 ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
                 
             liver_fatty_disease_icd9s = ['571.0', '571.8' ]
             prior_liver_fatty_disease =  prior_encounter.filter(
-                 icd9_codes__code__in=liver_fatty_disease_icd9s 
+                 dx_codes__code__in=liver_fatty_disease_icd9s ,
+                 dx_codes__type__exact='icd9'
                 )
             # any lab result in the past two years. 
             prior_2y_lab = LabResult.objects.filter(
@@ -1809,7 +1845,7 @@ class BaseDiabetesReport(Report):
             self.FIELDS.append(field_date)
             self.FIELDS.append(field_text)
             heuristic = DiagnosisHeuristic.get_heuristic_by_name(heuristic_name)
-            icd9_q = heuristic.icd9_queries
+            dx_codes_q = heuristic.dx_code_queries
             qs = Encounter.objects.filter(events__name=heuristic_name)
             qs = qs.filter(patient__in=self.patient_qs)
             qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
@@ -1819,9 +1855,9 @@ class BaseDiabetesReport(Report):
                 if enc.patient == last_patient:
                     continue
                 field_values = self.patient_field_values[enc.patient.pk]
-                icd9_obj = enc.icd9_codes.filter(icd9_q)[0]
-                field_values[field_code] = icd9_obj.code
-                field_values[field_text] = icd9_obj.name
+                dx_codes_obj = enc.dx_codes.filter(dx_codes_q)[0]
+                field_values[field_code] = dx_codes_obj.code
+                field_values[field_text] = dx_codes_obj.name
                 field_values[field_date] = enc.date
                 last_patient = enc.patient
     
