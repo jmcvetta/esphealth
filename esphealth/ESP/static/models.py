@@ -76,8 +76,8 @@ class DrugSynonym (models.Model):
                     alldrugnames.append(otherdrug.other_name)
         return alldrugnames   
      
-class FakeDxCodes(models.Model):
-    fakedxcode_id = models.AutoField(primary_key=True)
+class FakeDx_Codes(models.Model):
+    fakedx_code_id = models.AutoField(primary_key=True)
     dx_codes = models.CharField('dx_codes', max_length=3350)
     group_name = models.CharField('group_name', max_length=100)
     list_length = models.IntegerField(blank=True, null=True)
@@ -87,7 +87,7 @@ class FakeDxCodes(models.Model):
         return '%s -- %s' % (self.group_name, self.dx_codes)
     
     class Meta:
-        verbose_name = 'FAKEDXCODE'
+        verbose_name = 'FAKEDX_CODE'
 
 
 class FakeAllergen(models.Model):
