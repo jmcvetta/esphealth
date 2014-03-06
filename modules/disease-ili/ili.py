@@ -20,7 +20,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from ESP.utils import log
 from ESP.hef.base import Event, BaseEventHeuristic,LabResultAnyHeuristic,  PrescriptionHeuristic
-from ESP.hef.base import Dose, LabResultPositiveHeuristic, LabOrderHeuristic, DiagnosisHeuristic, Icd9Query
+from ESP.hef.base import Dose, LabResultPositiveHeuristic, LabOrderHeuristic, DiagnosisHeuristic, Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition, Case
 from ESP.static.models import DrugSynonym
 from ESP.emr.models import Encounter
@@ -55,9 +55,9 @@ class ili(DiseaseDefinition):
         #  
         heuristic_list.append( DiagnosisHeuristic(
             name = 'fever',
-            icd9_queries = [
-                 Icd9Query(starts_with='780.6'),
-                 Icd9Query(starts_with='780.31'),
+            dx_code_queries = [
+                 Dx_CodeQuery(starts_with='780.6', type='icd9'),
+                 Dx_CodeQuery(starts_with='780.31', type='icd9'),
                 ]))
         
         #
@@ -65,40 +65,40 @@ class ili(DiseaseDefinition):
         #        
         heuristic_list.append( DiagnosisHeuristic(
             name = 'ili',
-            icd9_queries = [
+            dx_code_queries = [
 
-                 Icd9Query(starts_with='079.3'),
-                 Icd9Query(starts_with='079.89'),
-                 Icd9Query(starts_with='079.99'),
-                 Icd9Query(starts_with='460'),
-                 Icd9Query(starts_with='462'),
-                 Icd9Query(starts_with='464.00'),
-                 Icd9Query(starts_with='464.01'),
-                 Icd9Query(starts_with='464.10'),
-                 Icd9Query(starts_with='464.11'),
-                 Icd9Query(starts_with='464.20'),
-                 Icd9Query(starts_with='464.21'),
-                 Icd9Query(starts_with='465.0'),
-                 Icd9Query(starts_with='465.8'),
-                 Icd9Query(starts_with='465.9'),
-                 Icd9Query(starts_with='466.0'),
-                 Icd9Query(starts_with='466.19'),
-                 Icd9Query(starts_with='478.9'),
-                 Icd9Query(starts_with='480.8'),
-                 Icd9Query(starts_with='480.9'),
-                 Icd9Query(starts_with='481'),
-                 Icd9Query(starts_with='482.40'),
-                 Icd9Query(starts_with='482.41'),
-                 Icd9Query(starts_with='482.42'),
-                 Icd9Query(starts_with='482.49'),
-                 Icd9Query(starts_with='484.8'),
-                 Icd9Query(starts_with='485'),
-                 Icd9Query(starts_with='486'),
-                 Icd9Query(starts_with='487.0'),
-                 Icd9Query(starts_with='487.1'),
-                 Icd9Query(starts_with='487.8'),
-                 Icd9Query(starts_with='784.1'),
-                 Icd9Query(starts_with='786.2'),   
+                 Dx_CodeQuery(starts_with='079.3', type='icd9'),
+                 Dx_CodeQuery(starts_with='079.89', type='icd9'),
+                 Dx_CodeQuery(starts_with='079.99', type='icd9'),
+                 Dx_CodeQuery(starts_with='460', type='icd9'),
+                 Dx_CodeQuery(starts_with='462', type='icd9'),
+                 Dx_CodeQuery(starts_with='464.00', type='icd9'),
+                 Dx_CodeQuery(starts_with='464.01', type='icd9'),
+                 Dx_CodeQuery(starts_with='464.10', type='icd9'),
+                 Dx_CodeQuery(starts_with='464.11', type='icd9'),
+                 Dx_CodeQuery(starts_with='464.20', type='icd9'),
+                 Dx_CodeQuery(starts_with='464.21', type='icd9'),
+                 Dx_CodeQuery(starts_with='465.0', type='icd9'),
+                 Dx_CodeQuery(starts_with='465.8', type='icd9'),
+                 Dx_CodeQuery(starts_with='465.9', type='icd9'),
+                 Dx_CodeQuery(starts_with='466.0', type='icd9'),
+                 Dx_CodeQuery(starts_with='466.19', type='icd9'),
+                 Dx_CodeQuery(starts_with='478.9', type='icd9'),
+                 Dx_CodeQuery(starts_with='480.8', type='icd9'),
+                 Dx_CodeQuery(starts_with='480.9', type='icd9'),
+                 Dx_CodeQuery(starts_with='481', type='icd9'),
+                 Dx_CodeQuery(starts_with='482.40', type='icd9'),
+                 Dx_CodeQuery(starts_with='482.41', type='icd9'),
+                 Dx_CodeQuery(starts_with='482.42', type='icd9'),
+                 Dx_CodeQuery(starts_with='482.49', type='icd9'),
+                 Dx_CodeQuery(starts_with='484.8', type='icd9'),
+                 Dx_CodeQuery(starts_with='485', type='icd9'),
+                 Dx_CodeQuery(starts_with='486', type='icd9'),
+                 Dx_CodeQuery(starts_with='487.0', type='icd9'),
+                 Dx_CodeQuery(starts_with='487.1', type='icd9'),
+                 Dx_CodeQuery(starts_with='487.8', type='icd9'),
+                 Dx_CodeQuery(starts_with='784.1', type='icd9'),
+                 Dx_CodeQuery(starts_with='786.2', type='icd9'),   
 
                 ]
             ))
