@@ -333,7 +333,7 @@ class BaseLoader(object):
         else:
             return natural_key
                
-    def get_dxcode(self, code, code_type, name, cache):
+    def get_dx_code(self, code, code_type, name, cache):
     
         '''
         Given an diagnostic code and code type strings, return a Dx_code model instance
@@ -345,17 +345,17 @@ class BaseLoader(object):
         combotypecode=code_type + ':' + code
         match = DXPAT_REGEX.match(combotypecode)
         if match:
-            dxcode = match.group()
+            dx_code = match.group()
             #BZ not sure why match.group() is being used here.  Isn't that the same as match?
-            if not dxcode in cache:
-                i, created = Dx_code.objects.get_or_create(combotypecode=dxcode, defaults={
-                     'combotypecode':dxcode, 'type':code_type,'code': code,'name':name + ' (Added by load_epic.py)'})
+            if not dx_code in cache:
+                i, created = Dx_code.objects.get_or_create(combotypecode=dx_code, defaults={
+                     'combotypecode':dx_code, 'type':code_type,'code': code,'name':name + ' (Added by load_epic.py)'})
     
                 if created:
-                    log.warning('Could not find dx code "%s" with type "%s" - creating new dx_code entry.' % dxcode, code_type)
-                cache[dxcode] = i
+                    log.warning('Could not find dx code "%s" with type "%s" - creating new dx_code entry.' % dx_code, code_type)
+                cache[dx_code] = i
                 
-            return cache[dxcode]
+            return cache[dx_code]
         else:
             log.info('Could not extract dx code: "%s"' % code)
             return None
@@ -1232,7 +1232,7 @@ class EncounterLoader(BaseLoader):
     feet_regex = re.compile('(?P<feet>\d)\' *(?P<inches>\d{1,2})')
     
     # Please see Caching Note on BaseLoader.
-    __dxcode_cache = {} # {dx_code obj}
+    __dx_code_cache = {} # {dx_codes obj}
     
     fields = [
         'patient_id',
@@ -1384,7 +1384,7 @@ class EncounterLoader(BaseLoader):
                 code_type='icd9'
                 diagnosis_text = ''
             if len(code) >= 1 and any(c in string.digits for c in code):
-                e.dx_codes.add(self.get_dxcode(code, code_type, diagnosis_text, self.__dxcode_cache))  
+                e.dx_codes.add(self.get_dx_code(code, code_type, diagnosis_text, self.__dx_code_cache))  
         try:
             e.save()
             log.debug('Saved encounter object: %s' % e)
@@ -1749,7 +1749,7 @@ class ProblemLoader(BaseLoader):
         code_type = row['type']
         if not code_type or code_type =='':
             code_type = 'icd9'
-        dx_code = self.get_dxcode(code, code_type, '', {})
+        dx_code = self.get_dx_code(code, code_type, '', {})
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key, 
@@ -1795,9 +1795,8 @@ class HospProblemLoader(BaseLoader):
         code_type = row['type']
         if not code_type or code_type =='':
             code_type = 'icd9'
-        dx_code = self.get_dxcode(code, code_type, '', {})
-        combotypecode=dx_code.combotypecode
-        
+        dx_code = self.get_dx_code(code, code_type, '', {})
+                
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key, 
@@ -1805,7 +1804,7 @@ class HospProblemLoader(BaseLoader):
             'patient' : self.get_patient(row['patient_id']),
             'mrn' : row['mrn'],
             'date' : self.date_or_none(row['date_noted']),
-            'combocodetype' : combotypecode,
+            'dx_code' : dx_code,
             'status' : string_or_none(row['problem_status']),
             'principal_prob_code' : string_or_none(row['principal_prob_code']),
             'present_on_adm_code' : string_or_none(row['present_on_adm_code']),

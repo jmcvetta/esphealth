@@ -269,7 +269,7 @@ class Command(BaseCommand):
 
 class EncounterCounter:
     '''
-    Adds support for checking for the presence of specific patient/date/dxcode combinations 
+    Adds support for checking for the presence of specific patient/date/dx_code combinations 
     when counting Encounter records.
     '''
     
