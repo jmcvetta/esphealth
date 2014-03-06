@@ -12,7 +12,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
-from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
+from ESP.static.models import Vaccine, ImmunizationManufacturer, Dx_code
 from ESP.vaers.models import Case, Questionnaire, Sender
 
 from ESP.utils.hl7_builder.segments import MSH, EVN, PID, OBX, PV1, TXA
@@ -154,10 +154,11 @@ class HL7_clinbasket(object):
             i=1
             for AE in AEs:
                 if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
-                    icd9codes = AE.matching_rule_explain.split()
-                    for icd9code in icd9codes:
-                        if Icd9.objects.filter(code=icd9code).exists():
-                            obx.value = '~(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
+                    dx_codes = AE.matching_rule_explain.split()
+                    #TODO filter dx codes with code and type for icd10
+                    for dx_code in dx_codes:
+                        if Dx_code.objects.filter(code=dx_code, type = 'ICD9').exists():
+                            obx.value = '~(' + str(i) + ') a diagnosis of ' + Dx_code.objects.get(code=dx_code, type = 'ICD9').longname + ' on ' + str(AE.encounterevent.date) 
                             j=j+1
                             obx.set_id=str(j).zfill(3)
                             i=i+1 
