@@ -12,7 +12,7 @@ class Command(BaseCommand):
     #
     # Parse command line options
     #
-    help = 'Gets all mapped lab tests and Icd9 codes to be identified and used by the VAERS engine'
+    help = 'Gets all mapped lab tests and dx codes to be identified and used by the VAERS engine'
     
     def handle(self, *fixture_labels, **options):
         define_active_rules()
