@@ -28,7 +28,7 @@ from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic
 
 from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
 from ESP.static.models import DrugSynonym
@@ -62,14 +62,14 @@ class Lyme(DiseaseDefinition):
         #
         heuristic_list.append( DiagnosisHeuristic(
             name = 'lyme',
-            icd9_queries = [
-                Icd9Query(starts_with='088.81'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='088.81', type='icd9'),
                 ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'rash',
-            icd9_queries = [
-                Icd9Query(starts_with='782.1'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='782.1', type='icd9'),
                 ]
             ))
         #
@@ -167,7 +167,7 @@ class Lyme(DiseaseDefinition):
             )
         #
         # Criteria Set #3 condition 1 from spec
-        # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme ICD9 or Lyme Antibiotics) w/in 30 days
+        # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme dx_code or Lyme Antibiotics) w/in 30 days
         #
         rpr_ev_names = dx_ev_names + rx_ev_names
             
