@@ -26,7 +26,7 @@ from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
 from ESP.static.models import DrugSynonym
@@ -63,15 +63,15 @@ class Syphilis(DiseaseDefinition):
         #
         heuristic_list.append( DiagnosisHeuristic(
             name = 'syphilis',
-            icd9_queries = [
-                Icd9Query(starts_with='090'),
-                Icd9Query(starts_with='091'),
-                Icd9Query(starts_with='092'),
-                Icd9Query(starts_with='093'),
-                Icd9Query(starts_with='094'),
-                Icd9Query(starts_with='095'),
-                Icd9Query(starts_with='096'),
-                Icd9Query(starts_with='097'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='090', type='icd9'),
+                Dx_CodeQuery(starts_with='091', type='icd9'),
+                Dx_CodeQuery(starts_with='092', type='icd9'),
+                Dx_CodeQuery(starts_with='093', type='icd9'),
+                Dx_CodeQuery(starts_with='094', type='icd9'),
+                Dx_CodeQuery(starts_with='095', type='icd9'),
+                Dx_CodeQuery(starts_with='096', type='icd9'),
+                Dx_CodeQuery(starts_with='097', type='icd9'),
                 ]
             ))
         #
