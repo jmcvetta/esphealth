@@ -11,7 +11,7 @@
 
 
 from django.contrib.contenttypes.models import ContentType
-from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
+from ESP.static.models import Vaccine, ImmunizationManufacturer, Dx_code
 from ESP.vaers.models import Case, Report_Sent, Questionnaire
 from ESP.emr.models import Provider
 
@@ -142,10 +142,11 @@ class HL7_emr_update(object):
             i=1
             for AE in AEs:
                 if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
-                    icd9codes = AE.matching_rule_explain.split()
-                    for icd9code in icd9codes:
-                        if Icd9.objects.filter(code=icd9code).exists():
-                            obx.value = '~(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
+                    #TODO icd10 check the dx_code filter by combotype or code and type
+                    dx_codes = AE.matching_rule_explain.split()
+                    for dx_code in dx_codes:
+                        if Dx_code.objects.filter(code=dx_code, type='ICD9').exists():
+                            obx.value = '~(' + str(i) + ') a diagnosis of ' + Dx_code.objects.get(code=dx_code, type='ICD9').longname + ' on ' + str(AE.encounterevent.date) 
                             j=j+1
                             obx.set_id=str(j).zfill(3)
                             i=i+1 
