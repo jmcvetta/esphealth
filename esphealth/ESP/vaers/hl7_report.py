@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 
 from django.contrib.contenttypes.models import ContentType
-from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
+from ESP.static.models import Vaccine, ImmunizationManufacturer, Dx_code
 from ESP.vaers.models import Case, Questionnaire, Report_Sent
 from ESP.emr.models import Provider, Patient
 from ESP.utils import utils
@@ -158,10 +158,12 @@ class AdverseReactionReport(object):
         caseDescription=''
         for AE in AEs:
             if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
-                icd9codes = AE.matching_rule_explain.split()
-                for icd9code in icd9codes:
-                    if Icd9.objects.filter(code=icd9code).exists():
-                        caseDescription += Icd9.objects.get(code=icd9code).name + ', '
+                #TODO check how the matching rule explain is filled out for icd10 patched for now
+                dx_codes = AE.matching_rule_explain.split()
+                for dx_code in dx_codes:
+                    #TODO fix icd10 patched  for now
+                    if Dx_code.objects.filter(code=dx_code, type= 'ICD9').exists():
+                        caseDescription += Dx_code.objects.get(code=dx_code, type= 'ICD9').name + ', '
                 caseDescription = caseDescription[0:-2] + ' on ' + str(AE.encounterevent.date) + ', '  
             elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('prescription'):
                 caseDescription = caseDescription + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) + ', '
