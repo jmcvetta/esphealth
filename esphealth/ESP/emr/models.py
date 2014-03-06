@@ -32,7 +32,7 @@ from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import LabTestMap
-from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeDxCodes
+from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeDx_Codes
 from ESP.static.models import Ndc
 from ESP.static.models import FakeAllergen
 from ESP.static.models import Dx_code
@@ -398,7 +398,7 @@ class Patient(BaseMedicalRecord):
             return '00000'
      
 
-    def has_history_of(self, dxcodes, begin_date=None, end_date=None):
+    def has_history_of(self, dx_codes, begin_date=None, end_date=None):
         '''
         returns a boolean if the patient has any of the dx code 
         in their history of encounters.
@@ -407,13 +407,13 @@ class Patient(BaseMedicalRecord):
         end_date = end_date or datetime.date.today()
         H1 = self.encounters().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(dx_codes__in=list(dxcodes)).count() != 0
+            ).filter(dx_codes__in=list(dx_codes)).count() != 0
         H2 = self.problems().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(dx_code_id__in=list(dxcodes)).count() != 0
+            ).filter(dx_code_id__in=list(dx_codes)).count() != 0
         H3 = self.hospprobs().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(dx_code_id__in=list(dxcodes)).count() != 0
+            ).filter(dx_code_id__in=list(dx_codes)).count() != 0
         #the point here is only to determine if there is any prior history and use this to stop
         # further heuristic processing.  So just return the first one that has any data, or the last one.
         if H1: 
@@ -1433,17 +1433,17 @@ class Encounter(BasePatientRecord):
             return  round(random.uniform(low, high), decimal)
         
     @staticmethod
-    def makedxcode_mock (maxdxcode, DX_CODE_PCT):
+    def makedx_code_mock (maxdx_code, DX_CODE_PCT):
         ''' another way
-            #msdxcodes = FakeDxcodes.objects.order_by('?')
-            #dxcode = Dx_code(code= msdxcodes[i].code,name=msdxcodes[i].name )
-            #dx_codes.add(dxcode)
-            dx_codes = [str(dxcode.code) for dxcode in FakeDxcodes.objects.order_by('?')[:how_manycodes]]
+            #msdx_codes = FakeDx_codes.objects.order_by('?')
+            #dx_code = Dx_code(code= msdx_codes[i].code,name=msdx_codes[i].name )
+            #dx_codes.add(dx_code)
+            dx_codes = [str(dx_code.code) for dx_code in FakeDx_codes.objects.order_by('?')[:how_manycodes]]
         ''' 
         
         if random.random() <= float(DX_CODE_PCT / 100.0):
-            how_many_codes = random.randint(1, maxdxcode)              
-            dx_codes =  [str(random.choice(dxcode.dx_codes.split(';'))) for dxcode in FakeDxCodes.objects.order_by('?')[:how_many_codes]]
+            how_many_codes = random.randint(1, maxdx_code)              
+            dx_codes =  [str(random.choice(dx_code.dx_codes.split(';'))) for dx_code in FakeDx_Codes.objects.order_by('?')[:how_many_codes]]
         else:
             dx_codes = ''
             
@@ -1495,7 +1495,7 @@ class Encounter(BasePatientRecord):
     #
     # TODO: issue 333 Move this code to VAERS
     #
-    def is_reoccurrence(self, dxcodes, month_period=12):
+    def is_reoccurrence(self, dx_codes, month_period=12):
         '''
         returns a boolean indicating if this encounters shows any dx 
         code that has been registered for this patient in last
@@ -1505,7 +1505,7 @@ class Encounter(BasePatientRecord):
         earliest = self.date - datetime.timedelta(days=30 * month_period)
         
         return Encounter.objects.filter(
-            date__lt=self.date, date__gte=earliest, patient=self.patient, dx_codes__in=dxcodes
+            date__lt=self.date, date__gte=earliest, patient=self.patient, dx_codes__in=dx_codes
             ).count() > 0
                 
     def __str__(self):
@@ -1520,16 +1520,16 @@ class Encounter(BasePatientRecord):
         Returns a single-line string representation of the Case instance
         '''
         values = self.__dict__ 
-        values['dxcodes'] = ', '.join([i.combotypecode for i in self.dx_codes.all().order_by('combotypecode')])
-        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(dxcodes)-30s' % values
+        values['dx_codes'] = ', '.join([i.combotypecode for i in self.dx_codes.all().order_by('combotypecode')])
+        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(dx_codes)-30s' % values
     
     @classmethod
     def str_line_header(cls):
         '''
         Returns a header describing the fields returned by str_line()
         '''
-        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'dxcodes': 'DX CODES'}
-        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(dxcodes)-30s' % values
+        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'dx_codes': 'DX CODES'}
+        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(dx_codes)-30s' % values
     
     def _get_dx_codes_str(self):
         return ', '.join(self.dx_codes.order_by('combotypecode').values_list('combotypecode', flat=True))
@@ -1617,10 +1617,10 @@ class Encounter(BasePatientRecord):
         '''
         if not codeset.lower() in  ['icd9','icd10']:
             raise NotImplementedError('Only icd9 and icd10 codeset supported at this time.  Codeset value was %s' % codeset)
-        dxcode_obj, created = Dx_code.objects.get_or_create(combotypecode=combotypecode)
-        self.dx_codes.add(dxcode_obj)
+        dx_code_obj, created = Dx_code.objects.get_or_create(combotypecode=combotypecode)
+        self.dx_codes.add(dx_code_obj)
         self.save()
-        log.debug('Added diagnosis %s to %s' % (dxcode_obj, self))
+        log.debug('Added diagnosis %s to %s' % (dx_code_obj, self))
         
             
 class Diagnosis(BasePatientRecord):
