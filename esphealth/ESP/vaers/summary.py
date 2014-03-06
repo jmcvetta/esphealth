@@ -19,37 +19,37 @@ allergy_events = AllergyEvent.objects.filter(gap__lte=MAX_TIME_WINDOW_POST_EVENT
 def report_by_imm():
     for imm in imm_count:
         #TODO get immunization from case 
-        icd9_count = diagnostics_events.filter(immunizations__name=imm['name']).count()
+        dx_code_count = diagnostics_events.filter(immunizations__name=imm['name']).count()
         lx_count = lx_events.filter(immunizations__name=imm['name']).count()
         rx_count = rx_events.filter(immunizations__name=imm['name']).count()
         allergy_count = allergy_events.filter(immunizations__name=imm['name']).count()
-        total = sum([ icd9_count, lx_count,rx_count,allergy_count])
+        total = sum([ dx_code_count, lx_count,rx_count,allergy_count])
         total_events = total
         total = imm['count']
-        rate_icd9 = float(icd9_count)/total
+        rate_dx_code = float(dx_code_count)/total
         rate_lx = float(lx_count)/total
         rate_rx = float(rx_count)/total
         rate_allergy = float(allergy_count)/total
         rate = float(total_events)/total
         if total_events: print '|'.join([imm['name'], 
                                          str(total), str(total_events), str(rate), 
-                                         str(icd9_count), str(rate_icd9), 
+                                         str(dx_code_count), str(rate_dx_code), 
                                          str(lx_count), str(rate_lx),
                                          str(rx_count), str(rate_rx),
                                          str(allergy_count), str(rate_allergy)])
 
 
 
-def report_by_icd9():
+def report_by_dx_code():
     total = 0
-    for icd9 in diagnostics_events.values('matching_rule_explain').distinct().annotate(
+    for dx_code in diagnostics_events.values('matching_rule_explain').distinct().annotate(
         count=Count('matching_rule_explain')):
-        print icd9['matching_rule_explain'].split('as an')[0], '-', icd9['count'] 
-        total += icd9['count']
+        print dx_code['matching_rule_explain'].split('as an')[0], '-', dx_code['count'] 
+        total += dx_code['count']
 
     print 'total', total
         
         
 
 if __name__ == '__main__': 
-    report_by_icd9()
+    report_by_dx_code()
