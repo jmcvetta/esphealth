@@ -2,7 +2,7 @@
 delete from static_dx_code t0
 where not exists (select null from emr_problem t1 where t1.dx_code_id=t0.code)
     and not exists (select null from emr_encounter_dx_code_codes t1 where t1.dx_code_id=t0.code)
-    and not exists (select null from conf_reportabledxcode t1 where t1.dx_code_id=t0.code)
+    and not exists (select null from conf_reportabledx_code t1 where t1.dx_code_id=t0.code)
     and not exists (select null from vaers_diagnosticseventrule_heuristic_defining_codes t1 where t1.dx_code_id=t0.code)
     and not exists (select null from vaers_diagnosticseventrule_heuristic_discarding_codes t1 where t1.dx_code_id=t0.code)
     and not exists (select null from emr_hospital_problem t1 where t1.dx_code_id=t0.code);
@@ -19,7 +19,7 @@ WHERE constraint_type = 'FOREIGN KEY' and ccu.table_name = 'static_dx_code';
 
 ALTER TABLE emr_encounter_dx_code_dx_code DROP CONSTRAINT emr_encounter_dx_codes_dx_code_id_fkey;
 
-ALTER TABLE conf_reportabledxcode DROP CONSTRAINT conf_reportabledxcode_dx_code_id_fkey;
+ALTER TABLE conf_reportabledx_code DROP CONSTRAINT conf_reportabledx_code_dx_code_id_fkey;
 
 ALTER TABLE emr_problem DROP CONSTRAINT emr_problem_dx_code_id_fkey;
 
@@ -61,8 +61,8 @@ ALTER TABLE emr_problem
       REFERENCES static_dx_code (code) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
 
-ALTER TABLE conf_reportabledxcode
-  ADD CONSTRAINT conf_reportabledxcode_dx_code_id_fkey FOREIGN KEY (dx_code_id)
+ALTER TABLE conf_reportabledx_code
+  ADD CONSTRAINT conf_reportabledx_code_dx_code_id_fkey FOREIGN KEY (dx_code_id)
       REFERENCES static_dx_code (code) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
 

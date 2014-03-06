@@ -196,7 +196,7 @@ esphealth/ESP/static/fixtures/Atrius/site_group.json -text
 esphealth/ESP/static/fixtures/dx_code.json -text
 esphealth/ESP/static/fixtures/espfakelabs.csv -text
 esphealth/ESP/static/fixtures/espfakelabs.json -text
-esphealth/ESP/static/fixtures/fakediabetesdxcodes.json -text
+esphealth/ESP/static/fixtures/fakediabetesdx_codes.json -text
 esphealth/ESP/static/fixtures/fakediabeteslabs.json -text
 esphealth/ESP/static/fixtures/fakediabetesmeds.json -text
 esphealth/ESP/static/fixtures/fakelabs.json -text
