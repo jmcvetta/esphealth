@@ -36,7 +36,7 @@ from ESP.hef.base import LabResultPositiveHeuristic
 from ESP.hef.base import LabResultRatioHeuristic
 from ESP.hef.base import LabResultFixedThresholdHeuristic
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
 
@@ -68,28 +68,30 @@ class HepatitisCombined(DiseaseDefinition):
         #
         # Diagnosis Codes
         #
+       
         heuristic_list.append( DiagnosisHeuristic(
             name = 'jaundice',
-            icd9_queries = [
-            Icd9Query(starts_with='782.4'),
+            dx_code_queries = [
+            Dx_CodeQuery(starts_with='R17', type='icd10'),
+            Dx_CodeQuery(starts_with='782.4', type='icd9'),
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_b:chronic',
-            icd9_queries = [
-            Icd9Query(starts_with='070.32'),
+            dx_code_queries = [
+            Dx_CodeQuery(starts_with='070.32', type='icd9'),
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_c:chronic',
-            icd9_queries = [
-            Icd9Query(starts_with='070.54'),
+            dx_code_queries = [
+            Dx_CodeQuery(starts_with='070.54', type='icd9'),
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_c:unspecified',
-            icd9_queries = [
-            Icd9Query(starts_with='070.70'),
+            dx_code_queries = [
+            Dx_CodeQuery(starts_with='070.70', type='icd9'),
             ]
             ))
         #
