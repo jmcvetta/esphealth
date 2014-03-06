@@ -121,8 +121,10 @@ class Case(models.Model):
         '''
         config = ConditionConfig.objects.filter(name=self.condition)
         if not config:
-            raise RuntimeError('no condition configuration for %s', self.condition)
+            log.warning('Please setup a Configuration for the condition for %s', self.condition)
+            return None
         else: return config[0]
+        
     condition_config = property(__get_condition_config)
 
     def __get_first_provider(self):
@@ -185,33 +187,37 @@ class Case(models.Model):
     reportable_labs = property(__get_reportable_labs)
 
     @property
-    def reportable_icd9s(self):
-        #TODO: fix icd9 stuff here.  Patched over for now
+    def reportable_dx_codes(self):
+        
         return Dx_code.objects.filter(encounter__in=self.reportable_encounters)
    
-    def __get_reportable_icd9s(self):
+    def __get_reportable_dx_codes(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        ##TODO: fix icd9 stuff here.  Patched over for now
-        icd9_objs = Dx_code.objects.filter(reportableicd9__condition=self.condition_config)
+        
+        conf = self.condition_config
+        if conf:
+            dx_code_objs = Dx_code.objects.filter(reportabledx_code__condition=conf)
+        else:
+            dx_code_objs = None
         disease_def_event_heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
         for heuristic in  disease_def_event_heuristics:
             if isinstance(heuristic, DiagnosisHeuristic):
-                #TODO: fix icd9 stuff here.  Patched over for now
-                for icd9_query in heuristic.icd9_queries:
-                    if not icd9_objs:
-                        icd9_objs = Dx_code.objects.filter( icd9_query.icd9_q_obj)
-                    else: icd9_objs |= Dx_code.objects.filter(icd9_query.icd9_q_obj)
+                
+                for dx_code_query in heuristic.dx_code_queries:
+                    if not dx_code_objs:
+                        dx_code_objs = Dx_code.objects.filter( dx_code_query.dx_code_q_obj)
+                    else: dx_code_objs |= Dx_code.objects.filter(dx_code_query.dx_code_q_obj)
          
-        return icd9_objs.distinct()
-    reportable_icd9s_list = property(__get_reportable_icd9s)
+        return dx_code_objs.distinct()
+    reportable_dx_codes_list = property(__get_reportable_dx_codes)
 
     def __get_reportable_encounters(self):
         q_obj = Q(patient=self.patient)
-        q_obj &= Q(icd9_codes__in=self.reportable_icd9s_list)
+        q_obj &= Q(dx_codes__in=self.reportable_dx_codes_list)
         conf = self.condition_config
-        start = self.date - datetime.timedelta(days=conf.icd9_days_before)
-        end = self.date + datetime.timedelta(days=conf.icd9_days_after)
+        start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
+        end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         encs = Encounter.objects.filter(q_obj)
@@ -224,7 +230,7 @@ class Case(models.Model):
         
         from ESP.nodis.base import DiseaseDefinition
         med_names = DiseaseDefinition.get_by_short_name(self.condition).medications
-        med_names |= set(ReportableMedication.objects.filter(condition=self.condition_config).values_list('drug_name', flat=True))
+        med_names |= set(ReportableMedication.objects.filter(condition=conf).values_list('drug_name', flat=True))
         if not med_names:
             return Prescription.objects.none()
         med_names = list(med_names)
