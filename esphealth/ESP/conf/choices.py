@@ -13,7 +13,7 @@
 # Are these codes still used?  If so, where?
 #
 RECODEFILE_TYPES = (
-    (u'Encounters',u'Daily encounter records - ICD9, demographics...'),
+    (u'Encounters',u'Daily encounter records - Dx codes, demographics...'),
     (u'Labs',u'Lab Orders and Lab Results - LOINC, CPT'),
     (u'Rx', u'Prescription data - NDC'),
     (u'PCP', u'Primary Care Physicians'),

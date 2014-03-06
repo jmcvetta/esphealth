@@ -334,8 +334,8 @@ class ConditionConfig(models.Model):
     initial_status = models.CharField(max_length=8, choices=STATUS_CHOICES, blank=False, default='AR')
     lab_days_before = models.IntegerField(blank=False, default=28)
     lab_days_after = models.IntegerField(blank=False, default=28)
-    icd9_days_before = models.IntegerField(blank=False, default=28)
-    icd9_days_after = models.IntegerField(blank=False, default=28)
+    dx_code_days_before = models.IntegerField(blank=False, default=28)
+    dx_code_days_after = models.IntegerField(blank=False, default=28)
     med_days_before = models.IntegerField(blank=False, default=28)
     med_days_after = models.IntegerField(blank=False, default=28)
     
@@ -375,26 +375,25 @@ class ReportableLab(models.Model):
         return msg
 
 
-class ReportableIcd9(models.Model):
+class ReportableDx_Code(models.Model):
     '''
-    Additional ICD9 codes to be reported for a given condition, in addition to 
+    Additional dx codes to be reported for a given condition, in addition to 
     those tests which are mapped to heuristics included in the condition's 
     definition.
     '''
     condition = models.ForeignKey(ConditionConfig, blank=False)
-    #TODO: fix icd9 stuff here.  Patched over for now
-    icd9 = models.ForeignKey(Dx_code, blank=False)
+    dx_code = models.ForeignKey(Dx_code, blank=False)
     #
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ['icd9', 'condition']
-        verbose_name = 'Reportable ICD9 Code'
+        unique_together = ['dx_code', 'condition']
+        verbose_name = 'Reportable dx Code'
     
     def __str__(self):
-        return '%s (%s)' % (self.icd9.code, self.condition)
+        return '%s (%s)' % (self.dx_code.combotypecode, self.condition)
 
 
 class ReportableMedication(models.Model):

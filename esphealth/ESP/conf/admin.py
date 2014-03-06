@@ -4,7 +4,7 @@ from ESP.conf.models import LabTestMap
 from ESP.conf.models import IgnoredCode
 from ESP.conf.models import ConditionConfig
 from ESP.conf.models import ReportableLab
-from ESP.conf.models import ReportableIcd9
+from ESP.conf.models import ReportableDx_Code
 from ESP.conf.models import ReportableMedication
 from ESP.conf.models import ResultString
 
@@ -81,8 +81,8 @@ class ConditionConfigAdmin(admin.ModelAdmin):
         'initial_status',
 	    'lab_days_before',
 	    'lab_days_after',
-	    'icd9_days_before',
-	    'icd9_days_after',
+	    'dx_code_days_before',
+	    'dx_code_days_after',
 	    'med_days_before',
 	    'med_days_after',
         ]
@@ -98,11 +98,11 @@ class ReportableMedicationAdmin(admin.ModelAdmin):
     list_display = ['condition', 'drug_name']
     list_filter = ['condition']
 
-class ReportableIcd9Admin(admin.ModelAdmin):
-    list_display = ['condition', 'icd9']
-    ordering = ['condition', 'icd9']
+class ReportableDx_CodeAdmin(admin.ModelAdmin):
+    list_display = ['condition', 'dx_code']
+    ordering = ['condition', 'dx_code']
     list_filter = ['condition']
-    raw_id_fields = ['icd9']
+    raw_id_fields = ['dx_code']
 
 class ResultStringAdmin(admin.ModelAdmin):
     list_display = ['value', 'indicates', 'match_type', 'applies_to_all']
@@ -112,6 +112,6 @@ admin.site.register(IgnoredCode, IgnoredCodeAdmin)
 admin.site.register(ConditionConfig, ConditionConfigAdmin)
 admin.site.register(ReportableLab, ReportableLabAdmin)
 admin.site.register(ReportableMedication, ReportableMedicationAdmin)
-admin.site.register(ReportableIcd9, ReportableIcd9Admin)
+admin.site.register(ReportableDx_Code, ReportableDx_CodeAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(ResultString, ResultStringAdmin)
