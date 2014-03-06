@@ -1,10 +1,10 @@
 [
 {% for obj in fixtures %}
 {"pk":"{{ obj.pk }}",
- "model":"conf.Icd9",
+ "model":"conf.Dx_code",
  "fields":{
      "code":"{{obj.pk}}",
-     "name":"{{obj.icd9Long}}"
+     "name":"{{obj.dx_codeLong}}"
  }
 },
 {% endfor %}
