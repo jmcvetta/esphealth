@@ -17,7 +17,7 @@ from dateutil.relativedelta import relativedelta
 
 from ESP.utils import log
 from ESP.utils.testing import EspTestCase
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 from ESP.emr.models import Encounter
 from ESP.emr.models import Immunization
 from ESP.emr.models import Problem
@@ -48,17 +48,18 @@ class VaersTestCase(EspTestCase):
         #
         #-------------------------------------------------------------------------------
         # All of our crew will be given a vaccine on the same day, and 
-        # diagnosed with an unusual ICD9 code on the same day.
+        # diagnosed with an unusual dx code on the same day.
         #
-        # The actual meaning of this ICD9 is not important here. The 
+        # The actual meaning of this dx is not important here. The 
         # vaccines and diagnoses occur on the same day for programming
         # convenience; but that will not effect the outcome, as the 
         # patients are considered separately.
         #
         vaccine_date = datetime.date(year=2010, month=2, day=15)
         dx_date = vaccine_date + relativedelta(days=7)
-        unusual_icd9_str = '555.55' 
-        unusual_icd9_obj, created = Icd9.objects.get_or_create(code=unusual_icd9_str)
+        #TODO fix for icd10
+        unusual_dx_code_str = '555.55' 
+        unusual_dx_code_obj, created = Dx_code.objects.get_or_create(code=unusual_dx_code_str, type='ICD9')
         for crew_member in [kirk, spock, uhura]:
             # TODO: Does the vaccine code matter to VAERS algo?
             new_imm = Immunization(
@@ -77,7 +78,7 @@ class VaersTestCase(EspTestCase):
                 patient = crew_member, 
                 date = dx_date,
                 codeset = 'icd9', 
-                diagnosis_code = unusual_icd9_str,
+                diagnosis_code = unusual_dx_code_str,
                 )
             #
             # Set aside Kirk's diagnosis encounter for later use
@@ -90,7 +91,7 @@ class VaersTestCase(EspTestCase):
         #
         #-------------------------------------------------------------------------------
         # 
-        # Spock has unusual_icd9_code in his problem list prior to
+        # Spock has unusual_dx_code in his problem list prior to
         # his vaccination.
         #
         spock_prob = Problem(
@@ -98,11 +99,11 @@ class VaersTestCase(EspTestCase):
             provider = mccoy,
             patient = spock,
             date = vaccine_date - relativedelta(years=1),
-            icd9 = unusual_icd9_obj,
+            dx_code = unusual_dx_code_obj,
             )
         spock_prob.save()
         #
-        # Uhura had an encounter with this ICD9 code prior to her
+        # Uhura had an encounter with this dx code prior to her
         # vaccination.
         #
         self.create_diagnosis(
@@ -110,7 +111,7 @@ class VaersTestCase(EspTestCase):
             patient = uhura, 
             date = vaccine_date - relativedelta(months=6),
             codeset = 'icd9', 
-            diagnosis_code = unusual_icd9_str,
+            diagnosis_code = unusual_dx_code_str,
             )
         #-------------------------------------------------------------------------------
         #
