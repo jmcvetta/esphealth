@@ -1445,14 +1445,14 @@ VAERS_DIAGNOSTICS = {
 def define_active_rules():
     '''Read each of the rules defined in VAERS_DIAGNOSTICS
     dict to create the Rule objects. The keys in the dict define a
-    whole set of icd9 codes that are indication of a VAERS Event'''
+    whole set of dx codes that are indication of a VAERS Event'''
     log.info('running define_active_rules for diagnosis')
     
     from ESP.vaers.models import DiagnosticsEventRule
     
-    
+    #TODO icd10 add type to this function 
     def find_and_add_codes(code_expression_list, code_set):
-        
+        #TODO code_expression might be combotypecode fix for icd10
         for code_expression in code_expression_list:
             try:
                 # If it's a single code, we should be able to find it
@@ -1460,19 +1460,20 @@ def define_active_rules():
                 # it's an expression or a code. Faster than going to
                 # the DB.
                 c = float(code_expression)
-                #TODO: fix icd9 stuff here.  Patched over for now
-                code = Dx_code.objects.get(code=code_expression)
+                #add type
+                #TODO: fix icd10 stuff here.  Patched over for now
+                code = Dx_code.objects.get(code=code_expression, type = 'ICD9')
                 code_set.add(code)
             except:
                 # DoesNotExist. It means we're dealing with an expression.
                 # We'll expand it, get the codes and add
-                #TODO: fix icd9 stuff here.  Patched over for now
-                codes = Dx_code.expansion(code_expression)
+                #TODO: fix icd10 stuff here.  Patched over for now
+                codes = Dx_code.expansion(code_expression, 'ICD9')
                 if len(codes) == 0:
                     for c in code_expression_list:
                         try:
-                            #TODO: fix icd9 stuff here.  Patched over for now
-                            Dx_code.objects.get(code=c.strip())
+                            #TODO: fix icd10 stuff here.  Patched over for now
+                            Dx_code.objects.get(code=c.strip(), type= 'ICD9')
                         except:
                             print c
 
