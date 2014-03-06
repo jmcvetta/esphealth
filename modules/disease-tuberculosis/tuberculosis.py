@@ -21,7 +21,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from ESP.utils import log
 from ESP.hef.base import Event, BaseEventHeuristic,LabResultAnyHeuristic,  PrescriptionHeuristic
-from ESP.hef.base import Dose, LabResultPositiveHeuristic, LabOrderHeuristic, DiagnosisHeuristic, Icd9Query
+from ESP.hef.base import Dose, LabResultPositiveHeuristic, LabOrderHeuristic, DiagnosisHeuristic, Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition, Case
 from ESP.static.models import DrugSynonym
 
@@ -58,16 +58,16 @@ class Tuberculosis(DiseaseDefinition):
         # 010.00-018.99
         heuristic_list.append( DiagnosisHeuristic(
             name = 'tuberculosis',
-            icd9_queries = [
-                Icd9Query(starts_with='010.'),
-                Icd9Query(starts_with='011.'),
-                Icd9Query(starts_with='012.'),
-                Icd9Query(starts_with='013.'),
-                Icd9Query(starts_with='014.'),
-                Icd9Query(starts_with='015.'),
-                Icd9Query(starts_with='016.'),
-                Icd9Query(starts_with='017.'),
-                Icd9Query(starts_with='018.'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='010.', type='icd9'),
+                Dx_CodeQuery(starts_with='011.', type='icd9'),
+                Dx_CodeQuery(starts_with='012.', type='icd9'),
+                Dx_CodeQuery(starts_with='013.', type='icd9'),
+                Dx_CodeQuery(starts_with='014.', type='icd9'),
+                Dx_CodeQuery(starts_with='015.', type='icd9'),
+                Dx_CodeQuery(starts_with='016.', type='icd9'),
+                Dx_CodeQuery(starts_with='017.', type='icd9'),
+                Dx_CodeQuery(starts_with='018.', type='icd9'),
                 ]
             ))
         
