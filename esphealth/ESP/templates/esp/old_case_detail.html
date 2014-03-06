@@ -133,7 +133,7 @@
  <tr class="{% cycle row1,row2 as rowcolors %}">
  <th>Pertinent to Condition</th>
  <th>Date</th>
- <th>ICD9 Codes</td>
+ <th>Dx Codes</td>
  <th>Site</td>
  <th>Pregnancy</th>
  <th>Temperature</th>
@@ -155,8 +155,8 @@
 <td>{{ e.EncEncounter_Date }} </td>
 
  <td>
-   {% for onerec in e.geticd9s %}
-         {%coloricd%}{{cobject.caseEncID}}:{{cobject.caseICD9}}:{{e.id }}:{{onerec.0}}{%endcoloricd%}
+   {% for onerec in e.getdx_codes %}
+         {%coloricd%}{{cobject.caseEncID}}:{{cobject.casedx_code}}:{{e.id }}:{{onerec.0}}{%endcoloricd%}
          {% ifequal "RED"  curicdcolor%}
             <font color="red"><b>{{onerec.0}}{{onerec.1}}</b></font>
          {%else%}

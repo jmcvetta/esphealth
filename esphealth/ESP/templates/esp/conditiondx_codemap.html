@@ -5,7 +5,7 @@
 <h2><a href="javascript:history.go(-1)">Go Back</a></h2>
 
 <center>
-<h2><font color="#800000">Condition-ICD9 Map</font></h2>
+<h2><font color="#800000">Condition-dx code Map</font></h2>
 </center>
 <br>
 {% if msg %}
@@ -20,7 +20,7 @@
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
-<form action="{{SITEROOT}}/preload/conditionicd9/update/" method="post">
+<form action="{{SITEROOT}}/preload/conditiondx_code/update/" method="post">
 <center>
 <input type="submit" name="submit" value="Save into a file" >
 </center>
@@ -29,7 +29,7 @@
 <tr class="{% cycle row1,row2 as rowcolors %}">
   <th>Id</th>
   <th>Rule</th>
-  <th>Icd9</th>
+  <th>Dx code</th>
   <th>Used in definition?</th>
   <th>Used in HL7? </th>
 </tr>
@@ -44,7 +44,7 @@
          {% endfor %}
          </SELECT>
       </td>
-      <td width="25%"> <input type="text" name="ICD_{{ mapobj.id }}" size="15" value={{ mapobj.CondiICD9}}> </td>
+      <td width="25%"> <input type="text" name="ICD_{{ mapobj.id }}" size="15" value={{ mapobj.CondiDx_code}}> </td>
       <td width="25%"> <input type="text" name="DEFINE_{{ mapobj.id }}" size="15" value={{mapobj.CondiDefine}} ></td>
       <td width="25%"> <input type="text" name="SEND_{{ mapobj.id }}" size="15" value={{mapobj.CondiSend}} ></td>
       </tr>
