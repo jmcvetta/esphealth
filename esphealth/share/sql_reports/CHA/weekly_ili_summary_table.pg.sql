@@ -3,12 +3,12 @@ create table ili_visits as
 SELECT distinct respcodes.id from
                    (select ilivis.id
                     from public.emr_encounter ilivis,
-                         public.emr_encounter_icd9_codes iliRcodes,
+                         public.emr_encounter_dx_codes iliRcodes,
                          public.static_ili_encounter_type types
                     where iliRcodes.encounter_id=ilivis.id and upper(types.raw_encounter_type)=upper(ilivis.raw_encounter_type)
-                          and iliRcodes.icd9_id in ('079.3','079.89','079.99','460','462','464.00','464.01','464.10','464.11','464.20',
-                                              '464.21','465.0','465.8','465.9','466.0','466.19','478.9','480.8','480.9','481','482.40',
-                                              '482.41','482.42','482.49','484.8','485','486','487.0','487.1','487.8','784.1','786.2'))
+                          and iliRcodes.dx_code_id in ('icd9:079.3','icd9:079.89','icd9:079.99','icd9:460','icd9:462','icd9:464.00','icd9:464.01','icd9:464.10','icd9:464.11','icd9:464.20',
+                                              'icd9:464.21','icd9:465.0','icd9:465.8','icd9:465.9','icd9:466.0','icd9:466.19','icd9:478.9','icd9:480.8','icd9:480.9','icd9:481','icd9:482.40',
+                                              'icd9:482.41','icd9:482.42','icd9:482.49','icd9:484.8','icd9:485','icd9:486','icd9:487.0','icd9:487.1','icd9:487.8','icd9:784.1','icd9:786.2'))
                     respcodes
                     left outer join
                     (select id
@@ -18,10 +18,10 @@ SELECT distinct respcodes.id from
                     left outer join
                     (select ilivis.id
                      from public.emr_encounter ilivis,
-                         public.emr_encounter_icd9_codes iliFcodes
+                         public.emr_encounter_dx_codes iliFcodes
                      where iliFcodes.encounter_id=ilivis.id
                           and ilivis.temperature is null
-                          and iliFcodes.icd9_id in ('780.6','780.31'))
+                          and iliFcodes.dx_code_id in ('780.6','780.31'))
                      fevcodes on respcodes.id=fevcodes.id
                  where fevvis.id is not null or fevcodes.id is not null;
 alter table ili_visits add primary key (id);
