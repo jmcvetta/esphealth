@@ -28,7 +28,7 @@ from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic
 from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
-from ESP.hef.base import Icd9Query
+from ESP.hef.base import Dx_CodeQuery
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
 
@@ -57,14 +57,14 @@ class Pertussis(DiseaseDefinition):
         
         heuristic_list.append( DiagnosisHeuristic(
             name = 'pertussis',
-            icd9_queries = [
-                Icd9Query(starts_with='033.0'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='033.0', type='icd9'),
                 ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'cough',
-            icd9_queries = [
-                Icd9Query(starts_with='033.9'),
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with='033.9', type='icd9'),
                 ]
             ))
         #
