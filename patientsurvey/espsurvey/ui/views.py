@@ -167,6 +167,9 @@ def save_survey_response(request):
                         continue
                     response, created = Response.objects.get_or_create(survey = survey[0],  question = question[0], participant = participant[0])
                     answer = form.cleaned_data[name]
+                    response.response_float = None
+                    response.response_choice = None
+                    response.response_string = None
                     if field.__class__.__name__ == 'ChoiceField' :
                         response.response_choice = answer
                     elif field.__class__.__name__ == 'CharField': 
