@@ -682,6 +682,7 @@ patientsurvey/espsurvey/media/css/jquery-ui.css -text
 patientsurvey/espsurvey/media/css/old-global.css -text
 patientsurvey/espsurvey/media/css/ui.theme.css -text
 patientsurvey/espsurvey/settings.py -text
+patientsurvey/espsurvey/sql/surveyreport.sql -text
 patientsurvey/espsurvey/survey/__init__.py -text
 patientsurvey/espsurvey/survey/admin.py -text
 patientsurvey/espsurvey/survey/context_processors.py -text
