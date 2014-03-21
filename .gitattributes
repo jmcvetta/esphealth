@@ -305,6 +305,7 @@ esphealth/ESP/ui/management/commands/validate_cases.py -text
 esphealth/ESP/ui/tests.py -text
 esphealth/ESP/ui/urls.py -text
 esphealth/ESP/ui/views.py -text
+esphealth/ESP/ui/views_survey.py -text
 esphealth/ESP/urls.py -text
 esphealth/ESP/utils/bogus_events_cleanup.py -text
 esphealth/ESP/utils/common.py -text
