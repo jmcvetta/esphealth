@@ -1,4 +1,12 @@
-﻿drop TABLE if exists  ContinuousVariables;
+﻿COPY emr_surveyresponse ( provenance_id,"created_timestamp",updated_timestamp,
+mrn,question,response_float,response_string,response_choice,response_boolean,date ) 
+    FROM '/srv/esp-data/surveyresponse.copy'
+     WITH 
+          DELIMITER  ',' 
+          CSV  HEADER;
+           
+
+drop TABLE if exists  ContinuousVariables;
 
 CREATE TEMPORARY TABLE ContinuousVariables(
     Question   VARCHAR(80),
@@ -537,7 +545,7 @@ where p.mrn in (select mrn from emr_surveyresponse b where
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'cplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'cplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'ccebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','cmlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -565,7 +573,7 @@ where p.mrn in (select mrn from emr_surveyresponse b where
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -598,7 +606,7 @@ where p.mrn in (select mrn from emr_surveyresponse b where
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -626,7 +634,7 @@ where p.mrn in (select mrn from emr_surveyresponse b where
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -922,7 +930,7 @@ s.response_choice = 'Y' and   (
 and (bp_systolic >140 or bp_diastolic > 90) )>=2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -939,7 +947,7 @@ s.response_choice = 'Y' and   (
 and (bp_systolic >140 or bp_diastolic > 90) )<2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -956,7 +964,7 @@ s.response_choice = 'N' and   (
 and (bp_systolic >140 or bp_diastolic > 90) )>=2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -973,7 +981,7 @@ s.response_choice = 'N' and   (
 and (bp_systolic >140 or bp_diastolic > 90) )<2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -990,7 +998,7 @@ s.response_choice = 'U' and   (
 and (bp_systolic >140 or bp_diastolic > 90) )>=2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1007,7 +1015,7 @@ s.response_choice = 'U' and   (
 and (bp_systolic >140 or bp_diastolic > 90) )<2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1021,7 +1029,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1035,7 +1043,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1049,7 +1057,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1063,7 +1071,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and  (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1077,7 +1085,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
@@ -1091,7 +1099,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'sprinolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
+'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
 'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
 'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
 'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
