@@ -24,7 +24,7 @@ from django.contrib.auth.forms import AuthenticationForm
 
 from espsurvey.settings import MEDIA_ROOT, MEDIA_URL
 
-from espsurvey.ui.views import launch_survey, save_survey_response, thanks_for_survey, survey_admin, enter_survey
+from espsurvey.ui.views import launch_survey, save_survey_response, thanks_for_survey, survey_admin, enter_survey, survey_export
 
 admin.autodiscover()
 
@@ -33,6 +33,7 @@ urlpatterns = patterns('',
     
     # Core Application
     url(r'^launch_survey', launch_survey, name='launch_survey'),
+    url(r'^survey_export/', survey_export, name='survey_export'),
     url(r'^enter_survey', enter_survey, name='enter_survey'),
     url(r'^$', survey_admin, name='esp_survey'),
     url(r'^thanks_for_survey', thanks_for_survey, name='thanks_for_survey'),
