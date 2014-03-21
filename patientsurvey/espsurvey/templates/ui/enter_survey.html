@@ -29,13 +29,13 @@
        function ShowHide(){    
             {% for field in form %}  
             	{% if field|field_unsure  %}  
-            		if (document.getElementById("{{ field.html_name }}").checked == true &&
-           		  		document.getElementById("{{field|field_unsure}}").value == ""  ){ 
+            		if (document.getElementById("{{ field.html_name }}").checked == true  ){ 
+           		  		document.getElementById("{{field|field_unsure}}").value == "";
            			    document.getElementById("{{field|field_unsure}}").readOnly = true;
 	           		}
 	           		else {
 	           			document.getElementById("{{field|field_unsure}}").readOnly = false;
-	           			document.getElementById("{{field|field_unsure}}").value = "";
+	           			
 	            		}
                 {% endif %}	       
  	     		{% if field|field_hidden  %}
