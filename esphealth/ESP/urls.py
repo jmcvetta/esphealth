@@ -16,6 +16,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
 #from ESP.esp.views import index, esplogin
 from ESP.ui.views import status_page
+from ESP.ui.views_survey import  survey_report, survey_import
 
 
 admin.autodiscover()
@@ -27,6 +28,10 @@ urlpatterns = patterns('',
     
     # Vaers
     url(r'^vaers/', include('ESP.vaers.urls')),
+    
+    #TODO add here the esp survey menu links
+    url(r'^survey_import/', survey_import, name='survey_import'),
+    url(r'^survey_report/', survey_report, name='survey_report'),
 
     # Syndromic Surveillance
     url(r'^ss/', include('ESP.ss.urls')),
