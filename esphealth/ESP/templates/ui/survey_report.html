@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<p>Date:  {{ today_string }}
+<br>Site:  {{ site_name }}
+
+
+<h2>
+    <hr>
+    {{ subtitle }}
+    <hr>
+</h2>
+
+<div id="new_case_summary" style="float: left;">
+    <h3>
+         {{ table1title }}
+    </h3>
+    
+    <table id="new_case_summary_table">
+    
+    <tr>
+     {% for item in tableheader %}
+           <th> {{ item.name }}   
+            
+         {% endfor %}
+        {% for row in tablecontent %}
+         <tr> 
+         
+        {% for col in row %}
+            <td>{{ col }}
+            
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    
+</div>
+
+<p style="clear: left;">&nbsp;</p>
+
+
+<div style="clear: both;" />
+
+
+{% comment %}
+
+{% endcomment %}
+
+{% endblock %}

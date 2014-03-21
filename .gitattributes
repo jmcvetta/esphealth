@@ -287,6 +287,7 @@ esphealth/ESP/templates/ui/labtest_lookup.html -text
 esphealth/ESP/templates/ui/map_native_code.html -text
 esphealth/ESP/templates/ui/status.html -text
 esphealth/ESP/templates/ui/status.txt -text
+esphealth/ESP/templates/ui/survey_report.html -text
 esphealth/ESP/templates/ui/unmapped_labs.html -text
 esphealth/ESP/templates/widgets/fixture_builder.json -text
 esphealth/ESP/templates/widgets/ss/day_map_report.html -text
