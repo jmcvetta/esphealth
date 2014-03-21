@@ -62,6 +62,7 @@
 		    
 		    {% if user.is_staff %}
                     <li><a href="{% url admin:index %}">Survey Administration</a></li>
+                    <li><a href="{% url survey_export %}">Export Responses</a></li>
 		    {% endif %}
                    
                     
