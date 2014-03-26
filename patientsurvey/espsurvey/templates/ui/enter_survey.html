@@ -91,7 +91,7 @@
 	{% for item in surveys %}
 		   <input type="hidden" name="surveyid" value= {{ item.id }} id="surveyid"> 
 	{% endfor %}
-	<h3>Survey Questions for Participant {{ mrn }} </h3>
+	<h3>Fill in the survey below for Participant {{ mrn }} </h3>
 	 <input type="hidden" name="mrn" value= {{ mrn }} id="mrn"> 
 	 <ol>
 	 {% for field in form %}
