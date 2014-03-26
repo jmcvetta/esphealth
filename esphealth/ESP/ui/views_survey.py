@@ -100,38 +100,65 @@ def survey_report(request):
     survey report tables from running a query
     '''
     
-    cursor = connection.cursor()
-    
-    cursor.execute("CREATE TEMPORARY TABLE ContinuousVariables(    Question   VARCHAR(80),    NoOfRespondents INTEGER,   SelfReportMean  DECIMAL(7,2), " +
-        " SelfReportSD  DECIMAL(7,2),  EHRReportMean  DECIMAL(7,2),  EHRReportSD  DECIMAL(7,2))")
-    cursor.execute("INSERT INTO ContinuousVariables(   Question  ,   NoOfRespondents ,SelfReportMean ,SelfReportSD )  select question, count(mrn) " +
-        " as \"No. of Respondents\",Round( avg(response_float)::numeric,2) as \"Self-Report Mean\",round( stddev(response_float)::numeric,2) as " +
-        " \"+- SD\" from emr_surveyresponse where  response_float is not null group by question")
-    cursor.execute("update ContinuousVariables set EHRReportMean= (select round(avg(date_part('year',age(emr_surveyresponse.date, date_of_birth)) )::numeric,2) " + 
-        " from emr_patient , emr_surveyresponse where emr_patient.mrn = emr_surveyresponse.mrn and question ='What is your age?'), " +
-        " EHRReportSD=(select round(stddev(date_part('year',age(emr_surveyresponse.date, date_of_birth)) )::numeric,2) from emr_patient , emr_surveyresponse " +
-        " where emr_patient.mrn = emr_surveyresponse.mrn and question ='What is your age?') where Question ='What is your age?'")
-    cursor.execute("select question as \"Questions\", noofrespondents as \"No. of Respondents\",  selfreportmean::text   as \"Self-Report Mean\",  ' +/- ' || selfreportsd::text  as \"SD\", "+
-        " EHRReportMean::text  as \"EHR Mean\",  ' +/- ' || EHRReportSD::text as \"SD\"  from ContinuousVariables where selfreportmean>0")
-        
-    
-    sqlfile =  os.path.join(TOPDIR+"/surveys/", 'surveyreport.sql')
-    #sqlfile =  os.path.join(TOPDIR+"/surveys/", 'test.sql')
+    cursor = connection.cursor()    
+    sqlfile =  os.path.join(TOPDIR+"/surveys/", 'newsurveyreport.sql')
     f = open(sqlfile)
-    #response = cursor.execute(f.read())
+    sql = f.read()
     f.close()
-    cursor.execute("select question as \"Questions\", noofrespondents as \"No. of Respondents\",  selfreportmean::text   as \"Self-Report Mean\",  ' +/- ' || selfreportsd::text  as \"SD\", "+
-        " EHRReportMean::text  as \"EHR Mean\",  ' +/- ' || EHRReportSD::text as \"SD\"  from ContinuousVariables where selfreportmean>0")
+    response = cursor.execute(sql)
     
-    desc = cursor.description
-    rows = cursor.fetchall() 
-
     values = _populate_status_values()
     values['title'] = 'BRFSS Results'
     values['subtitle'] = 'ESP Survey vs EHR report'
+    
+    cursor.execute("select question as \"Questions\", noofrespondents as \"No. of Respondents\", NoOfEHRRespondents as \"No. of EHR Respondents\", selfreportmean::text   as \"Self-Report Mean\",  ' +/- ' || selfreportsd::text  as \"SD\", "+
+        " EHRReportMean::text  as \"EHR Mean\",  ' +/- ' || EHRReportSD::text as \"SD\"  from ContinuousVariables where selfreportmean>0")
+    desc = cursor.description
+    rows = cursor.fetchall() 
+
     values['table1title'] = 'Continuous variables'
-    values['tableheader'] = desc
-    values['tablecontent'] = rows 
+    values['tableheader1'] = desc
+    values['tablecontent1'] = rows 
+    
+    cursor.execute("select Question, NoOfRespondents as \"No. of Respondents\", PtYes as \"Pt Yes\",PTNo  as \"Pt No\",    EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,"+
+        "PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\","+
+        "PtUnsureEHRYes as \"Pt Unsure / EHR Yes\", PtUnsureEHRNo as \"Pt Unsure / EHR Yes\" from YesNoUnsureQuestions order by question;")
+    desc = cursor.description
+    rows = cursor.fetchall() 
+    
+    values['table2title'] = 'Yes / No / Unsure Questions'
+    values['tableheader2'] = desc
+    values['tablecontent2'] = rows 
+    
+    cursor.execute("select  RaceEthnicity as \"Race-Ethnicity\" , SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\","+  
+      "EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
+      "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\" from CategoricalVariables;")
+    desc = cursor.description
+    rows = cursor.fetchall() 
+    
+    values['table3title'] = 'Categorical variables'
+    values['tableheader3'] = desc
+    values['tablecontent3'] = rows 
+    
+    cursor.execute("select type as \"Diabetes Type\", SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\", EHRYes as \"EHR Yes\","+
+       "EHRNo as \"EHR No\" ,PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
+       "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\" from DiabetesType;")
+    desc = cursor.description
+    rows = cursor.fetchall() 
+
+    values['table4title'] = 'What type of diabetes do you have?'
+    values['tableheader4'] = desc
+    values['tablecontent4'] = rows 
+    
+    cursor.execute("select type as \"BMI Category\", SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\",  EHRYes as \"EHR Yes\", "+
+      "EHRNo as \"EHR No\" ,EHRMissing as \"EHR Missing\",PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
+      "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\", ptyesehrmissing as \"Pt Yes / EHR Missing\", ptnoehrmissing as \"Pt No / EHR Missing\" from WeightType;")
+    desc = cursor.description
+    rows = cursor.fetchall() 
+
+    values['table5title'] = 'How would you classify your weight?'
+    values['tableheader5'] = desc
+    values['tablecontent5'] = rows 
    
     return render_to_response('ui/survey_report.html', values, context_instance=RequestContext(request))
 
