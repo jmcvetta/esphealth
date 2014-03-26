@@ -30,6 +30,10 @@ from emr_patient , emr_surveyresponse
 where emr_patient.mrn = emr_surveyresponse.mrn and question ='What is your age?')
 where Question ='What is your age?';
 
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
+where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and height is not null )
+where Question ='What is your current height in Feet?';
+
 --mean height and sd
 update ContinuousVariables set EHRReportMean=
 (select round(avg(height )::numeric,2) as "EHR height Mean"
@@ -40,6 +44,10 @@ from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
 where Question ='What is your current height in Feet?';
 
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
+where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and weight is not null )
+where Question ='What is your current weight in pounds?';
+
 --mean weight and sd
 update ContinuousVariables set EHRReportMean=
 (select round(avg(weight )::numeric,2) as "EHR weight Mean"
@@ -49,6 +57,10 @@ EHRReportSD=(select round(stddev(weight )::numeric,2) as "+- SD"
 from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
 where Question ='What is your current weight in pounds?';
+
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
+where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and bp_diastolic is not null )
+where Question ='What is your last diastolic blood pressure?';
 
 --mean diastolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_diastolic 
@@ -65,6 +77,10 @@ from emr_patient
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What is your last diastolic blood pressure?';
 
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
+where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and bp_systolic is not null )
+where Question ='What was your blood pressure the last time it was measured by your doctor?';
+
 --mean systolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_systolic 
 from  emr_encounter
@@ -79,6 +95,12 @@ order by emr_encounter.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What was your blood pressure the last time it was measured by your doctor?';
+
+update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.id))   from emr_labresult , emr_patient 
+where native_code in (select native_code from conf_labtestmap where test_name ='a1c')
+and emr_labresult.patient_id = emr_patient.id and result_float is not null 
+and emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
+where Question ='what was your most recent hemoglobin A1C value?';
 
 --mean a1c and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select result_float 
@@ -96,6 +118,12 @@ order by emr_labresult.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='what was your most recent hemoglobin A1C value?';
+
+update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.id))   from emr_labresult , emr_patient 
+where native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl')
+and emr_labresult.patient_id = emr_patient.id and result_float is not null 
+and emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
+where Question ='What was your last LDL level?';
 
 --mean ldl and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select result_float 
