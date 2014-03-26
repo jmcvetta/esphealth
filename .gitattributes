@@ -212,6 +212,7 @@ esphealth/ESP/static/sql/dx_code.postgresql.sql -text
 esphealth/ESP/static/sql/fakelabs.postgresql.sql -text
 esphealth/ESP/static/tests.py -text
 esphealth/ESP/static/views.py -text
+esphealth/ESP/surveys/newsurveyreport.sql -text
 esphealth/ESP/surveys/surveyreport.sql -text
 esphealth/ESP/templates/404.html -text
 esphealth/ESP/templates/500.html -text
