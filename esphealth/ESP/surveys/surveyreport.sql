@@ -3,6 +3,7 @@
 CREATE TEMPORARY TABLE ContinuousVariables(
     Question   VARCHAR(80),
     NoOfRespondents INTEGER,
+    NoOfEHRRespondents INTEGER,
     SelfReportMean  DECIMAL(7,2),
     SelfReportSD  DECIMAL(7,2),
     EHRReportMean  DECIMAL(7,2),
@@ -17,6 +18,8 @@ Round( avg(response_float)::numeric,2) as "Self-Report Mean",round( stddev(respo
 from emr_surveyresponse 
 where  response_float is not null 
 group by question ;
+
+update ContinuousVariables set NoOfEHRRespondents = 1 where Question ='What is your age?';
 
 update ContinuousVariables set EHRReportMean=
 (select round(avg(date_part('year',age(emr_surveyresponse.date, date_of_birth)) )::numeric,2) 
@@ -112,6 +115,7 @@ where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse)
 where Question ='What was your last LDL level?'; 
 
 select question as "Questions", noofrespondents as "No. of Respondents", 
+NoOfEHRRespondents as "No. of EHR Respondents",
 selfreportmean::text   as "Self-Report Mean",  ' +/- ' || selfreportsd::text  as "SD",
 EHRReportMean::text  as "EHR Mean",  ' +/- ' || EHRReportSD::text as "SD"
  from ContinuousVariables where selfreportmean>0;
