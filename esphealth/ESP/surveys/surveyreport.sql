@@ -1132,40 +1132,34 @@ where b.question='What kind of diabetes do you have?' and (
 ) group by response_choice, b.question);
  
 --diabetes type ehr yes 
-update DiabetesType set ehryes =( select count(*) 
-  from emr_patient p, nodis_case c
-where 
-c.patient_id = p.id and 
+update DiabetesType set ehryes =( select count(*)  from emr_patient p, nodis_case c
+where c.patient_id = p.id and 
 p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
-(Type=   'Type 1' and c.condition = 'diabetes:type-2'  ) or
-(Type=   'Type 2' and c.condition = 'diabetes:type-1'  ) or
-(Type=  'Pre-diabetes' and c.condition = 'diabetes:gestational'  ) or
-(Type=   'Gestational' and c.condition = 'diabetes:prediabetes') 
+(Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
+(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
+(Type=  'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
+(Type=   'Gestational' and c.condition = 'diabetes:gestational') 
 ) group by c.condition);
 
 --diabetes type ehr no 
-update DiabetesType set ehrno = (select (select count(*) from emr_patient p , nodis_case c 
-where c.patient_id = p.id and  
-   mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ))
-        - count(*) as "EHR No"
-from emr_patient b , nodis_case c 
-where c.patient_id = b.id and  
-b.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?') 
-and  ((Type=   'Type 1' and c.condition = 'diabetes:type-2'  ) or
-(Type=   'Type 2' and c.condition = 'diabetes:type-1'  ) or
-(Type=  'Pre-diabetes' and c.condition = 'diabetes:gestational'  ) or
-(Type=   'Gestational' and c.condition = 'diabetes:prediabetes') 
-) group by c.condition);
+update DiabetesType set ehrno =( select count(*)  from emr_patient p, nodis_case c
+where c.patient_id = p.id and 
+p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
+(Type=   'Type 1' and c.condition <> 'diabetes:type-1'  ) or
+(Type=   'Type 2' and c.condition <> 'diabetes:type-2'  ) or
+(Type=  'Pre-diabetes' and c.condition <> 'diabetes:prediabetes'  ) or
+(Type=   'Gestational' and c.condition <> 'diabetes:gestational') 
+) group by Type);
 
 --diabetes survey vs ehr yes/yes
 update DiabetesType set ptyesehryes = (select count(*) as "Pt yes / EHR yes" 
 from emr_surveyresponse s, emr_patient p , nodis_case c 
  where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
        c.patient_id = p.id and 
-       ((Type=   'Type 1' and c.condition = 'diabetes:type-2'  ) or
-	(Type=   'Type 2' and c.condition = 'diabetes:type-1'  ) or
-	(Type=  'Pre-diabetes' and c.condition = 'diabetes:gestational'  ) or
-	(Type=   'Gestational' and c.condition = 'diabetes:prediabetes') )
+       ((Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
+	(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
+	(Type=  'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
+	(Type=   'Gestational' and c.condition = 'diabetes:gestational') )
      and ((c.condition = 'diabetes:type-1' and response_choice='T1') or 
 	 (c.condition = 'diabetes:type-2' and response_choice='T2') or 
 	 (c.condition = 'diabetes:prediabetes' and response_choice='PRE') or
@@ -1173,15 +1167,16 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
 	 ) group by c.condition);
 
 
+
 --diabetes survey vs ehr yes/no 
 update DiabetesType set ptyesehrno = (select count(*) as "Pt yes / EHR no" 
 from emr_surveyresponse s, emr_patient p , nodis_case c 
  where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
        c.patient_id = p.id and 
-       ((Type=   'Type 1' and c.condition = 'diabetes:type-2'  ) or
-	(Type=   'Type 2' and c.condition = 'diabetes:type-1'  ) or
-	(Type=  'Pre-diabetes' and c.condition = 'diabetes:gestational'  ) or
-	(Type=   'Gestational' and c.condition = 'diabetes:prediabetes') )
+       ((Type=   'Type 1' and response_choice='T1'  ) or
+	(Type=   'Type 2' and response_choice='T2'  ) or
+	(Type=  'Pre-diabetes' and response_choice='PRE'  ) or
+	(Type=   'Gestational' and response_choice='GDM') )
      and ((c.condition <> 'diabetes:type-1' and response_choice='T1') or 
 	 (c.condition <> 'diabetes:type-2' and response_choice='T2') or 
 	 (c.condition <> 'diabetes:prediabetes' and response_choice='PRE') or
@@ -1193,10 +1188,10 @@ update DiabetesType set ptnoehryes = (select count(*) as "Pt no/ EHR yes"
 from emr_surveyresponse s, emr_patient p , nodis_case c 
  where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
        c.patient_id = p.id and 
-       ((Type=   'Type 1' and c.condition = 'diabetes:type-2'  ) or
-	(Type=   'Type 2' and c.condition = 'diabetes:type-1'  ) or
-	(Type=  'Pre-diabetes' and c.condition = 'diabetes:gestational'  ) or
-	(Type=   'Gestational' and c.condition = 'diabetes:prediabetes') )
+       ((Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
+	(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
+	(Type=  'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
+	(Type=   'Gestational' and c.condition = 'diabetes:gestational') )
      and ((c.condition = 'diabetes:type-1' and response_choice<>'T1') or 
 	 (c.condition = 'diabetes:type-2' and response_choice<>'T2') or 
 	 (c.condition = 'diabetes:prediabetes' and response_choice<>'PRE') or
@@ -1208,15 +1203,15 @@ update DiabetesType set ptnoehrno = (select count(*) as "Pt no / EHR no"
 from emr_surveyresponse s, emr_patient p , nodis_case c 
  where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
        c.patient_id = p.id and 
-       ((Type=   'Type 1' and c.condition = 'diabetes:type-2'  ) or
-	(Type=   'Type 2' and c.condition = 'diabetes:type-1'  ) or
-	(Type=  'Pre-diabetes' and c.condition = 'diabetes:gestational'  ) or
-	(Type=   'Gestational' and c.condition = 'diabetes:prediabetes') )
+       ((Type=   'Type 1' and response_choice<>'T1'  ) or
+	(Type=   'Type 2' and response_choice<>'T2' ) or
+	(Type=  'Pre-diabetes' and response_choice<>'PRE') or
+	(Type=   'Gestational' and response_choice<>'GDM') )
      and ((c.condition <> 'diabetes:type-1' and response_choice<>'T1') or 
 	 (c.condition <> 'diabetes:type-2' and response_choice<>'T2') or 
 	 (c.condition <> 'diabetes:prediabetes' and response_choice<>'PRE') or
 	 (c.condition <> 'diabetes:gestational' and response_choice<>'GDM')
-	 ) group by Type);	 
+	 ) group by Type);
 	 	 
 --diabetes type TOTALS
 delete from DiabetesType where Type='TOTAL';
