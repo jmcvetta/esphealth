@@ -568,13 +568,11 @@ update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'cplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'ccebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','cmlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine') )>0 or 
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%' )>0 or 
 (select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )>=2)
 where question = 'Have you ever been diagnosed with high blood pressure?';
@@ -586,9 +584,8 @@ b.question=YesNoUnsureQuestions.question ) and
 (select count(*) from emr_labresult where emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )>0 or (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
 where question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --meds for hypertension ehr yes
@@ -596,13 +593,11 @@ update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine') )>0 )
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%' )>0 )
 where question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds for hyperlipedimia ehr yes  
@@ -610,9 +605,8 @@ update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 ((select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --diabetes ehr yes  
@@ -629,13 +623,11 @@ update YesNoUnsureQuestions set ehrno =( select count(distinct(p.mrn)) from emr_
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine') )=0 and 
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%' )=0 and 
 (select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )<2)
 where question = 'Have you ever been diagnosed with high blood pressure?';
@@ -647,9 +639,8 @@ b.question=YesNoUnsureQuestions.question ) and
 (select count(*) from emr_labresult where emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )=0 and (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))=0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0)
 where question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --meds for hypertension ehr no
@@ -657,13 +648,11 @@ update YesNoUnsureQuestions set ehrno =( select count(distinct(p.mrn)) from emr_
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine') )=0 )
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%' )=0 )
 where question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds for hyperlipedimia ehr no  
@@ -671,9 +660,8 @@ update YesNoUnsureQuestions set ehrno =( select count(distinct(p.mrn)) from emr_
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 ((select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))=0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0))
 where question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --diabetes ehr no  
@@ -802,9 +790,8 @@ s.response_choice = 'Y' and   (
 ( select count(distinct(emr_labresult.patient_id))  from emr_labresult where emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )>0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --hyperlipedimia ynu survey vs ehr yes/no
@@ -816,9 +803,8 @@ s.response_choice = 'Y' and  (
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))=0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 
@@ -831,9 +817,8 @@ s.response_choice = 'N' and  (
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )>0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --hyperlipedimia ynu survey vs ehr no/no
@@ -845,9 +830,8 @@ s.response_choice = 'N' and  (
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))=0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --hyperlipedimia ynu survey vs ehr unsure/yes
@@ -859,9 +843,8 @@ s.response_choice = 'U' and  (
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )>0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --hyperlipedimia ynu survey vs ehr unsure/no
@@ -873,9 +856,8 @@ s.response_choice = 'U' and  (
 native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0))
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --meds for hyperlipedimia ynu survey vs ehr yes/yes
@@ -884,9 +866,8 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and       
  (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --meds hyperlipedimia ynu survey vs ehr yes/no
@@ -895,9 +876,8 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))=0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 
@@ -907,9 +887,8 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --med hyperlipedimia ynu survey vs ehr no/no
@@ -918,9 +897,8 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and  (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))=0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --meds hyperlipedimia ynu survey vs ehr unsure/yes
@@ -929,9 +907,8 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and  (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --hyperlipedimia ynu survey vs ehr unsure/no
@@ -940,9 +917,8 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
-lower(name) in ('lovastatin', 'atorvastatin', 'fluvastatin', 'pravastatin', 'rosuvastatin', 'simvastatin',
-'bezafibrate', 'fenofibrate', 'fenofibric acid', 'gemfibrozil',
-'cholestyramine','colesevelam', 'colestipol', 'niacin', 'ezetimibe'))>0)
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --hypertension ynu survey vs ehr yes/yes
@@ -953,13 +929,11 @@ s.response_choice = 'Y' and   (
 ( select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )>=2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))>0))
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0))
 where YesNoUnsureQuestions.question = 'Have you ever been diagnosed with high blood pressure?';
 
 --hypertension ynu survey vs ehr yes/no
@@ -970,13 +944,11 @@ s.response_choice = 'Y' and   (
 ( select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )<2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))=0))
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0))
 where YesNoUnsureQuestions.question = 'Have you ever been diagnosed with high blood pressure?';
 
 --hypertension ynu survey vs ehr no/yes
@@ -987,13 +959,11 @@ s.response_choice = 'N' and   (
 ( select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )>=2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))>0))
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0))
 where YesNoUnsureQuestions.question = 'Have you ever been diagnosed with high blood pressure?';
 
 --hypertension ynu survey vs ehr no/no
@@ -1004,13 +974,11 @@ s.response_choice = 'N' and   (
 ( select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )<2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))=0))
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0))
 where YesNoUnsureQuestions.question = 'Have you ever been diagnosed with high blood pressure?';
 
 --hypertension ynu survey vs ehr unsure/yes
@@ -1021,13 +989,11 @@ s.response_choice = 'U' and   (
 ( select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )>=2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))>0))
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0))
 where YesNoUnsureQuestions.question = 'Have you ever been diagnosed with high blood pressure?';
 
 --hypertension ynu survey vs ehr unsure/no
@@ -1038,13 +1004,11 @@ s.response_choice = 'U' and   (
 ( select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
 and (bp_systolic >140 or bp_diastolic > 90) )<2
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))=0))
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0))
 where YesNoUnsureQuestions.question = 'Have you ever been diagnosed with high blood pressure?';
 
 --meds for hypertension ynu survey vs ehr yes/yes
@@ -1052,13 +1016,11 @@ update YesNoUnsureQuestions set ptyesehryes =  (select count(distinct(p.mrn)) as
 from emr_surveyresponse s, emr_patient p 
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))>0)
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds hypertension ynu survey vs ehr yes/no
@@ -1066,13 +1028,11 @@ update YesNoUnsureQuestions set ptyesehrno =  (select count(distinct(p.mrn)) as 
 from emr_surveyresponse s, emr_patient p 
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))=0)
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds hypertension ynu survey vs ehr no/yes
@@ -1080,13 +1040,11 @@ update YesNoUnsureQuestions set ptnoehryes =  (select count(distinct(p.mrn)) as 
 from emr_surveyresponse s, emr_patient p 
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))>0)
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds hypertension ynu survey vs ehr no/no
@@ -1094,13 +1052,11 @@ update YesNoUnsureQuestions set ptnoehrno =  (select count(distinct(p.mrn)) as "
 from emr_surveyresponse s, emr_patient p 
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and  (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))=0)
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds hypertension ynu survey vs ehr unsure/yes
@@ -1108,13 +1064,11 @@ update YesNoUnsureQuestions set ptunsureehryes =  (select count(distinct(p.mrn))
 from emr_surveyresponse s, emr_patient p 
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))>0)
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 --meds hypertension ynu survey vs ehr unsure/no
@@ -1122,13 +1076,11 @@ update YesNoUnsureQuestions set ptunsureehrno =  (select count(distinct(p.mrn)) 
 from emr_surveyresponse s, emr_patient p 
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
-lower(name) in ('benazepril', 'captopril', 'enalapril', 'fosinopril', 'lisinopril', 'moexipril', 'perindopril', 'quinapril', 'ramipril', 'trandolapril', 
-'eplerenone', 'spironolactone','clonidine', 'doxazosin', 'guanfacine', 'methyldopa', 'prazosin', 'terazosin',
-'candesartan', 'eprosartan', 'irbesartan', 'losartan', 'olmesartan', 'telmisartan', 'valsartan',
-'acebutolol', 'atenolol', 'betaxolol', 'bisoprolol', 'carvedilol', 'labetolol', 'metoprolol','nadolol', 
-'nebivolol', 'oxprenolol', 'pindolol', 'propranolol','amlodipine', 'clevidipine', 'felodopine', 'isradipine', 
-'nicardipine', 'nifedipine', 'nisoldipine', 'diltiazem', 'verapamil',
-'chlorthalidone', 'hydrochlorothiazide', 'indapamide', 'aliskiren', 'fenoldopam', 'hydralazine'))=0)
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 select Question, NoOfRespondents as "No. of Respondents", PtYes as "Pt Yes",
