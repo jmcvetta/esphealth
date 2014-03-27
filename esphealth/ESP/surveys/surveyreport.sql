@@ -727,7 +727,6 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
      and response_choice='U')  ) 
 where question = 'Do you have diabetes?';
 
-
 --a1c ynu survey vs ehr yes/yes
 update YesNoUnsureQuestions set ptyesehryes = (select count(distinct(p.mrn)) as "Pt yes / EHR yes" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
@@ -1315,40 +1314,40 @@ update WeightType set ptyesehryes = (select count(*) as "Pt yes / EHR yes"
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
  where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
        c.patient_id = p.id and 
-       ((Type=  'Low' and bmi is not null and bmi <18  ) or
-	(Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
-	(Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
-	(Type=  'Obese' and bmi is not null and bmi >130 )  )
+       ((Type=  'Low' and response_choice='L'  ) or
+	(Type=  'Normal' and response_choice='N'  ) or
+	(Type=  'Overweight' and response_choice='OV' ) or
+	(Type=  'Obese' and response_choice='OB' )  )
      and ((bmi is not null and bmi <18 and response_choice='L') or 
 	 (bmi is not null and bmi >18 and bmi <25 and response_choice='N') or 
 	 (bmi is not null and bmi >25.01 and bmi <30 and response_choice='OV') or
 	 (bmi is not null and bmi >130 and response_choice='OB')
-	 ) group by response_choice);--bmi
+	 ) group by response_choice);
 
 --weight survey vs ehr yes/no 
 update WeightType set ptyesehrno = (select count(*) as "Pt yes / EHR no" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
  where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
        c.patient_id = p.id and 
-       ((Type=  'Low' and bmi is not null and bmi <18  ) or
-	(Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
-	(Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
-	(Type=  'Obese' and bmi is not null and bmi >130 )  )
+       ((Type=  'Low' and response_choice='L'  ) or
+	(Type=  'Normal' and response_choice='N'  ) or
+	(Type=  'Overweight' and response_choice='OV' ) or
+	(Type=  'Obese' and response_choice='OB' )   )
      and ((bmi is not null and bmi >18 and response_choice='L') or 
 	 (bmi is not null and (bmi <18 or bmi >25) and response_choice='N') or 
 	 (bmi is not null and (bmi <25.01 or bmi >30) and response_choice='OV') or
 	 (bmi is not null and bmi < 130 and response_choice='OB')
 	 ) group by Type);
-
+	 
 --weight survey vs ehr no/yes 
 update WeightType set ptnoehryes = (select count(*) as "Pt no / EHR yes" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
  where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
        c.patient_id = p.id and 
-       ((Type=  'Low' and bmi is not null and bmi <18  ) or
-	(Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
-	(Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
-	(Type=  'Obese' and bmi is not null and bmi >130 )  )
+       ((Type=  'Low' and response_choice<>'L'  ) or
+	(Type=  'Normal' and response_choice<>'N'  ) or
+	(Type=  'Overweight' and response_choice<>'OV' ) or
+	(Type=  'Obese' and response_choice<>'OB' )   )
      and ((bmi is not null and bmi <18 and response_choice<>'L') or 
 	 (bmi is not null and bmi >18 and bmi <25 and response_choice<>'N') or 
 	 (bmi is not null and bmi >25.01 and bmi <30 and response_choice<>'OV') or
@@ -1360,10 +1359,10 @@ update WeightType set ptnoehrno = (select count(*) as "Pt no / EHR no"
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
  where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
        c.patient_id = p.id and 
-       ((Type=  'Low' and bmi is not null and bmi <18  ) or
-	(Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
-	(Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
-	(Type=  'Obese' and bmi is not null and bmi >130 )  )
+       ((Type=  'Low' and response_choice<>'L'  ) or
+	(Type=  'Normal' and response_choice<>'N' ) or
+	(Type=  'Overweight' and response_choice<>'OV'  ) or
+	(Type=  'Obese' and response_choice<>'OB' )  )
      and ((bmi is not null and bmi >18 and response_choice<>'L') or 
 	 (bmi is not null and (bmi <18 or bmi >25) and response_choice<>'N') or 
 	 (bmi is not null and (bmi <25.01 or bmi >30) and response_choice<>'OV') or
