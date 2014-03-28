@@ -15,9 +15,9 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'django.db.backends.postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'esp3survey'             # Or path to database file if using sqlite3.
-DATABASE_USER = 'esp'           # Not used with sqlite3.
-DATABASE_PASSWORD = 'esp'         # Not used with sqlite3.
+DATABASE_NAME = 'espsurvey'             # Or path to database file if using sqlite3.
+DATABASE_USER = 'espsurvey'           # Not used with sqlite3.
+DATABASE_PASSWORD = 'espsurvey'         # Not used with sqlite3.
 DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = '5432'            # Set to empty string for default. Not used with sqlite3.
 
@@ -42,19 +42,20 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = True
 
-TOPDIR = os.path.dirname(__file__)
+TOPDIR = '/srv/esp/espsurvey'
 PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..'))
 # One could also set CONFIG_FOLDER manually, to something like '/etc/esp', if 
 # so desired.
 TEMPLATE_CONTEXT_PROCESSORS = (
-    #'django.contrib.auth.context_processors.auth',
+    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
     'espsurvey.survey.context_processors.path_definitions' 
     )
 
-CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
+#CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
+CONFIG_FOLDER = TOPDIR
 version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
 
@@ -71,7 +72,7 @@ MEDIA_URL = '/media'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+ADMIN_MEDIA_PREFIX = 'http:/localhost:8000/media/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'xbn6p9q9xif(fpt#-z8#=k-@#v4d=a(ty$9c+ipegdi5t@yj*_'
@@ -100,6 +101,7 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

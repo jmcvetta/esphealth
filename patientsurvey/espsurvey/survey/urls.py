@@ -23,7 +23,6 @@ from django.contrib.auth.views import logout
 from django.contrib.auth.forms import AuthenticationForm
 
 from espsurvey.settings import MEDIA_ROOT, MEDIA_URL
-
 from espsurvey.ui.views import launch_survey, save_survey_response, thanks_for_survey, survey_admin, enter_survey, survey_export
 
 admin.autodiscover()
