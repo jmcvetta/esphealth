@@ -12,19 +12,24 @@
     <hr>
 </h2>
 
+<p>
+    <a href="{{ full_path }}&export_csv=brfssdemo_report">Export Survey Report to CSV file</a>
+ <p>
+
+{% for table in tables %}
 <div id="new_case_summary" style="float: left;">
     <h3>
-         {{ table1title }}
+         {{ table.0 }}
     </h3>
     
     <table id="new_case_summary_table1">
     
     <tr>
-     {% for item in tableheader1 %}
+     {% for item in table.1 %}
            <th> {{ item.name }}   
             
          {% endfor %}
-        {% for row in tablecontent1 %}
+        {% for row in table.2 %}
          <tr> 
          
         {% for col in row %}
@@ -36,108 +41,9 @@
     </table>
     
 </div>
-
-<div id="new_case_summary" style="float: left;">
-    <h3>
-         {{ table2title }}
-    </h3>
-    
-    <table id="new_case_summary_table">
-    
-    <tr>
-     {% for item in tableheader2 %}
-           <th> {{ item.name }}   
-            
-         {% endfor %}
-        {% for row in tablecontent2 %}
-         <tr> 
-         
-        {% for col in row %}
-            <td>{{ col }}
-            
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
-    
-</div>
-
-<div id="new_case_summary" style="float: left;">
-    <h3>
-         {{ table3title }}
-    </h3>
-    
-    <table id="new_case_summary_table3">
-    
-    <tr>
-     {% for item in tableheader3 %}
-           <th> {{ item.name }}   
-            
-         {% endfor %}
-        {% for row in tablecontent3 %}
-         <tr> 
-         
-        {% for col in row %}
-            <td>{{ col }}
-            
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
-    
-</div>
-
-
-<div id="new_case_summary" style="float: left;">
-    <h3>
-         {{ table4title }}
-    </h3>
-    
-    <table id="new_case_summary_table4">
-    
-    <tr>
-     {% for item in tableheader4 %}
-           <th> {{ item.name }}   
-            
-         {% endfor %}
-        {% for row in tablecontent4 %}
-         <tr> 
-         
-        {% for col in row %}
-            <td>{{ col }}
-            
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
-    
-</div>
-
-<div id="new_case_summary" style="float: left;">
-    <h3>
-         {{ table5title }}
-    </h3>
-    
-    <table id="new_case_summary_table5">
-    
-    <tr>
-     {% for item in tableheader5 %}
-           <th> {{ item.name }}   
-            
-         {% endfor %}
-        {% for row in tablecontent5 %}
-         <tr> 
-         
-        {% for col in row %}
-            <td>{{ col }}
-            
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
-    
-</div>
-
+  {% endfor %}
+ 
+ 
 <p style="clear: left;">&nbsp;</p>
 
 

@@ -107,7 +107,14 @@ def survey_report(request):
     f.close()
     response = cursor.execute(sql)
     
+    full_path = request.get_full_path()
+    # If path does not contain a query string (beginning with '?'), add a '?' 
+    # so the template forms a valid query
+    query_index = full_path.find('?')
+    if query_index == -1:
+        full_path += '?'
     values = _populate_status_values()
+    values['full_path'] = full_path
     values['title'] = 'BRFSS Results'
     values['subtitle'] = 'ESP Survey vs EHR report'
     
@@ -115,50 +122,61 @@ def survey_report(request):
         " EHRReportMean::text  as \"EHR Mean\",  ' +/- ' || EHRReportSD::text as \"SD\"  from ContinuousVariables where selfreportmean>0")
     desc = cursor.description
     rows = cursor.fetchall() 
+    tables = [('Continuous variables', desc, rows)]
 
-    values['table1title'] = 'Continuous variables'
-    values['tableheader1'] = desc
-    values['tablecontent1'] = rows 
-    
     cursor.execute("select Question, NoOfRespondents as \"No. of Respondents\", PtYes as \"Pt Yes\",PTNo  as \"Pt No\",    EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,"+
         "PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\","+
         "PtUnsureEHRYes as \"Pt Unsure / EHR Yes\", PtUnsureEHRNo as \"Pt Unsure / EHR Yes\" from YesNoUnsureQuestions order by question;")
     desc = cursor.description
     rows = cursor.fetchall() 
-    
-    values['table2title'] = 'Yes / No / Unsure Questions'
-    values['tableheader2'] = desc
-    values['tablecontent2'] = rows 
-    
+    tables.append(('Yes / No / Unsure Questions',desc,rows))
+        
     cursor.execute("select  RaceEthnicity as \"Race-Ethnicity\" , SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\","+  
       "EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
       "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\" from CategoricalVariables;")
     desc = cursor.description
     rows = cursor.fetchall() 
-    
-    values['table3title'] = 'Categorical variables'
-    values['tableheader3'] = desc
-    values['tablecontent3'] = rows 
-    
+    tables.append(('Categorical variables',desc,rows))
+       
     cursor.execute("select type as \"Diabetes Type\", SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\", EHRYes as \"EHR Yes\","+
        "EHRNo as \"EHR No\" ,PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
        "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\" from DiabetesType;")
     desc = cursor.description
     rows = cursor.fetchall() 
-
-    values['table4title'] = 'What type of diabetes do you have?'
-    values['tableheader4'] = desc
-    values['tablecontent4'] = rows 
+    tables.append(('What type of diabetes do you have?', desc,rows))
     
     cursor.execute("select type as \"BMI Category\", SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\",  EHRYes as \"EHR Yes\", "+
       "EHRNo as \"EHR No\" ,EHRMissing as \"EHR Missing\",PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
       "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\", ptyesehrmissing as \"Pt Yes / EHR Missing\", ptnoehrmissing as \"Pt No / EHR Missing\" from WeightType;")
     desc = cursor.description
     rows = cursor.fetchall() 
-
-    values['table5title'] = 'How would you classify your weight?'
-    values['tableheader5'] = desc
-    values['tablecontent5'] = rows 
+    tables.append(('How would you classify your weight?', desc,rows))
+    
+    values['tables'] = tables
+    
+    if request.GET.get('export_csv', None) == 'brfssdemo_report':
+        return export_survey_report(request, tables)
    
     return render_to_response('ui/survey_report.html', values, context_instance=RequestContext(request))
 
+def export_survey_report(request, tables):
+    '''
+    Exports case list from a queryset as a CSV file
+    '''
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment;filename=survey_report.csv'
+    writer = csv.writer(response)
+    
+    if tables:
+        for table in tables:
+            header = [table[0]] #table title
+            for description in table[1]:
+                header.append(description.name)
+            
+            writer.writerow(header)
+            for element in table[2]:
+                row=[''] #leave empty column for table title column in csv 
+                for column in element:
+                    row.append( column)
+                writer.writerow(row)
+    return response
