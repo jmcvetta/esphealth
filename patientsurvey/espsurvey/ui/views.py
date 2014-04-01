@@ -83,7 +83,7 @@ def thanks_for_survey(request):
      
     return render_to_response('ui/thanks_for_survey.html', values, context_instance=RequestContext(request))
 
-@login_required
+
 def survey_admin(request):
     admin = True
     return prepare_survey(request, admin)
@@ -111,12 +111,12 @@ def prepare_survey(request, admin):
     Launching main survey.
     '''
     values = _populate_status_values()
-    if admin:
-        values['admin'] = True
-     
+    
+    values['admin'] = admin
+    
     #loads all the questions from survey question and let user save. 
     values['surveys'] = Response.create_survey()
-       
+    
     return render_to_response('ui/launch_survey.html', values, context_instance=RequestContext(request))
 
 SURVEY_FILLED_OUT = 'It appears that you have already completed this survey. Thank you.  If you believe that you have not completed the survey, please speak to the survey organizer.'
