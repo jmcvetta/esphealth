@@ -37,7 +37,7 @@
 	<span id="version_site_user"> 
 		<br>
 		Version: {{ version }}
-    		{% if user.is_authenticated %}
+    		{% if admin %}
 		<br>
 		Site: {{ site_name }}
 		<br>
@@ -52,25 +52,21 @@
     </div>
 
 
-    {% if user.is_authenticated %}
+    {% if admin %}
     <div id="navigation">
         <ul class='jd_menu'>
             <li><a href="{% url launch_survey  %}">Launch Survey</a></li>
             
             <li>Survey &raquo;
                 <ul>
-		    
-		    {% if user.is_staff %}
-                    <li><a href="{% url admin:index %}">Survey Administration</a></li>
+		           <li><a href="{% url admin:index %}">Survey Administration</a></li>
                     <li><a href="{% url survey_export %}">Export Responses</a></li>
-		    {% endif %}
-                   
-                    
+		            
                 </ul>
             </li>
             <li><a href="{% url about %}">About</a></li>
             {% if user.is_authenticated %}
-            <li><a href="{% url logout %}">Logout</a></li>
+            	<li><a href="{% url logout %}">Logout</a></li>
             {% endif %}
         </ul>
     </div>
