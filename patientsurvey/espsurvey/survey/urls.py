@@ -35,6 +35,8 @@ urlpatterns = patterns('',
     url(r'^survey_export/', survey_export, name='survey_export'),
     url(r'^enter_survey', enter_survey, name='enter_survey'),
     url(r'^$', survey_admin, name='esp_survey'),
+    url(r'^survey_admin', survey_admin, name='survey_admin'),
+    
     url(r'^thanks_for_survey', thanks_for_survey, name='thanks_for_survey'),
     
     url(r'^save_survey_response', save_survey_response, name='save_survey_response'),
