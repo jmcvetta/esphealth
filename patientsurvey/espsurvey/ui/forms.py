@@ -101,13 +101,14 @@ class SurveyForm (forms.Form):
     race.question =6 
     systolic = forms.IntegerField( required=False, label='What was your blood pressure the last time it was measured by your doctor? ')
     systolic.question =7
+    systolic.unsure = 'diastolic_unsure'
     diastolic = forms.IntegerField(required=False, label='/')
     diastolic.question =25
     diastolic.inline= True
+    diastolic.unsure= 'diastolic_unsure'
     diastolic_unsure = forms.BooleanField(required=False, label = 'Unsure')
     diastolic_unsure.question =9
     diastolic_unsure.inline= True
-    diastolic_unsure.unsure = 'diastolic'
     high_blood_pressure = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Have you ever been diagnosed with high blood pressure?')
     high_blood_pressure.question =10
     meds_high_blood_pressure = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Are you currently being prescribed medications for high blood pressure?')
@@ -124,34 +125,34 @@ class SurveyForm (forms.Form):
     a1c_value.question =15
     a1c_value.hidden =['a1c_0','Y'] 
     a1c_value.hidden_parent_type = a1c
+    a1c_value.unsure = 'a1c_unsure'
     a1c_unsure = forms.BooleanField(required=False,  label = 'Unsure')
     a1c_unsure.question =24
     a1c_unsure.inline= True
     a1c_unsure.hidden =['a1c_0','Y']
-    a1c_unsure.unsure = 'a1c_value'
     a1c_unsure.hidden_parent_type = a1c
     height = forms.FloatField( required=False, label='What is your current height in Feet?')
     height.question =16
+    height.unsure = 'height_unsure'
     height_unsure = forms.BooleanField(required=False,  label = 'Unsure')
     height_unsure.question =17
     height_unsure.inline= True
-    height_unsure.unsure = 'height'
     weight = forms.FloatField( required=False, label='What is your current weight in pounds?')
     weight.question =26
+    weight.unsure = 'weight_unsure'
     weight_unsure = forms.BooleanField(required=False,  label = 'Unsure')
     weight_unsure.question =18
     weight_unsure.inline= True
-    weight_unsure.unsure = 'weight'
     weight_type = forms.ChoiceField(WEIGHT_TYPE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='How would you classify your weight?')
     weight_type.question =19
     high_cholesterol = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Do you have a history of hyperlipidemia or elevated cholesterol?')
     high_cholesterol.question =20
     ldl = forms.FloatField( required=False, label='What was your last LDL level?')
     ldl.question =21
+    ldl.unsure = 'ldl_unsure'
     ldl_unsure = forms.BooleanField(required=False, label = 'Unsure')
     ldl_unsure.question =22
     ldl_unsure.inline= True
-    ldl_unsure.unsure = 'ldl'
     meds_cholesterol = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Are you currently being prescribed medications for high cholesterol?')
     meds_cholesterol.question =23
         

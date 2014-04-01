@@ -20,7 +20,7 @@
 	    		{% endif %}
 	    		{% if field|field_unsure %}
 	    		   
-	    				document.getElementById('{{ field.html_name }}').onchange = ShowHide();   
+	    				document.getElementById('{{ field|field_unsure }}').onchange = ShowHide();   
 	    			
 	    		{% endif %}	 
 	    	{% endfor %}  	    	
@@ -29,12 +29,12 @@
        function ShowHide(){    
             {% for field in form %}  
             	{% if field|field_unsure  %}  
-            		if (document.getElementById("{{ field.html_name }}").checked == true  ){ 
-           		  		document.getElementById("{{field|field_unsure}}").value == "";
-           			    document.getElementById("{{field|field_unsure}}").readOnly = true;
+            		if (document.getElementById("{{ field|field_unsure }}").checked == true  ){ 
+           		  		document.getElementById("{{field.html_name}}").value = "";
+           			    document.getElementById("{{field.html_name}}").readOnly = true;
 	           		}
 	           		else {
-	           			document.getElementById("{{field|field_unsure}}").readOnly = false;
+	           			document.getElementById("{{field.html_name}}").readOnly = false;
 	           			
 	            		}
                 {% endif %}	       
