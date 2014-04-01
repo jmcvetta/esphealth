@@ -854,6 +854,7 @@ patientsurvey/espsurvey/survey/models.py -text
 patientsurvey/espsurvey/survey/templatetags/__init__.py -text
 patientsurvey/espsurvey/survey/templatetags/myfilters.py -text
 patientsurvey/espsurvey/survey/urls.py -text
+patientsurvey/espsurvey/templates/about.html -text
 patientsurvey/espsurvey/templates/base.html -text
 patientsurvey/espsurvey/templates/ui/enter_survey.html -text
 patientsurvey/espsurvey/templates/ui/launch_survey.html -text
