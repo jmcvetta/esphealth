@@ -165,8 +165,12 @@ class Case(models.Model):
         q_obj = Q(patient=self.patient)
         q_obj &= Q(native_code__in=reportable_codes)
         conf = self.condition_config
-        start = self.date - datetime.timedelta(days=conf.lab_days_before)
-        end = self.date + datetime.timedelta(days=conf.lab_days_after)
+        if conf:
+            start = self.date - datetime.timedelta(days=conf.lab_days_before)
+            end = self.date + datetime.timedelta(days=conf.lab_days_after)
+        else:
+            start = self.date
+            end = self.date 
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         labs = LabResult.objects.filter(q_obj).distinct()
@@ -189,7 +193,9 @@ class Case(models.Model):
     @property
     def reportable_dx_codes(self):
         
-        return Dx_code.objects.filter(encounter__in=self.reportable_encounters)
+        if self.reportable_encounters:
+            return Dx_code.objects.filter(encounter__in=self.reportable_encounters)
+        return None
    
     def __get_reportable_dx_codes(self):
         
@@ -208,16 +214,22 @@ class Case(models.Model):
                     if not dx_code_objs:
                         dx_code_objs = Dx_code.objects.filter( dx_code_query.dx_code_q_obj)
                     else: dx_code_objs |= Dx_code.objects.filter(dx_code_query.dx_code_q_obj)
-         
-        return dx_code_objs.distinct()
+        if  dx_code_objs:
+            return dx_code_objs.distinct()
+        return None
     reportable_dx_codes_list = property(__get_reportable_dx_codes)
 
     def __get_reportable_encounters(self):
         q_obj = Q(patient=self.patient)
-        q_obj &= Q(dx_codes__in=self.reportable_dx_codes_list)
+        if self.reportable_dx_codes_list:
+            q_obj &= Q(dx_codes__in=self.reportable_dx_codes_list)
         conf = self.condition_config
-        start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
-        end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
+        if conf:
+            start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
+            end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
+        else:
+            start = self.date
+            end = self.date 
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         encs = Encounter.objects.filter(q_obj)
@@ -238,8 +250,12 @@ class Case(models.Model):
         for med in med_names:
             q_obj |= Q(name__icontains=med)
         q_obj &= Q(patient=self.patient)
-        start = self.date - datetime.timedelta(days=conf.med_days_before)
-        end = self.date + datetime.timedelta(days=conf.med_days_after)
+        if conf:
+            start = self.date - datetime.timedelta(days=conf.med_days_before)
+            end = self.date + datetime.timedelta(days=conf.med_days_after)
+        else:
+            start = self.date
+            end = self.date
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         prescriptions = Prescription.objects.filter(q_obj).distinct()
