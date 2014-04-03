@@ -243,6 +243,9 @@ class DiseaseDefinition(object):
         '''
         diseases = {}
         all = cls.get_all()
+        #TODO this is a patch. change diabetes class to have a subclass for each type 
+        if short_name.find('diabetes')>-1:
+            short_name = 'diabetes'
         for d in all:
             diseases[d.short_name] = d
         if not short_name in diseases:
