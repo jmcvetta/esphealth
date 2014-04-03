@@ -243,7 +243,8 @@ class DiseaseDefinition(object):
         '''
         diseases = {}
         all = cls.get_all()
-        #TODO this is a patch. change diabetes class to have a subclass for each type 
+        #Special case to handle diabetes conditions where 
+        #multiple conditions are handled by a single class
         if short_name.find('diabetes')>-1:
             short_name = 'diabetes'
         for d in all:
