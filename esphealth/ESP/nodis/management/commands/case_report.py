@@ -65,7 +65,7 @@ from django.template.loader import render_to_string
 from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 from ESP.conf.models import LabTestMap
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider, Provenance
@@ -262,8 +262,8 @@ class hl7Batch:
         ##Clinical information
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
-        icd9_codes = case.reportable_icd9s
-        self.addCaseOBR(condition=case.condition, icd9=icd9_codes, orcs=orcs, gender=case.patient.gender)
+        dx_codes = case.reportable_dx_codes
+        self.addCaseOBR(condition=case.condition, dx_code=dx_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
             rx=rxobjs[0]
         else:
@@ -274,7 +274,7 @@ class hl7Batch:
             lx =lxobjs[0]
         else:
             lx = None
-        self.addCaseOBX(demog=patient, orcs=orcs, icd9=icd9_codes, lx=lx, rx=rx,
+        self.addCaseOBX(demog=patient, orcs=orcs, dx_code=dx_codes, lx=lx, rx=rx,
             encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
                       
@@ -477,37 +477,39 @@ class hl7Batch:
             section.appendChild(contact)
         return section
 
-    def addCaseOBR(self, condition=None, icd9=[], orcs=None, gender=''):
+    def addCaseOBR(self, condition=None, dx_code=[], orcs=None, gender=''):
         """
             </OBR.31> is used to name the notifiable condition"""
+        # TODO fix for icd10 patched for now
         obr = self.casesDoc.createElement('OBR')
         self.addSimple(obr,'1','OBR.1')
         obr4 = self.casesDoc.createElement('OBR.4')
         self.addSimple(obr4,'Additional Patient Demographics','CE.2')
         obr.appendChild(obr4)
-        fakeicd9={'PID':'614.9',
+        fakedx_code={'PID':'614.9',
                   'CHLAMYDIA':{'F':'099.53','M':'099.41','U':'099.41', '':'099.41'},
                   'GONORRHEA':'098.0',
                   'ACUTE HEPATITIS A':'070.10',
                   'ACUTE HEPATITIS B':'070.30'
                   }
-        if not icd9 and condition.upper() in fakeicd9.keys():
+        if not dx_code and condition.upper() in fakedx_code.keys():
             gender = gender.upper()
-            icd9values = fakeicd9[condition.upper()]
-            if type(icd9values)==type(''): ##a string
-                icd9=[icd9values]
+            dx_codevalues = fakedx_code[condition.upper()]
+            if type(dx_codevalues)==type(''): ##a string
+                dx_code=[dx_codevalues]
             else:
                 try:
-                    icd9=[icd9values[gender]]
+                    dx_code=[dx_codevalues[gender]]
                 except: ##all other gender
-                    icd9 = ['099.41']
-        for i in icd9:
-            obr31 = self.casesDoc.createElement('OBR.31') 
-            self.addSimple(obr31,i,'CE.1')   
-            self.addSimple(obr31,condition,'CE.2')
-            self.addSimple(obr31,'I9','CE.3')
-            obr.appendChild(obr31)
-        orcs.appendChild(obr)
+                    dx_code = ['099.41']
+        if dx_code:
+            for i in dx_code:
+                obr31 = self.casesDoc.createElement('OBR.31') 
+                self.addSimple(obr31,i,'CE.1')   
+                self.addSimple(obr31,condition,'CE.2')
+                self.addSimple(obr31,'I9','CE.3')
+                obr.appendChild(obr31)
+                orcs.appendChild(obr)
 
     def getPregnancyStatus(self, caseid):
         ##Email on 8/22/2007: Report patient as being pregnant if pregnancy flag active anytime between (test order date) and (test result date + 30 days inclusive).
@@ -531,7 +533,7 @@ class hl7Batch:
         edd = edd_encs[0].edd
         return ('77386006', edd)
 
-    def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
+    def addCaseOBX(self, demog=None, orcs=None,dx_code=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
         """
         """
         indx=1
@@ -539,7 +541,8 @@ class hl7Batch:
         # Testing - Does MDPH accept null age?
         #
         if demog.date_of_birth:
-            dur = (datetime.date.today() - demog.date_of_birth).days
+            #TODO code review issue date of birth needed to be date 
+            dur = (datetime.date.today() - demog.date_of_birth.date()).days
             age = int(dur/365)
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',age)],nte=casenote)
             orcs.appendChild(obx)
@@ -584,7 +587,7 @@ class hl7Batch:
         ##Symptoms
         lxresd=None
         if lx:
-            lxresd=lx.result_date
+            lxresd=lx.result_date #this will always be datetime
         sym='373067005' #NO
         temperature=0
         for enc in encounters:
@@ -592,8 +595,8 @@ class hl7Batch:
                 temperature = enc.temperature
             except:
                 temperature=0
-            if lxresd:
-                dur = enc.date - lxresd
+            if lxresd: 
+                dur = enc.date - lxresd.date()
             else:
                 dur = datetime.timedelta(days=0)
             if abs(dur.days)<15 or temperature>100.4:
@@ -603,10 +606,11 @@ class hl7Batch:
         indx += 1
         orcs.appendChild(obx)
         #removed for specific condition --if condition.upper()  in ('CHLAMYDIA', 'GONORRHEA'):
-        for i in icd9:
-            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('',i)])
-            indx += 1
-            orcs.appendChild(obx)
+        if dx_code:
+            for i in dx_code:
+                obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('',i)])
+                indx += 1
+                orcs.appendChild(obx)
         if temperature>100.4:
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('','fever')])
             indx += 1
