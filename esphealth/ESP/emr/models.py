@@ -14,6 +14,7 @@ import string
 import time
 import random
 import datetime
+from datetime import datetime
 import sys
 import re
 import os
@@ -836,13 +837,13 @@ class LabResult(BasePatientRecord):
             
             lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=provenance, natural_key=now)
             lx.pk = 0
-            lx.result_date = date
+            lx.result_date = datetime.combine(date, datetime.min.time())
             lx.date = order_date
             lx.native_code = 'MDPH-250' #this is the loinc
         
             lx.order_natural_key = lx.natural_key # same order and key
             lx.native_name = 'TB NO TEST'
-            lx.collection_date = order_date
+            lx.collection_date = datetime.combine(date, datetime.min.time())
         
         return lx 
         
