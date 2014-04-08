@@ -13,7 +13,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'Electronic Support for Public Health',
+    name = 'Electronic medical record Support for Public Health (ESPnet)',
     version = '3.0a',
     packages = find_packages(),
     install_requires = [
