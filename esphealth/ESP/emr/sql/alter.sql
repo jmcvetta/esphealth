@@ -167,6 +167,20 @@ ALTER TABLE nodis_case
 -- support for icd10 codes and meaningful use 
 -- 2014-04-09 CCHACIN
 
+--statis model changes 
+ALTER TABLE static_fakeicd9s
+ RENAME COLUMN fakeicd9_id TO fakedx_code_id;
+ALTER TABLE static_fakeicd9s 
+ RENAME COLUMN icd9_codes TO dx_codes;
+ALTER TABLE static_fakeicd9s
+ RENAME TO static_fakedx_codes;
+
+ALTER TABLE static_icd9
+ RENAME TO static_dx_code;
+ALTER TABLE static_dx_code 
+ ADD COLUMN combotypecode character varying(20) ,
+ ADD COLUMN  "type" character varying(10)  NULL;
+
 -- conf model changes    
 ALTER TABLE  conf_conditionconfig
   RENAME COLUMN icd9_days_before TO dx_code_days_before;
@@ -180,10 +194,114 @@ ALTER TABLE conf_reportableicd9
  
 ALTER TABLE  conf_reportabledx_code
  RENAME COLUMN icd9_id TO dx_code_id;
- ALTER TABLE  conf_reportabledx_code
- ADD CONSTRAINT conf_reportabledx_code_dx_code_id_fkey FOREIGN KEY (dx_code_id)
-      REFERENCES static_dx_code (combotypecode);
     
+-- dependency tables for emr changes 
+CREATE TABLE emr_labinfo
+(
+  "CLIA_ID" character varying(20) NOT NULL,
+  provenance_id integer NOT NULL,
+  laboratory_name character varying(150),
+  "Lab_Director" character varying(150),
+  "NPI_ID" character varying(60),
+  address1 character varying(200),
+  address2 character varying(100),
+  city character varying(50),
+  state character varying(20),
+  zip character varying(20),
+  zip5 character varying(5),
+  country character varying(60),
+  county_code character varying(10),
+  CONSTRAINT emr_labinfo_pkey PRIMARY KEY ("CLIA_ID"),
+  CONSTRAINT emr_labinfo_provenance_id_fkey FOREIGN KEY (provenance_id)
+      REFERENCES emr_provenance (provenance_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE emr_labinfo OWNER TO esp;
+
+-- Index: emr_labinfo_provenance_id
+
+-- DROP INDEX emr_labinfo_provenance_id;
+
+CREATE INDEX emr_labinfo_provenance_id
+  ON emr_labinfo
+  USING btree
+  (provenance_id);
+
+-- Index: emr_labinfo_zip
+
+-- DROP INDEX emr_labinfo_zip;
+
+CREATE INDEX emr_labinfo_zip
+  ON emr_labinfo
+  USING btree
+  (zip);
+
+-- Index: emr_labinfo_zip5
+
+-- DROP INDEX emr_labinfo_zip5;
+
+CREATE INDEX emr_labinfo_zip5
+  ON emr_labinfo
+  USING btree
+  (zip5);
+
+-- Index: emr_labinfo_zip5_like
+
+-- DROP INDEX emr_labinfo_zip5_like;
+
+CREATE INDEX emr_labinfo_zip5_like
+  ON emr_labinfo
+  USING btree
+  (zip5 varchar_pattern_ops);
+
+-- Index: emr_labinfo_zip_like
+
+-- DROP INDEX emr_labinfo_zip_like;
+
+CREATE INDEX emr_labinfo_zip_like
+  ON emr_labinfo
+  USING btree
+  (zip varchar_pattern_ops);
+
+CREATE TABLE emr_specimen
+(
+  specimen_num character varying(100) NOT NULL,
+  provenance_id integer NOT NULL,
+  specimen_source character varying(255),
+  type_modifier character varying(100),
+  additives character varying(100),
+  collection_method character varying(100),
+  "Source_site" character varying(100),
+  "Source_site_modifier" character varying(100),
+  "Specimen_role" character varying(100),
+  "Collection_amount" character varying(100),
+  "Received_date" timestamp with time zone,
+  creceived_date character varying(100),
+  analysis_date timestamp with time zone,
+  canalysis_date character varying(100),
+  CONSTRAINT emr_specimen_pkey PRIMARY KEY (specimen_num),
+  CONSTRAINT emr_specimen_provenance_id_fkey FOREIGN KEY (provenance_id)
+      REFERENCES emr_provenance (provenance_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE emr_specimen OWNER TO esp;
+
+-- Index: emr_specimen_provenance_id
+
+-- DROP INDEX emr_specimen_provenance_id;
+
+CREATE INDEX emr_specimen_provenance_id
+  ON emr_specimen
+  USING btree
+  (provenance_id);
+
+
  -- emr model changes 
 ALTER TABLE emr_provider
 ADD COLUMN   dept_country character varying(100),
@@ -246,29 +364,11 @@ ADD COLUMN    reason_code_type character varying(25),
 ADD COLUMN    order_info character varying(100),
 ADD COLUMN    remark text;
  
-ALTER TABLE static_fakeicd9s
- RENAME COLUMN fakeicd9_id TO fakedx_code_id;
-ALTER TABLE static_fakeicd9s 
- RENAME COLUMN icd9_codes TO dx_codes;
-ALTER TABLE static_fakeicd9s
- RENAME TO static_fakedx_codes;
-
-ALTER TABLE static_icd9
- RENAME TO static_dx_code;
-ALTER TABLE static_dx_code 
- ADD COLUMN combotypecode character varying(20) ,
- ADD COLUMN  "type" character varying(10)  NULL;
- 
 --rename tables for many to many for emr_encounter
 ALTER TABLE  emr_encounter_icd9_codes 
  DROP CONSTRAINT emr_encounter_icd9_codes_icd9_id_fkey;
 ALTER TABLE  emr_encounter_icd9_codes 
  RENAME COLUMN icd9_id  TO dx_code_id;
--- issue with no unique static id9 hasnt been filled out
---ALTER TABLE  emr_encounter_icd9_codes 
--- ADD  CONSTRAINT emr_encounter_dx_codes_dx_code_id_fkey FOREIGN KEY (dx_code_id)
-    --  REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
-    --  ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
       
 ALTER TABLE  emr_encounter_icd9_codes 
  RENAME TO emr_encounter_dx_codes;
@@ -277,21 +377,13 @@ ALTER TABLE emr_problem
 DROP CONSTRAINT emr_problem_icd9_id_fkey;
 ALTER TABLE emr_problem 
  RENAME COLUMN icd9_id TO dx_code_id;
---issue with no unique
-ALTER TABLE emr_problem 
- ADD CONSTRAINT emr_problem_dx_code_id_fkey FOREIGN KEY (dx_code_id)
-      REFERENCES static_dx_code (combotypecode);
- 
+
 ALTER TABLE emr_hospital_problem
  DROP COLUMN raw_icd9_code ;
  ALTER TABLE emr_hospital_problem 
  DROP CONSTRAINT emr_hospital_problem_icd9_id_fkey;
  ALTER TABLE emr_hospital_problem
  RENAME COLUMN icd9_id TO dx_code_id;
---issue no unique
- ALTER TABLE emr_hospital_problem
- ADD CONSTRAINT emr_hospital_problem_dx_code_id_fkey FOREIGN KEY (dx_code_id)
-      REFERENCES static_dx_code (combotypecode);
 
  -- vaers model changes 
 ALTER TABLE  vaers_excludedicd9code
@@ -304,17 +396,9 @@ ALTER TABLE   vaers_diagnosticseventrule_heuristic_defining_codes
  DROP CONSTRAINT  vaers_diagnosticseventrule_heuristic_defining_code_icd9_id_fkey;
 ALTER TABLE   vaers_diagnosticseventrule_heuristic_defining_codes 
  RENAME COLUMN icd9_id  TO dx_code_id;
-ALTER TABLE   vaers_diagnosticseventrule_heuristic_defining_codes
- ADD CONSTRAINT vaers_diagnosticseventrule_heuristic_defining_c_dx_code_id_fkey FOREIGN KEY (dx_code_id)
-      REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes 
   DROP CONSTRAINT vaers_diagnosticseventrule_heuristic_discarding_co_icd9_id_fkey;
 ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes 
   RENAME COLUMN icd9_id  TO dx_code_id;
-ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes 
- ADD CONSTRAINT vaers_diagnosticseventrule_heuristic_discarding_dx_code_id_fkey FOREIGN KEY (dx_code_id)
-      REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
    
