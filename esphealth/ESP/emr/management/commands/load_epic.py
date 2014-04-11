@@ -1363,6 +1363,12 @@ class EncounterLoader(BaseLoader):
         # within a code string, the code and optional text are separated by white space 
         for code_string in row['dxlist'].strip().split(';'):
             code_string = code_string.strip()
+            #until we go live with icd10 send a warning that we are loading icd10
+            type = code_string.find(':') 
+            if  code_string[:type] == 'icd10':
+                log.error('ICD10 codes are not allowed yet and you are attempting to load one %s: ' % self.provenance.provenance_id)
+                raise BaseException(e)
+                    
             firstspace = code_string.find(' ')
             if firstspace >= 0:
                 firststring = code_string[:firstspace].strip()
