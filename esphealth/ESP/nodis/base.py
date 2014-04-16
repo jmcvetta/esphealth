@@ -44,6 +44,7 @@ class DiseaseDefinition(object):
 
     __metaclass__ = abc.ABCMeta
     
+    criteria = ''
     #
     # Abstract class interface
     #
@@ -471,6 +472,8 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
     # Abstract class interface
     #
     
+    criteria = ''
+    
     @abc.abstractproperty
     def condition(self):
         '''
@@ -529,7 +532,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         event_qs = Event.objects.filter(name__in=pos_event_names)
         new_case_count = self._create_cases_from_event_qs(
             condition = self.condition, 
-            criteria = 'positive lab test', 
+            criteria = self.criteria + ' Single positive lab test', 
             recurrence_interval = self.recurrence_interval, 
             event_qs = event_qs, 
             relevant_event_names = pos_event_names,
