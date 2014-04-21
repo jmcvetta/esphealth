@@ -21,7 +21,7 @@ from ESP.conf.choices import FORMAT_TYPES
 from ESP.conf.choices import WORKFLOW_STATES
 from ESP.static.models import Dx_code
 from ESP.static.models import ImmunizationManufacturer
-from ESP.static.models import Loinc
+from ESP.static.models import hl7_vocab
 from ESP.static.models import Vaccine
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
@@ -415,3 +415,32 @@ class ReportableMedication(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.drug_name, self.condition)
+
+class SiteHL7(models.Model):
+    '''
+    Site information used as part of lab_report
+    '''
+    location = models.CharField(blank=False, null=False, max_length=40)
+    element = models.CharField(blank=False, null=False, max_length=80)
+    value = models.CharField(null=True, max_length=255)
+
+    class Meta:
+        unique_together = ['location', 'element']
+        verbose_name = 'HL7 site date'
+
+    def __str__(self):
+        return '%s:%s:%s' % (self.location, self.element, self.value)
+
+class HL7Map(models.Model):
+    '''
+    Maps native data to hl7 standard terms 
+    '''
+    model = models.CharField(max_length=100)
+    variable = models.CharField(max_length=100)
+    value = models.CharField(max_length=100)
+    hl7 = models.ForeignKey(hl7_vocab, null=True)
+
+    def __unicode__(self):
+        return u'%s:%s:%s:%s' % (self.model, self.variable, self.value, self.hl7)
+
+
