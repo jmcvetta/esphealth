@@ -30,16 +30,15 @@ from django.contrib.contenttypes import generic
 from ESP.settings import DATA_DIR
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
-from ESP.emr.choices import LAB_ORDER_TYPES
+from ESP.conf.models import HL7Map
 from ESP.conf.common import EPOCH
 from ESP.conf.models import LabTestMap
-from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeDx_Codes
+from ESP.static.models import FakeLabs, FakeVitals, FakeMeds, FakeDx_Codes
 from ESP.static.models import Ndc
 from ESP.static.models import FakeAllergen
 from ESP.static.models import Dx_code
 from ESP.static.models import Allergen
 from ESP.static.models import Vaccine
-from ESP.static.models import ImmunizationManufacturer
 from ESP.conf.models import VaccineManufacturerMap, VaccineCodeMap
 from ESP.utils import randomizer
 from ESP.utils.utils import log, log_query, date_from_str, str_from_date
@@ -145,6 +144,25 @@ class BaseMedicalRecord(models.Model):
 
     class Meta:
         abstract = True
+        
+    def get_hl7(self, mod, var, val, typ):
+        '''
+        Returns hl7 type associated with variable val a, or throws an exception
+        '''
+        if val:
+            mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
+            if typ=='value':
+                ret = mapObj.hl7.value
+            elif typ=='description':
+                ret = mapObj.hl7.description
+            elif typ=='codesys':
+                ret = mapObj.hl7.codesys
+            elif typ=='version':
+                ret = mapObj.hl7.version
+        else:
+            #if the value being passed is empty, return empty
+            ret = ''
+        return ret
 
 
 class Provider(BaseMedicalRecord):
@@ -184,6 +202,8 @@ class Provider(BaseMedicalRecord):
     clin_tel_ext = models.CharField('Clinician Extension', max_length=10, blank=True, null=True)
     clin_call_info = models.CharField('Clinician address comment', max_length=200, blank=True, null=True)
     suffix = models.CharField('Name suffix', max_length=20, blank=True, null=True)
+    dept_addr_type = models.CharField(max_length=20, blank=True, null=True)
+    clin_addr_type = models.CharField(max_length=20, blank=True, null=True)
 
     
     q_fake = Q(natural_key__startswith='FAKE')
@@ -258,6 +278,53 @@ class Provider(BaseMedicalRecord):
     tel_numeric = property(__get_tel_numeric)
 
 
+class Provider_idInfo(models.Model):
+    '''
+    For Meaningful Use certification, Providers have a number of IDs and extra associated information
+    '''
+    provider = models.ForeignKey(Provider)
+    provider_natural_key = models.CharField('provider_natural_key', unique=True, max_length=128, null=True)
+    #unique foreign key ensures one-to-one order to order_idinfo relationship, used in nodis.labreport.makeorc
+    provenance = models.ForeignKey(Provenance, blank=False)
+    provider_nistid = models.CharField(max_length=100, blank=True, null=True)
+    auth_namespaceid = models.CharField(max_length=100, blank=True, null=True)
+    auth_universalid = models.CharField(max_length=100, blank=True, null=True)
+    auth_universalidtype = models.CharField(max_length=100, blank=True, null=True)
+    name_typecode = models.CharField(max_length=100, blank=True, null=True)
+    identifier_typecode = models.CharField(max_length=100, blank=True, null=True)
+    fac_namespaceid = models.CharField(max_length=100, blank=True, null=True)
+    fac_universalid = models.CharField(max_length=100, blank=True, null=True)
+    fac_universalidtype = models.CharField(max_length=100, blank=True, null=True)
+    facname_type = models.CharField(max_length=100, blank=True, null=True)
+    facname_auth_nid = models.CharField(max_length=100, blank=True, null=True)
+    facname_auth_uid = models.CharField(max_length=100, blank=True, null=True)
+    facname_auth_uidtype = models.CharField(max_length=100, blank=True, null=True)
+    facname_auth_idtype = models.CharField(max_length=100, blank=True, null=True)
+    facname_auth_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    
+class Provider_phones(models.Model):
+    '''
+    For Meaningful Use certification, Providers have a number of IDs and extra associated information
+    '''
+    provider = models.ForeignKey(Provider)
+    provider_natural_key = models.CharField('provider_natural_key', max_length=128, null=False)
+    provider_phone_id =  models.CharField(max_length=12, null=False)
+    provenance = models.ForeignKey(Provenance, blank=False)
+    tel_use_code = models.CharField(max_length=100, blank=True, null=True)
+    tel_eqp_type = models.CharField(max_length=100, blank=True, null=True)
+    email = models.CharField(max_length=100, blank=True, null=True)
+    tel_countrycode = models.CharField(max_length=100, blank=True, null=True)
+    tel_areacode = models.CharField(max_length=100, blank=True, null=True)
+    tel = models.CharField(max_length=100, blank=True, null=True)
+    tel_extension = models.CharField(max_length=100, blank=True, null=True)
+    tel_info = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Provider Phones'
+        unique_together = ['provider_natural_key','provider_phone_id']
+    
+    
 class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
@@ -592,6 +659,23 @@ class BasePatRecord(BaseMedicalRecord):
     A pat record contains normalized data from a specific patient record 
     '''
     patient = models.ForeignKey(Patient, blank=True, null=True) 
+    mrn = models.CharField('Medical Record Number', max_length=50, blank=True, null=True)
+    
+    def get_basePat_hl7(self, model, var, val, typ):
+        '''
+        Returns hl7 type associated with variable val a, or throws an exception
+        '''
+        mapObj = HL7Map.objects.get(model=model, variable=var, value=val)
+        if typ=='value':
+            ret = mapObj.hl7.value
+        elif typ=='description':
+            ret = mapObj.hl7.description
+        elif typ=='codesys':
+            ret = mapObj.hl7.codesys
+        elif typ=='version':
+            ret = mapObj.hl7.version
+        return ret
+
     
     q_fake = Q(patient_natural_key__startswith='FAKE')
     
@@ -621,6 +705,8 @@ class Patient_Addr(BasePatRecord):
     call_info = models.CharField('Additional information', max_length=100, blank=True, null=True)
     email = models.CharField('email', max_length=200, blank=True, null=True)
     type = models.CharField('Type', max_length=100, blank=True, null=True)
+    use = models.CharField(max_length=10, blank=True, null=True)
+    eqptype = models.CharField(max_length=10, blank=True, null=True)
     
 class Patient_Guardian(BasePatRecord):
     '''
@@ -629,27 +715,55 @@ class Patient_Guardian(BasePatRecord):
     '''
     organization = models.CharField('Relationship', max_length=200, blank=True, null=True)
     relationship = models.CharField('Relationship', max_length=200, blank=True, null=True)
-    honorific = models.CharField('honorific', max_length=10, blank=True, null=True)
+    title = models.CharField('honorific', max_length=20, blank=True, null=True)
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
     middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
-    suffix = models.CharField('Suffix', max_length=199, blank=True, null=True)
+    suffix = models.CharField('Suffix', max_length=20, blank=True, null=True)
     address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
     address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
-    city = models.CharField('City', max_length=50, blank=True, null=True)
-    state = models.CharField('State', max_length=20, blank=True, null=True)
-    zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
+    city = models.CharField('City', max_length=100, blank=True, null=True)
+    state = models.CharField('State', max_length=10, blank=True, null=True)
+    zip = models.CharField('Zip', max_length=10, blank=True, null=True, db_index=True)
     zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
     country = models.CharField('Country', max_length=60, blank=True, null=True)
     county_code = models.CharField('County Code', max_length=10, blank=True, null=True)
+    type = models.CharField('type', max_length=10, blank=True, null=True)
+    use = models.CharField('type', max_length=10, blank=True, null=True)  
+    eqptype = models.CharField('equipment type', max_length=10, blank=True, null=True)
     tel_country_code = models.CharField('Telephone Country Code', max_length=10, blank=True, null=True)
-    areacode = models.CharField('Phone Area Code', max_length=50, blank=True, null=True)
-    tel = models.CharField('Phone Number', max_length=100, blank=True, null=True)
-    tel_ext = models.CharField('Phone Extension', max_length=50, blank=True, null=True)
+    areacode = models.CharField('Phone Area Code', max_length=5, blank=True, null=True)
+    tel = models.CharField('Phone Number', max_length=10, blank=True, null=True)
+    tel_ext = models.CharField('Phone Extension', max_length=5, blank=True, null=True)
     call_info = models.CharField('Additional information', max_length=100, blank=True, null=True)
     email = models.CharField('email', max_length=200, blank=True, null=True)
-    type = models.CharField('Type', max_length=100, blank=True, null=True)
+    email_info = models.CharField('email text', max_length=100, blank=True, null=True)
+    auth_nid = models.CharField('Auth Namespace ID', max_length=50, blank=True, null=True)
+    auth_uid = models.CharField('Auth Universal ID', max_length=50, blank=True, null=True)
+    auth_uidtype = models.CharField('Auth UID Type', max_length=10, blank=True, null=True)
+    idtype_code = models.CharField('ID Type Code', max_length=10, blank=True, null=True)
+    org_id = models.CharField('Organization ID', max_length=20, blank=True, null=True)
 
+class Patient_ExtraData(BasePatRecord):
+    '''
+    For meaningful use certification, patient have a bunch of otherwise meaningless data.
+    '''
+    auth_nid = models.CharField(max_length=100, blank=True, null=True)
+    auth_uid = models.CharField(max_length=100, blank=True, null=True)
+    auth_uidtype = models.CharField(max_length=100, blank=True, null=True)
+    id_typecode = models.CharField(max_length=100, blank=True, null=True)
+    fac_nid = models.CharField(max_length=100, blank=True, null=True)
+    fac_uid = models.CharField(max_length=100, blank=True, null=True)
+    fac_uidtype = models.CharField(max_length=100, blank=True, null=True)
+    death_ind = models.CharField(max_length=10, blank=True, null=True)
+    last_source_update = models.CharField(max_length=100, blank=True, null=True)
+    lsu_nid = models.CharField(max_length=100, blank=True, null=True)
+    lsu_uid = models.CharField(max_length=100, blank=True, null=True)
+    lsu_uidtype = models.CharField(max_length=10, blank=True, null=True)
+    species = models.CharField(max_length=40, blank=True, null=True)
+    
+    
+    
 
 class BasePatientRecordManager(models.Manager):
     
@@ -703,9 +817,27 @@ class LabInfo(models.Model):
     '''
     CLIA_ID = models.CharField('CLIA ID', max_length=20,primary_key=True, blank=True)
     provenance = models.ForeignKey(Provenance, blank=False)
+    perf_auth_nid = models.CharField(max_length=100, blank=True, null=True)
+    perf_auth_uid = models.CharField(max_length=100, blank=True, null=True)
+    perf_auth_uidtype = models.CharField(max_length=100, blank=True, null=True)
+    perf_idtypecode = models.CharField(max_length=100, blank=True, null=True)
     laboratory_name =  models.CharField('Laboratory name', max_length=150, blank=True, null=True)
-    Lab_Director = models.CharField('Director Name', max_length=150, blank=True, null=True)
+    lab_name_type_code = models.CharField(max_length=100, blank=True, null=True)
+    Lab_Director_lname = models.CharField(max_length=100, blank=True, null=True)
+    Lab_Director_fname = models.CharField(max_length=100, blank=True, null=True)
+    Lab_Director_mname = models.CharField(max_length=100, blank=True, null=True)
+    Lab_Director_suff = models.CharField(max_length=100, blank=True, null=True)
+    Lab_Director_pref = models.CharField(max_length=100, blank=True, null=True)
     NPI_ID = models.CharField('NPI ID', max_length=60, blank=True, null=True)
+    labdir_auth_nid = models.CharField(max_length=100, blank=True, null=True)
+    labdir_auth_uid = models.CharField(max_length=100, blank=True, null=True)
+    labdir_auth_uidtype = models.CharField(max_length=100, blank=True, null=True)
+    labdir_nametypecode = models.CharField(max_length=100, blank=True, null=True)
+    labdir_idtypecode = models.CharField(max_length=100, blank=True, null=True)
+    labdir_fac_nid = models.CharField(max_length=100, blank=True, null=True)
+    labdir_fac_uid = models.CharField(max_length=100, blank=True, null=True)
+    labdir_fac_uidtype = models.CharField(max_length=100, blank=True, null=True)
+    labdir_profsuff = models.CharField(max_length=100, blank=True, null=True)
     address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
     address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
     city = models.CharField('City', max_length=50, blank=True, null=True)
@@ -713,17 +845,102 @@ class LabInfo(models.Model):
     zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
     zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
     country = models.CharField('Country', max_length=60, blank=True, null=True)
+    addr_type = models.CharField(max_length=10, blank=True, null=True)
     county_code = models.CharField('County Code', max_length=10, blank=True, null=True)
     
     def __str__(self):
         return u'%20s' % (self.pk)
 
+class LabOrder(BasePatientRecord):
+    '''
+    An order for a laboratory test
+    '''
+    
+    class Meta:
+        verbose_name = 'Lab Order'
+    # natural key is order number    
+    cdate = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
+    procedure_name = models.CharField(max_length=300, blank=True, null=True)
+    specimen_id = models.CharField(max_length=30, blank=True, null=True, db_index=True)
+    order_type = models.CharField(max_length=64, blank=True, db_index=True)
+    specimen_source = models.CharField(max_length=300, blank=True, null=True)
+    test_status = models.CharField('Test status', max_length=5, null=True)
+    patient_class = models.CharField('Patient class',max_length=5, null=True)
+    patient_status = models.CharField('Patient status',max_length=5, null=True)
+    group_id = models.CharField('Placer Order Group',max_length=15, null=True)
+    reason_code = models.CharField('Reason for Order',max_length=15, null=True)
+    reason_code_type = models.CharField('Reason code type',max_length=25, null=True)
+    order_info = models.CharField('Clinical information',max_length=100, null=True)
+    obs_start_date = models.CharField(max_length=100, null=True)
+    obs_end_date = models.CharField(max_length=100, null=True)
+    remark  = models.TextField('Remark', blank=True, null=True)
+
+    
+    
+    @staticmethod
+    def delete_fakes():
+        LabOrder.fakes().delete()
+
+    @staticmethod
+    def fakes():
+        return LabOrder.objects.filter(LabOrder.q_fake)
+
+    @staticmethod
+    def make_mock(patient, when=None, **kw):
+        
+        save_on_db = kw.pop('save_on_db', False)
+        msLabs = FakeLabs.objects.order_by('?')[0]
+        now = int(time.time()*1000) #time in milliseconds
+        provider = Provider.get_mock()
+       
+        lx = LabOrder(patient=patient, mrn=patient.mrn, provider=provider, provenance=Provenance.fake(), natural_key=now)
+        
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        lx.date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        lx.procedure_code = str(msLabs.native_code)
+        lx.procedure_name = msLabs.native_name
+        #1 for Lab, 2 for Imaging, or 9 for Procedures. 3 for EKG 
+        lx.order_type = '1' #lab
+       
+        if save_on_db: lx.save()
+        return lx 
+    
+    
+class Order_idInfo(models.Model):
+    '''
+    For Meaningful Use certification, Orders have a number of IDs and extra associated information
+    '''
+    laborder = models.ForeignKey(LabOrder)
+    order_natural_key = models.CharField('order_natural_key', unique=True, max_length=128, null=True)
+    #unique foreign key ensures one-to-one order to order_idinfo relationship, used in nodis.labreport.makeorc
+    provenance = models.ForeignKey(Provenance, blank=False)
+    placer_ord_eid = models.CharField('Placer Order Number Entity ID', max_length=100, null=True)
+    placer_ord_nid = models.CharField('Placer Order Number Namespace ID', max_length=100, null=True)
+    placer_ord_uid = models.CharField('Placer Order Number Universal ID', max_length=100, null=True)
+    placer_ord_uid_type = models.CharField('Placer Order Number Universal ID Type', max_length=100, null=True)
+    filler_ord_eid = models.CharField('Filler Order Number Entity ID', max_length=100, null=True)
+    filler_ord_nid = models.CharField('Filler Order Number Namespace ID', max_length=100, null=True)
+    filler_ord_uid = models.CharField('Filler Order Number Universal ID', max_length=100, null=True)
+    filler_ord_uid_type = models.CharField('Filler Order Number Universal ID Type', max_length=100, null=True)
+    placer_grp_eid = models.CharField('Placer Group Number Entity ID', max_length=100, null=True)
+    placer_grp_nid = models.CharField('Placer Group Number Namespace ID', max_length=100, null=True)
+    placer_grp_uid = models.CharField('Placer Group Number Universal ID', max_length=100, null=True)
+    placer_grp_uid_type = models.CharField('Placer Group Number Universal ID Type', max_length=100, null=True)
+    
+
 class Specimen(models.Model):
     '''
     Details about the lab specimen
     '''
-    specimen_num = models.CharField('Speciment ID Number', max_length=100,primary_key=True, blank=True)
+    order_natural_key = models.CharField('order_natural_key', max_length=128, null=True)
+    specimen_num = models.CharField('Specimen ID Number', max_length=100, null=True)
+    laborder = models.ForeignKey(LabOrder)
     provenance = models.ForeignKey(Provenance, blank=False)
+    fill_nid  = models.CharField(max_length=50,null=True)
+    fill_uid = models.CharField(max_length=50,null=True)
+    fill_uidtype  = models.CharField(max_length=50,null=True)
     specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
     type_modifier =  models.CharField('Specimen Type Modifier', max_length=100, blank=True, null=True)
     additives =  models.CharField('Specimen additives', max_length=100, blank=True, null=True)
@@ -732,11 +949,36 @@ class Specimen(models.Model):
     Source_site_modifier =  models.CharField('Specimen Source site modifier', max_length=100, blank=True, null=True)
     Specimen_role =  models.CharField('Specimen Role', max_length=100, blank=True, null=True)
     Collection_amount =  models.CharField('Collection Amount', max_length=100, blank=True, null=True)
+    amount_id = models.CharField(max_length=50,null=True)
+    range_startdt = models.CharField(max_length=50,null=True)
+    range_enddt = models.CharField(max_length=50,null=True) 
     Received_date = models.DateTimeField('Received datetime',null=True)
     creceived_date = models.CharField('Received date String', max_length=100, blank=True, null=True)
     analysis_date = models.DateTimeField('Analysis datetime',null=True)
     canalysis_date = models.CharField('Analysis Date String', max_length=100, blank=True, null=True)
 
+    class Meta:
+        verbose_name = 'Lab Specimen'
+        unique_together = ['order_natural_key', 'specimen_num']
+
+    def get_hl7(self, mod, var, val, typ):
+        '''
+        Returns hl7 type associated with variable val a, or throws an exception
+        '''
+        ret = ''
+        if val:
+            mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
+            if typ=='value':
+                ret = mapObj.hl7.value
+            elif typ=='description':
+                ret = mapObj.hl7.description
+            elif typ=='codesys':
+                ret = mapObj.hl7.codesys
+            elif typ=='version':
+                ret = mapObj.hl7.version
+        return ret
+
+    
 class LabResult(BasePatientRecord):
     '''
     Result data for a lab test
@@ -774,15 +1016,14 @@ class LabResult(BasePatientRecord):
     #
     # Wide fields
     #
-    specimen_num = models.ForeignKey(Specimen, blank=True, null=True)
-    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
+    specimen_num = models.CharField('Specimen ID Number', max_length=100, null=True)
+    specimen_source = models.CharField('Specimen Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
     #
     # Added for meaningful use
     #
-    filler_ID = models.CharField('Filler Order Number', max_length=20, blank=True, null=True)
     collection_date_end = models.DateTimeField('Lab Collection End date',null=True)
     ccollection_date_end = models.CharField('Collection end date String', max_length=100, blank=True, null=True)
     status_date = models.DateTimeField('Result interpretation/status change date', null=True)
@@ -790,6 +1031,7 @@ class LabResult(BasePatientRecord):
     interpreter = models.CharField('Lab result interpreter', max_length=100, blank=True, null=True)
     interpreter_id = models.CharField('Interpreter ID', max_length=20, blank=True, null=True)
     interp_id_auth = models.CharField('Interpreter ID Type', max_length=50, blank=True, null=True)
+    interp_uid = models.CharField('Interpreter uid', max_length=50, blank=True, null=True)
     CLIA_ID = models.ForeignKey(LabInfo, blank=True, null=True)
     lab_method = models.CharField('Observation method', max_length=100, blank=True, null=True)
 
@@ -1124,70 +1366,61 @@ class LabResult(BasePatientRecord):
     snomed_ind = property(__get_snomed_ind)
         
 
+class Labresult_Details(models.Model):
+    '''
+    For Meaningful Use certification, numeric lab results have extended values, findings are presented as original text 
+    in some cases.
+    '''
+    labresult = models.ForeignKey(LabResult)
+    labresult_natural_key = models.CharField('labresult_natural_key', unique=True, max_length=128, null=False)
+    provenance = models.ForeignKey(Provenance, blank=False)
+    comparator =  models.CharField(max_length=20, null=True)
+    num1 = models.CharField(max_length=20, blank=True, null=True)
+    sep_suff = models.CharField(max_length=20, blank=True, null=True)
+    num2 = models.CharField(max_length=20, blank=True, null=True)
+    ref_range = models.CharField(max_length=20, blank=True, null=True)
+    char_finding = models.CharField(max_length=50, blank=True, null=True)
+    orig_text = models.CharField(max_length=50, blank=True, null=True)
+    sub_id = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Lab result details'
+    
+    
 class SpecObs(models.Model):
     '''
     Observations and comments regarding the specimen
     '''
-    specimen_num = models.ForeignKey(Specimen)
+    specimen = models.ForeignKey(Specimen)
     provenance = models.ForeignKey(Provenance, blank=False)
+    order_natural_key = models.CharField(blank=True, null=True, max_length=128)
+    specimen_num = models.CharField(max_length=50)
     type = models.CharField('Observation type', max_length=100, blank=True, null=True)
     result = models.CharField('Observation value', max_length=200, blank=True, null=True)
     unit = models.CharField('Observation unit', max_length=50, blank=True, null=True)
 
-class LabOrder(BasePatientRecord):
-    '''
-    An order for a laboratory test
-    '''
-    
     class Meta:
-        verbose_name = 'Lab Order'
-    # natural key is order number    
-    cdate = models.CharField(max_length=100, blank=True, null=True, db_index=True)
-    procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
-    procedure_name = models.CharField(max_length=300, blank=True, null=True)
-    specimen_id = models.CharField(max_length=30, blank=True, null=True, db_index=True)
-    order_type = models.CharField(max_length=64, blank=True, db_index=True)
-    specimen_source = models.CharField(max_length=300, blank=True, null=True)
-    test_status = models.CharField('Test status', max_length=5, null=True)
-    patient_class = models.CharField('Patient class',max_length=5, null=True)
-    patient_status = models.CharField('Patient status',max_length=5, null=True)
-    group_id = models.CharField('Placer Order Group',max_length=15, null=True)
-    reason_code = models.CharField('Reason for Order',max_length=15, null=True)
-    reason_code_type = models.CharField('Reason code type',max_length=25, null=True)
-    order_info = models.CharField('Clinical information',max_length=100, null=True)
-    remark  = models.TextField('Remark', blank=True, null=True)
-
-    
-    
-    @staticmethod
-    def delete_fakes():
-        LabOrder.fakes().delete()
-
-    @staticmethod
-    def fakes():
-        return LabOrder.objects.filter(LabOrder.q_fake)
-
-    @staticmethod
-    def make_mock(patient, when=None, **kw):
+        verbose_name = 'Lab Specimen Observation'
+        unique_together = ['order_natural_key', 'specimen_num']
         
-        save_on_db = kw.pop('save_on_db', False)
-        msLabs = FakeLabs.objects.order_by('?')[0]
-        now = int(time.time()*1000) #time in milliseconds
-        provider = Provider.get_mock()
-       
-        lx = LabOrder(patient=patient, mrn=patient.mrn, provider=provider, provenance=Provenance.fake(), natural_key=now)
-        
-        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
-        lx.date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
-        lx.procedure_code = str(msLabs.native_code)
-        lx.procedure_name = msLabs.native_name
-        #1 for Lab, 2 for Imaging, or 9 for Procedures. 3 for EKG 
-        lx.order_type = '1' #lab
-       
-        if save_on_db: lx.save()
-        return lx 
-    
+
+    def get_hl7(self, mod, var, val, typ):
+        '''
+        Returns hl7 type associated with variable val a, or throws an exception
+        '''
+        ret = ''
+        if val:
+            mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
+            if typ=='value':
+                ret = mapObj.hl7.value
+            elif typ=='description':
+                ret = mapObj.hl7.description
+            elif typ=='codesys':
+                ret = mapObj.hl7.codesys
+            elif typ=='version':
+                ret = mapObj.hl7.version
+        return ret
+
     
 class Prescription(BasePatientRecord):
     '''
