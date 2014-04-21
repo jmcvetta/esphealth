@@ -52,7 +52,7 @@ from ESP.emr.models import Encounter, EncounterTypeMap
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
-from ESP.emr.models import Patient_Guardian, Patient_Addr
+from ESP.emr.models import Patient_Guardian, Patient_Addr, Patient_ExtraData, Order_idInfo, Provider_idInfo, Provider_phones, Labresult_Details
 from ESP.emr.models import Specimen, SpecObs
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
@@ -144,6 +144,7 @@ class BaseLoader(object):
     #
     __patient_cache = {} # {patient_id: Patient instance}
     __provider_cache = {} # {provider_id: Provider instance}
+    __labOrd_cache = {} # {order_natural_key: order instance}
     __labSpec_cache = {}  # {specimen_num: Specimen instance}
     __labCLIA_cache = {}  # {CLIA_id: LabInfo instance}
     
@@ -232,18 +233,37 @@ class BaseLoader(object):
         return self.__provider_cache[natural_key]
     
 
-    def get_specid(self, code):
+    def get_laborder(self, natural_key):
+        
+        if not natural_key:
+            return UNKNOWN_PROVIDER
+        #truncate the key some keys were too long
+        natural_key = truncate_str(natural_key, 'natural_key', 128)
+            
+        if not natural_key in self.__labOrd_cache:
+            try:
+                p = LabOrder.objects.get(natural_key=natural_key)
+            except LabOrder.DoesNotExist:
+                p = LabOrder(natural_key=natural_key, date=date_from_filepath(self.filepath), provenance=self.provenance)
+                p.save()
+            self.__labOrd_cache[natural_key] = p
+        return self.__labOrd_cache[natural_key]
+    
+
+    def get_specid(self, specid, order_key):
     
         '''
-        Given a specId, as a string, create a stub record if needed
+        Given a specId and order natural key, finds specimen record or creates a stub record if needed
         '''
-        if not code in self.__labSpec_cache:
-            i, created = Specimen.objects.get_or_create(specimen_num__exact=code, defaults={
-                     'specimen_num': code, 'provenance': self.provenance})
-            self.__labSpec_cache[code]=i    
+        if not specid or not order_key:
+            return ''
+        if not specid+'_'+order_key in self.__labSpec_cache:
+            i, created = Specimen.objects.get_or_create(specimen_num__exact=specid, order_natural_key__exact=order_key, defaults={
+                     'specimen_num': specid, 'order_natural_key':order_key, 'provenance': self.provenance})
+            self.__labSpec_cache[specid+'_'+order_key]=i    
             if created:
-                log.info('Creating new Specimen stub for id %s.' % code)
-        return self.__labSpec_cache[code]
+                log.info('Creating new Specimen stub for id %s, %s.' % specid, order_key)
+        return self.__labSpec_cache[specid+'_'+order_key]
     
     def insert_or_update(self, model, field_values, key_fields):
         '''
@@ -265,7 +285,7 @@ class BaseLoader(object):
             obj = model(**field_values)
             obj.save()
             created = True
-        except IntegrityError:
+        except IntegrityError as e:
             #this integrity error we hope is due to a previously loaded record being updated, so now we try to update
             transaction.savepoint_rollback(sid)
             
@@ -282,11 +302,11 @@ class BaseLoader(object):
                 for field_name in field_values:
                     setattr(obj, field_name, field_values[field_name])
                 obj.save()
-            except:
+            except IntegrityError as e:
                 #most likely missing a non-null field
                 transaction.savepoint_rollback(sid)
                 log.warning('Record could not be saved')
-                raise Exception('Record could not be saved.  System error was: ', sys.exc_info()[0]) 
+                raise Exception('Record could not be saved.  System error was: %s ' % e) 
         if created:
             self.inserted += 1
         else:
@@ -614,6 +634,8 @@ class ProviderLoader(BaseLoader):
         'clin_tel_ext',
         'clin_call_info',
         'suffix',
+        'dept_addr_type',
+        'clin_addr_type',
         ]
     
     model = Provider
@@ -669,6 +691,8 @@ class ProviderLoader(BaseLoader):
         'clin_tel_ext' : row['clin_tel_ext'],
         'clin_call_info' : row['clin_call_info'],
         'suffix' : row['suffix'],  
+        'dept_addr_type' : row['dept_addr_type'],
+        'clin_addr_type' : row['clin_addr_type'],
         }
 
         try:
@@ -677,6 +701,104 @@ class ProviderLoader(BaseLoader):
             p = self.get_provider(natural_key)
         except:
             raise     
+
+class ProviderIdInfoLoader(BaseLoader):
+    fields = [
+        'provider_natural_key',
+        'provider_nistid', 
+        'auth_namespaceid', 
+        'auth_universalid',
+        'auth_universalidtype',
+        'name_typecode',
+        'identifier_typecode',
+        'fac_namespaceid',
+        'fac_universalid',
+        'fac_universalidtype',
+        'facname_type',
+        'facname_auth_nid',
+        'facname_auth_uid',
+        'facname_auth_uidtype',
+        'facname_auth_idtype',
+        'facname_auth_id',
+        ]
+    
+    model = Provider_idInfo
+    
+    def load_row(self, row):
+        
+        values = {
+            'provider' : Provider.objects.get(natural_key=row['provider_natural_key']),
+            'provider_natural_key' : string_or_none(row['provider_natural_key']),
+            'provenance' : self.provenance,
+            'provider_nistid' : string_or_none(row['provider_nistid']),
+            'auth_namespaceid' : string_or_none(row['auth_namespaceid']),
+            'auth_universalid' : string_or_none(row['auth_universalid']),
+            'auth_universalidtype' : string_or_none(row['auth_universalidtype']),
+            'name_typecode' : string_or_none(row['name_typecode']),
+            'identifier_typecode' : string_or_none(row['identifier_typecode']),
+            'fac_namespaceid' : string_or_none(row['fac_namespaceid']),
+            'fac_universalid' : string_or_none(row['fac_universalid']),
+            'fac_universalidtype' : string_or_none(row['fac_universalidtype']),
+            'facname_type' : string_or_none(row['facname_type']),
+            'facname_auth_nid' : string_or_none(row['facname_auth_nid']),
+            'facname_auth_uid' : string_or_none(row['facname_auth_uid']),
+            'facname_auth_uidtype' : string_or_none(row['facname_auth_uidtype']),
+            'facname_auth_idtype' : string_or_none(row['facname_auth_idtype']),
+            'facname_auth_id' : string_or_none(row['facname_auth_id']),
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Provider_idInfo, values, ['provider_natural_key'])
+            log.debug('Saved Provider inInfo object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+
+class ProviderPhonesLoader(BaseLoader):
+    fields = [
+        'provider_natural_key', 
+        'provider_phone_id',
+        'tel_use_code',
+        'tel_eqp_type',
+        'email',
+        'tel_countrycode',
+        'tel_areacode',
+        'tel',
+        'tel_extension',
+        'tel_info',
+        ]
+    
+    model = Provider_phones
+    
+    def load_row(self, row):
+        
+        values = {
+            'provider' : Provider.objects.get(natural_key=row['provider_natural_key']),
+            'provider_natural_key' : string_or_none(row['provider_natural_key']),
+            'provenance' : self.provenance,
+            'provider_phone_id' : row['provider_phone_id'],
+            'tel_use_code' : string_or_none(row['tel_use_code']),
+            'tel_eqp_type' : string_or_none(row['tel_eqp_type']),
+            'email' : string_or_none(row['email']),
+            'tel_countrycode' : string_or_none(row['tel_countrycode']),
+            'tel_areacode' : string_or_none(row['tel_areacode']),
+            'tel' : string_or_none(row['tel']),
+            'tel_extension' : string_or_none(row['tel_extension']),
+            'tel_info' : string_or_none(row['tel_info']),
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Provider_phones, values, ['provider_natural_key','provider_phone_id'])
+            log.debug('Saved Provider phone object: %s' % s)
+        except ex_to_catch, e:
+            raise e
 
 class PatientLoader(BaseLoader):
     
@@ -712,6 +834,7 @@ class PatientLoader(BaseLoader):
         'last_update',
         'last_update_site',
         'suffix',
+        'remark',
         ]
     
     model = Patient
@@ -755,6 +878,7 @@ class PatientLoader(BaseLoader):
         'clast_update' : row['last_update'],
         'last_update_site' : string_or_none(row['last_update_site']),
         'suffix' : string_or_none(row['suffix']),
+        'remark' : string_or_none(row['remark']),
         }
 
         try:
@@ -770,8 +894,10 @@ class PatientLoader(BaseLoader):
 class PatientGuardianLoader(BaseLoader):
     fields = [
         'patient_id',
+        'mrn',
+        'organization',
         'relationship',
-        'honorific',
+        'title',
         'last_name',
         'first_name',
         'middle_name',
@@ -782,13 +908,22 @@ class PatientGuardianLoader(BaseLoader):
         'state',
         'zip',
         'country',
+        'county_code',
         'type',
+        'use',
+        'eqptype',
         'tel_country_code',
         'areacode',
         'tel',
         'tel_ext',
         'call_info',
         'email',
+        'email_info',
+        'auth_nid',
+        'auth_uid',
+        'auth_uidtype',
+        'idtype_code',
+        'org_id',
         ]
     
     model = Patient_Guardian
@@ -799,10 +934,12 @@ class PatientGuardianLoader(BaseLoader):
                     
         values = {
             'patient' : self.get_patient(row['patient_id']),
+            'mrn' : row['mrn'],
             'provenance' : self.provenance,
             'natural_key' : natural_key,
+            'organization' : string_or_none(row['organization']),
             'relationship' : string_or_none(row['relationship']),
-            'honorific' : string_or_none(row['honorific']),
+            'title' : string_or_none(row['title']),
             'last_name' : string_or_none(row['last_name']),
             'first_name' : string_or_none(row['first_name']),
             'middle_name' : string_or_none(row['middle_name']),
@@ -813,13 +950,22 @@ class PatientGuardianLoader(BaseLoader):
             'state' : string_or_none(row['state']),
             'zip' : string_or_none(row['zip']),
             'country' : string_or_none(row['country']),
+            'county_code' : string_or_none(row['county_code']),
             'type' : string_or_none(row['type']),
+            'use' : string_or_none(row['use']),
+            'eqptype' : string_or_none(row['eqptype']),
             'tel_country_code' : string_or_none(row['tel_country_code']),
             'areacode' : string_or_none(row['areacode']),
             'tel' : string_or_none(row['tel']),
             'tel_ext' : string_or_none(row['tel_ext']),
             'call_info' : string_or_none(row['call_info']),
             'email' : string_or_none(row['email']),
+            'email_info' : string_or_none(row['email_info']),
+            'auth_nid' : string_or_none(row['auth_nid']),
+            'auth_uid' : string_or_none(row['auth_uid']),
+            'auth_uidtype' : string_or_none(row['auth_uidtype']),
+            'idtype_code' : string_or_none(row['idtype_code']),
+            'org_id' : string_or_none(row['org_id']),
             }
        
         if DEBUG:
@@ -836,6 +982,7 @@ class PatientGuardianLoader(BaseLoader):
 class PatientAddrLoader(BaseLoader):
     fields = [
         'patient_id',
+        'mrn',
         'address1',
         'address2',
         'city',
@@ -850,6 +997,8 @@ class PatientAddrLoader(BaseLoader):
         'call_info',
         'email',
         'type',
+        'use',
+        'eqptype',
         ]
     
     model = Patient_Addr
@@ -860,6 +1009,7 @@ class PatientAddrLoader(BaseLoader):
                     
         values = {
             'patient' : self.get_patient(row['patient_id']),
+            'mrn' : row['mrn'],
             'provenance' : self.provenance,
             'natural_key' : natural_key,
             'address1' : row['address1'],
@@ -876,6 +1026,8 @@ class PatientAddrLoader(BaseLoader):
             'call_info' : row['call_info'],
             'email' : row['email'],
             'type' : row['type'],
+            'use' : row['use'],
+            'eqptype' : row['eqptype'],
             }
        
         if DEBUG:
@@ -889,12 +1041,82 @@ class PatientAddrLoader(BaseLoader):
         except ex_to_catch, e:
             raise e
 
+class PatientExtraLoader(BaseLoader):
+    fields = [
+        'patient_iid',
+        'mrn',
+        'auth_nid',
+        'auth_uid',
+        'auth_uidtype',
+        'id_typecode',
+        'fac_nid',
+        'fac_uid',
+        'fac_uidtype',
+        'death_ind',
+        'last_source_update',
+        'lsu_nid',
+        'lsu_uid',
+        'lsu_uidtype',
+        'species',
+        ]
+    
+    model = Patient_ExtraData
+    
+    def load_row(self, row):
+        
+        values = {
+            'patient' : self.get_patient(row['patient_iid']),
+            'natural_key' : row['patient_iid'],
+            'provenance' : self.provenance,
+            'auth_nid' : row['auth_nid'],
+            'auth_uid' : row['auth_uid'],
+            'auth_uidtype' : row['auth_uidtype'],
+            'id_typecode' : row['id_typecode'],
+            'fac_nid' : row['fac_nid'],
+            'fac_uid' : row['fac_uid'],
+            'fac_uidtype' : row['fac_uidtype'],
+            'death_ind' : row['death_ind'],
+            'last_source_update' : row['last_source_update'],
+            'lsu_nid' : row['lsu_nid'],
+            'lsu_uid' : row['lsu_uid'],
+            'lsu_uidtype' : row['lsu_uidtype'],
+            'species' : row['species'],
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Patient_ExtraData, values, ['natural_key'])
+            log.debug('Saved pat idInfo object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+
 class LabInfoLoader(BaseLoader):
     fields = [
         'CLIA_ID',
+        'perf_auth_nid',
+        'perf_auth_uid',
+        'perf_auth_uidtype',
+        'perf_idtypecode',
         'laboratory_name',
-        'Lab_Director',
+        'lab_name_type_code',
+        'Lab_Director_lname',
+        'Lab_Director_fname',
+        'Lab_Director_mname',
+        'Lab_Director_suff',
+        'Lab_Director_pref',
         'NPI_ID',
+        'labdir_auth_nid',
+        'labdir_auth_uid',
+        'labdir_auth_uidtype',
+        'labdir_nametypecode',
+        'labdir_idtypecode',
+        'labdir_fac_nid',
+        'labdir_fac_uid',
+        'labdir_fac_uidtype',
+        'labdir_profsuff',
         'address1',
         'address2',
         'city',
@@ -902,6 +1124,7 @@ class LabInfoLoader(BaseLoader):
         'zip',
         'country',
         'county_code',
+        'addr_type',
         ]
     
     model = LabInfo
@@ -911,15 +1134,34 @@ class LabInfoLoader(BaseLoader):
         values = {
             'CLIA_ID' : row['CLIA_ID'],
             'provenance' : self.provenance,
+            'perf_auth_nid' : row['perf_auth_nid'],
+            'perf_auth_uid' : row['perf_auth_uid'],
+            'perf_auth_uidtype' : row['perf_auth_uidtype'],
+            'perf_idtypecode' : row['perf_idtypecode'],
             'laboratory_name' : row['laboratory_name'],
-            'Lab_Director' : row['Lab_Director'],
+            'lab_name_type_code' : row['lab_name_type_code'],
+            'Lab_Director_lname' : row['Lab_Director_lname'],
+            'Lab_Director_fname' : row['Lab_Director_fname'],
+            'Lab_Director_mname' : row['Lab_Director_mname'],
+            'Lab_Director_suff' : row['Lab_Director_suff'],
+            'Lab_Director_pref' : row['Lab_Director_pref'],
             'NPI_ID' : row['NPI_ID'],
+            'labdir_auth_nid' : row['labdir_auth_nid'],
+            'labdir_auth_uid' : row['labdir_auth_uid'],
+            'labdir_auth_uidtype' : row['labdir_auth_uidtype'],
+            'labdir_nametypecode' : row['labdir_nametypecode'],
+            'labdir_idtypecode' : row['labdir_idtypecode'],
+            'labdir_fac_nid' : row['labdir_fac_nid'],
+            'labdir_fac_uid' : row['labdir_fac_uid'],
+            'labdir_fac_uidtype' : row['labdir_fac_uidtype'],
+            'labdir_profsuff' : row['labdir_profsuff'],
             'address1' : row['address1'],
             'address2' : row['address2'],
             'city' : row['city'],
             'state' : row['state'],
             'zip' : row['zip'],
             'country' : row['country'],
+            'addr_type' : row['addr_type'],
             'county_code' : row['county_code'],
             }
        
@@ -962,12 +1204,12 @@ class LabResultLoader(BaseLoader):
         'natural_key',          # 23 added in 3
         'patient_class',        # 24 added in 3
         'patient_status',       # 25 added in 3
-        'filler_ID', 
         'collection_date_end', 
         'status_date', 
         'interpreter', 
         'interpreter_id', 
         'interp_id_auth', 
+        'interp_uid',
         'CLIA_ID', 
         'lab_method', 
         'ref_text',
@@ -987,7 +1229,7 @@ class LabResultLoader(BaseLoader):
                 log.warning('Could not find CLIA ID "%s" - creating new entry.' % CLIA_ID)
                 
         return self._BaseLoader__labCLIA_cache[CLIA_ID]
-
+    
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
@@ -1047,7 +1289,7 @@ class LabResultLoader(BaseLoader):
         'abnormal_flag' : row['normal_flag'],
         'status' : string_or_none(row['status']),
         'comment' : string_or_none(row['note']),
-        'specimen_num' : self.get_specid(row['specimen_num']),
+        'specimen_num' : string_or_none(row['specimen_num']),
         'impression' : string_or_none(row['impression']),
         'specimen_source' : string_or_none(row['specimen_source']),
         'collection_date' : self.date_or_none(row['collection_date']),
@@ -1056,7 +1298,6 @@ class LabResultLoader(BaseLoader):
         'natural_key' : natural_key,
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
-        'filler_ID' : string_or_none(row['filler_ID']),
         'collection_date_end' : self.date_or_none(row['collection_date_end']),
         'ccollection_date_end' : row['collection_date_end'],
         'status_date' : self.date_or_none(row['status_date']),
@@ -1064,6 +1305,7 @@ class LabResultLoader(BaseLoader):
         'interpreter' : string_or_none(row['interpreter']),
         'interpreter_id' : string_or_none(row['interpreter_id']),
         'interp_id_auth' : string_or_none(row['interp_id_auth']),
+        'interp_uid' : string_or_none(row['interp_uid']),
         'CLIA_ID' : self.get_LabCLIA(row['CLIA_ID']),
         'lab_method' : string_or_none(row['lab_method']),
          }
@@ -1074,9 +1316,53 @@ class LabResultLoader(BaseLoader):
             raise 
         
 
+class LabDetailLoader(BaseLoader):
+    fields = [
+        'labresult_natural_key',
+        'comparator',
+        'num1',
+        'sep_suff',
+        'num2',
+        'ref_range',
+        'char_finding',
+        'orig_text',
+        'sub_id',
+        ]
+    model = Labresult_Details
+    
+    def load_row(self, row):
+        
+        values = {
+            'labresult' : LabResult.objects.get(natural_key=row['labresult_natural_key']),
+            'labresult_natural_key' : string_or_none(row['labresult_natural_key']),
+            'provenance' : self.provenance,
+            'comparator' : string_or_none(row['comparator']),
+            'num1' : string_or_none(row['num1']),
+            'sep_suff' : string_or_none(row['sep_suff']),
+            'num2' : string_or_none(row['num2']),
+            'ref_range' : string_or_none(row['ref_range']),
+            'char_finding' : string_or_none(row['char_finding']),
+            'orig_text' : string_or_none(row['orig_text']),
+            'sub_id' : string_or_none(row['sub_id']),
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Labresult_Details, values, ['labresult_natural_key'])
+            log.debug('Saved lab result numeric detail object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+
 class SpecimenLoader(BaseLoader):
     fields = [
+        'order_natural_key',
         'specimen_num',
+        'fill_nid',
+        'fill_uid',
+        'fill_uidtype',
         'specimen_source',
         'type_modifier',
         'additives',
@@ -1085,6 +1371,9 @@ class SpecimenLoader(BaseLoader):
         'Source_site_modifier',
         'Specimen_role',
         'Collection_amount',
+        'amount_id',
+        'range_startdt',
+        'range_enddt',
         'Received_date',
         'analysis_date',
         ]
@@ -1093,11 +1382,15 @@ class SpecimenLoader(BaseLoader):
     
     def load_row(self, row):
         
-        natural_key = self.generateNaturalkey(row['specimen_num'])
                     
         values = {
-            'specimen_num' : row['specimen_num'],
             'provenance' : self.provenance,
+            'order_natural_key' : row['order_natural_key'],
+            'specimen_num' : row['specimen_num'],
+            'fill_nid' : row['fill_nid'],
+            'fill_uid' : row['fill_uid'],
+            'fill_uidtype' : row['fill_uidtype'],
+            'laborder' : self.get_laborder(row['order_natural_key']),
             'specimen_source' : row['specimen_source'],
             'type_modifier' : row['type_modifier'],
             'additives' : row['additives'],
@@ -1106,6 +1399,9 @@ class SpecimenLoader(BaseLoader):
             'Source_site_modifier' : row['Source_site_modifier'],
             'Specimen_role' : row['Specimen_role'],
             'Collection_amount' : row['Collection_amount'],
+            'amount_id' : row['amount_id'],
+            'range_startdt' : row['range_startdt'],
+            'range_enddt' : row['range_enddt'],
             'Received_date' : self.date_or_none(row['Received_date']),
             'creceived_date' : row['Received_date'],
             'analysis_date' : self.date_or_none(row['analysis_date']),
@@ -1117,14 +1413,14 @@ class SpecimenLoader(BaseLoader):
         else:
             ex_to_catch = [BaseException]
         try:
-            s, created = self.insert_or_update(Specimen, values, ['natural_key'])
-            #TODO: zip5
+            s, created = self.insert_or_update(Specimen, values, ['order_natural_key','specimen_num'])
             log.debug('Saved Specimen object: %s' % s)
         except ex_to_catch, e:
             raise e
 
 class SpecObsLoader(BaseLoader):
     fields = [
+        'order_natural_key',
         'specimen_num',
         'type',
         'result',
@@ -1136,8 +1432,10 @@ class SpecObsLoader(BaseLoader):
     def load_row(self, row):
         
         values = {
-            'specimen_num' : self.get_specid(row['specimen_num']),
+            'specimen' : self.get_specid(row['specimen_num'],row['order_natural_key']),
             'provenance' : self.provenance,
+            'order_natural_key' : row['order_natural_key'],
+            'specimen_num' : row['specimen_num'],
             'type' : row['type'],
             'result' : row['result'],
             'unit' : row['unit'],
@@ -1148,8 +1446,8 @@ class SpecObsLoader(BaseLoader):
         else:
             ex_to_catch = [BaseException]
         try:
-            s, created = self.insert_or_update(SpecObs, values, row['specimen_num'])
-            #TODO: need a real unique ID here...)
+            s, created = self.insert_or_update(SpecObs, values, ['specimen_num', 'order_natural_key'])
+            log.debug('Saved Specimen observation: %s' % s)
         except ex_to_catch, e:
             raise e
 
@@ -1173,6 +1471,9 @@ class LabOrderLoader(BaseLoader):
         'reason_code',
         'reason_code_type',
         'order_info',
+        'obs_start_date',
+        'obs_end_date',
+        'remark',
         ]
     
     model = LabOrder
@@ -1219,6 +1520,9 @@ class LabOrderLoader(BaseLoader):
             'reason_code' : string_or_none(row['reason_code']),
             'reason_code_type' : string_or_none(row['reason_code_type']),
             'order_info' : string_or_none(row['order_info']),
+            'obs_start_date' : string_or_none(row['obs_start_date']),
+            'obs_end_date' : string_or_none(row['obs_end_date']),
+            'remark' : string_or_none(row['remark']),
             }
         try:
             lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
@@ -1226,6 +1530,55 @@ class LabOrderLoader(BaseLoader):
         except:
             raise
 
+
+class OrderIdInfoLoader(BaseLoader):
+    fields = [
+        'order_natural_key',
+        'placer_ord_eid',
+        'placer_ord_nid',
+        'placer_ord_uid',
+        'placer_ord_uid_type',
+        'filler_ord_eid',
+        'filler_ord_nid',
+        'filler_ord_uid',
+        'filler_ord_uid_type',
+        'placer_grp_eid',
+        'placer_grp_nid',
+        'placer_grp_uid',
+        'placer_grp_uid_type',
+        ]
+    
+    model = Order_idInfo
+    
+    def load_row(self, row):
+        
+        values = {
+            'laborder' : LabOrder.objects.get(natural_key=row['order_natural_key']),
+            'order_natural_key' : string_or_none(row['order_natural_key']),
+            'provenance' : self.provenance,
+            'placer_ord_eid' : string_or_none(row['placer_ord_eid']),
+            'placer_ord_nid' : string_or_none(row['placer_ord_nid']),
+            'placer_ord_uid' : string_or_none(row['placer_ord_uid']),
+            'placer_ord_uid_type' : string_or_none(row['placer_ord_uid_type']),
+            'filler_ord_eid' : string_or_none(row['filler_ord_eid']),
+            'filler_ord_nid' : string_or_none(row['filler_ord_nid']),
+            'filler_ord_uid' : string_or_none(row['filler_ord_uid']),
+            'filler_ord_uid_type' : string_or_none(row['filler_ord_uid_type']),
+            'placer_grp_eid' : string_or_none(row['placer_grp_eid']),
+            'placer_grp_nid' : string_or_none(row['placer_grp_nid']),
+            'placer_grp_uid' : string_or_none(row['placer_grp_uid']),
+            'placer_grp_uid_type' : string_or_none(row['placer_grp_uid_type']),
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Order_idInfo, values, ['order_natural_key'])
+            log.debug('Saved order idInfo object: %s' % s)
+        except ex_to_catch, e:
+            raise e
 
 class EncounterLoader(BaseLoader):
     
@@ -1870,14 +2223,19 @@ class Command(LoaderCommand):
                 input_filepaths.append(filepath)
         conf = [
             ('epicpro', ProviderLoader),
+            ('epicpid', ProviderIdInfoLoader),
+            ('epicpph', ProviderPhonesLoader),
             ('epicmem', PatientLoader),
             ('epicmad', PatientAddrLoader),
             ('epicgrd', PatientGuardianLoader),
+            ('epicmud', PatientExtraLoader),
             ('epicord', LabOrderLoader),
+            ('epicoid', OrderIdInfoLoader),
             ('epicspc', SpecimenLoader),
             ('epicsob', SpecObsLoader),
             ('epiclab', LabInfoLoader),
             ('epicres', LabResultLoader),
+            ('epiclnd', LabDetailLoader),
             ('epicvis', EncounterLoader),
             ('epicmed', PrescriptionLoader),
             ('epicimm', ImmunizationLoader),
