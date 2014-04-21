@@ -85,8 +85,88 @@
       "gender": "UNKNOWN"
     }
   },
-  {"pk": 3, "model": "emr.encountertypemap", "fields": {"priority": 1, "raw_encounter_type": "HOSP", "mapping": "HOSPITALIZATION"}}, {"pk": 1, "model": "emr.encountertypemap", "fields": {"priority": 3, "raw_encounter_type": "ENCOUNTER", "mapping": "VISIT"}}, {"pk": 2, "model": "emr.encountertypemap", "fields": {"priority": 2, "raw_encounter_type": "EMERGENCY", "mapping": "ER"}},
-  {"pk": "", "model": "emr.specimen", "fields": {"Source_site": null, "collection_method": null, "Specimen_role": null, "canalysis_date": null, "provenance": 2, "analysis_date": null, "type_modifier": null, "Source_site_modifier": null, "creceived_date": null, "specimen_source": null, "Collection_amount": null, "additives": null, "Received_date": null}},
-  {"pk": "", "model": "emr.labinfo", "fields": {"city": null, "zip": null, "NPI_ID": null, "laboratory_name": null, "address2": null, "provenance": 2, "state": null, "address1": null, "county_code": null, "country": null, "Lab_Director": null, "zip5": null}}
+  {
+   "pk": 3, 
+   "model": "emr.encountertypemap", 
+   "fields": {
+      "priority": 1, 
+      "raw_encounter_type": "HOSP", 
+      "mapping": "HOSPITALIZATION"
+     }
+  }, 
+  {
+   "pk": 1, 
+   "model": "emr.encountertypemap", 
+   "fields": {
+      "priority": 3, 
+      "raw_encounter_type": "ENCOUNTER", 
+      "mapping": "VISIT"
+     }
+  }, 
+  {
+   "pk": 2, 
+   "model": "emr.encountertypemap", 
+   "fields": {
+      "priority": 2, 
+      "raw_encounter_type": "EMERGENCY", 
+      "mapping": "ER"
+     }
+  },
+  {
+   "pk": "1", 
+   "model": "emr.laborder", 
+   "fields": {
+     "provenance": 2,
+     "natural_key": null,
+     "created_timestamp":  "2009-07-30 16:15:48", 
+     "updated_timestamp": "2009-07-30 16:15:48", 
+     "patient": null,
+     "provider": null,
+     "date": "2009-07-30",
+     "mrn": null,
+     "cdate": null,
+     "procedure_code": null,
+     "procedure_modifier": null,
+     "procedure_name": null,
+     "specimen_id": null,
+     "order_type": "Null",
+     "specimen_source": null,
+     "test_status": null,
+     "patient_class": null,
+     "patient_status": null,
+     "group_id": null,
+     "reason_code": null,
+     "reason_code_type": null,
+     "order_info": null,
+     "remark": null
+    }
+  },
+  {
+   "pk": "1", 
+   "model": "emr.specimen", 
+   "fields": {
+      "order_natural_key": null,
+      "specimen_num": null,
+      "laborder": 1,
+      "provenance": 2, 
+      "specimen_source": null, 
+      "type_modifier": null, 
+      "additives": null, 
+      "collection_method": null, 
+      "Source_site": null, 
+      "Source_site_modifier": null, 
+      "Specimen_role": null, 
+      "Collection_amount": null, 
+      "Received_date": null,
+      "creceived_date": null, 
+      "analysis_date": null, 
+      "canalysis_date": null
+     }
+  },
+  {
+   "pk": "", 
+   "model": "emr.labinfo", 
+   "fields": {
+      "provenance": 2}}
   
 ]
