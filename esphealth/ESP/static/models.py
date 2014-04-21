@@ -76,7 +76,7 @@ class DrugSynonym (models.Model):
                     alldrugnames.append(otherdrug.other_name)
         return alldrugnames   
      
-class FakeDx_Codes(models.Model):
+class FakeDx_Codes (models.Model):
     fakedx_code_id = models.AutoField(primary_key=True)
     dx_codes = models.CharField('dx_codes', max_length=3350)
     group_name = models.CharField('group_name', max_length=100)
@@ -258,6 +258,7 @@ class hl7_vocab(models.Model):
     value = models.CharField('HL7 value',max_length=26)
     description = models.CharField('HL7 value description',max_length=250)
     codesys = models.CharField('HL7 code system name',max_length=10)
+    version = models.CharField('HL7 code system name',max_length=25)
     
     def __str__(self):
         return '%s -- %s -- %s' % (self.value, self.description, self.codesys)
