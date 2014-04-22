@@ -73,15 +73,11 @@ class InvalidHeuristic(NodisException):
     '''
     You specified a heuristic that is not registered with the system.
     '''
-
-
 #-------------------------------------------------------------------------------
 #
 #--- Pattern Matching Logic
 #
 #-------------------------------------------------------------------------------
-
-
 
 
 class Case(models.Model):
@@ -121,7 +117,7 @@ class Case(models.Model):
         '''
         config = ConditionConfig.objects.filter(name=self.condition)
         if not config:
-            log.warning('Please setup a Configuration for the condition for %s', self.condition)
+            #log.warning('Please setup a Configuration for the condition for %s', self.condition)
             return None
         else: return config[0]
         
@@ -167,25 +163,23 @@ class Case(models.Model):
         conf = self.condition_config
         if conf:
             start = self.date - datetime.timedelta(days=conf.lab_days_before)
-            end = self.date + datetime.timedelta(days=conf.lab_days_after)
-        else:
-            start = self.date
-            end = self.date 
-        q_obj &= Q(date__gte=start)
-        q_obj &= Q(date__lte=end)
+            end = self.date + datetime.timedelta(days=conf.lab_days_after)       
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
         labs = LabResult.objects.filter(q_obj).distinct()
-        #log_query('Reportable labs for %s' % self, labs)
+        # log_query('Reportable labs for %s' % self, labs)
         # this will affect case reports and 
-        if not labs and not self.lab_results and self.condition.upper() == 'TUBERCULOSIS':
+        if not labs and not self.lab_results:
             labs = LabResult.objects.none()
-            # new feature redmine 482
-            # This code is used for case report hl7 and case detail view 
-            # specific for MDPH specific which requires one lab for TB 
-            # if there are no reportable labs or labs associated with a case
-            # we create a dummy one.
-            dummy_lab = LabResult.createTBDummyLab(self.patient, [self])
-            labs._result_cache.append(dummy_lab)
-                           
+            #TODO add code here if pid case and has no labs associated then add dummy lab too
+            if self.condition.upper() == 'TUBERCULOSIS' or self.condition.upper() == 'PID':
+                # new feature redmine 482
+                # This code is used for case report hl7 and case detail view 
+                # specific for MDPH specific which requires one lab for TB 
+                # if there are no reportable labs or labs associated with a case
+                # we create a dummy one.
+                dummy_lab = LabResult.createDummyLab(self.patient, [self])
+                labs._result_cache.append(dummy_lab)
         return labs
     
     reportable_labs = property(__get_reportable_labs)
@@ -216,9 +210,11 @@ class Case(models.Model):
                     else: dx_code_objs |= Dx_code.objects.filter(dx_code_query.dx_code_q_obj)
         if  dx_code_objs:
             return dx_code_objs.distinct()
-        return None
+        else:
+            return Dx_code.objects.none()
     reportable_dx_codes_list = property(__get_reportable_dx_codes)
 
+    #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
     def __get_reportable_encounters(self):
         q_obj = Q(patient=self.patient)
         if self.reportable_dx_codes_list:
@@ -227,11 +223,8 @@ class Case(models.Model):
         if conf:
             start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
             end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
-        else:
-            start = self.date
-            end = self.date 
-        q_obj &= Q(date__gte=start)
-        q_obj &= Q(date__lte=end)
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
         encs = Encounter.objects.filter(q_obj)
         #log_query('Encounters for %s' % self, encs)
         return encs
@@ -253,11 +246,8 @@ class Case(models.Model):
         if conf:
             start = self.date - datetime.timedelta(days=conf.med_days_before)
             end = self.date + datetime.timedelta(days=conf.med_days_after)
-        else:
-            start = self.date
-            end = self.date
-        q_obj &= Q(date__gte=start)
-        q_obj &= Q(date__lte=end)
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
         prescriptions = Prescription.objects.filter(q_obj).distinct()
         #log_query('Reportable prescriptions for %s' % self, prescriptions)
         return prescriptions

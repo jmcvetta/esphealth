@@ -138,7 +138,11 @@ class IncompleteCaseData(BaseException):
     '''
     pass
 
-
+class NoConditionConfigurationException(BaseException):
+    '''
+    raised when no conf.config defined for a disease, needed for reportable items (encounters, icd9s, prescriptions and labs)
+    '''
+    pass
 
 
 def isoTime(t=None):
@@ -251,6 +255,9 @@ class hl7Batch:
         p = self.makeFacility()
         orus2.appendChild(p)
         ##Treating Clinician
+        if not case.condition_config:
+            raise NoConditionConfigurationException('Condition %s has no Reportable Configuration. Please configure it under Administration/Site Administration/Conf - Condition Configurations' % case.condition)
+        
         rxobjs = case.reportable_prescriptions.order_by('natural_key')
         treatclis = set( rxobjs.values_list('provider', flat=True) )
         for cli in treatclis:
@@ -541,8 +548,7 @@ class hl7Batch:
         # Testing - Does MDPH accept null age?
         #
         if demog.date_of_birth:
-            #TODO code review issue date of birth needed to be date 
-            dur = (datetime.date.today() - demog.date_of_birth.date()).days
+            dur = (datetime.date.today() - demog.date_of_birth).days
             age = int(dur/365)
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',age)],nte=casenote)
             orcs.appendChild(obx)
@@ -1330,6 +1336,7 @@ class Command(BaseCommand):
                                 if (case.status == 'RQ'):
                                     case.status = 'RS'
                                 else:
+                                    #TODO set it to S1 and check if >=15 days and if so resend and set to SF 
                                     case.status = 'S'
                                 case.sent_timestamp = datetime.datetime.now()
                                 case.save()
@@ -1380,8 +1387,11 @@ class Command(BaseCommand):
             log.debug('Generating HL7 for %s' % case)
             try:
                 batch.addCase(case)
+            except NoConditionConfigurationException, e:
+                log.critical('Could not generate HL7 message for case %s!' % case)
+                log.critical('    %s' % e)
             except IncompleteCaseData, e:
-                log.critical('Could not generate HL7 message for case # %s !' % case)
+                log.critical('Could not generate HL7 message for case %s !' % case)
                 log.critical('    %s' % e)
         case_report = batch.renderBatch()
         return case_report
