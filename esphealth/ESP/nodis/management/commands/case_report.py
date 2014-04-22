@@ -548,7 +548,7 @@ class hl7Batch:
         # Testing - Does MDPH accept null age?
         #
         if demog.date_of_birth:
-            dur = (datetime.date.today() - demog.date_of_birth).days
+            dur = (datetime.datetime.today() - demog.date_of_birth).days
             age = int(dur/365)
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',age)],nte=casenote)
             orcs.appendChild(obx)
