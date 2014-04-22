@@ -375,14 +375,16 @@ ADD COLUMN   last_update timestamp with time zone,
 ADD COLUMN   clast_update character varying(100),
 ADD COLUMN   last_update_site character varying(100),
 ADD COLUMN   title character varying(50),
-ADD COLUMN   remark text;
+ADD COLUMN   remark text,
+ALTER COLUMN date_of_birth SET DATA TYPE timestamp with time zone,
+ALTER COLUMN date_of_death SET DATA TYPE timestamp with time zone;
  
 ALTER TABLE emr_labresult
 ADD COLUMN   cresult_date character varying(100),
 ADD COLUMN    ccollection_date character varying(100),
 ADD COLUMN    ref_text character varying(100),
-ADD COLUMN     specimen_num_id character varying(100),
-ADD COLUMN     "filler_ID" character varying(20),
+ADD COLUMN    specimen_num character varying(100),
+ADD COLUMN    "filler_ID" character varying(20),
 ADD COLUMN    collection_date_end timestamp with time zone,
 ADD COLUMN    ccollection_date_end character varying(100),
 ADD COLUMN    status_date timestamp with time zone,
@@ -390,6 +392,7 @@ ADD COLUMN    cstatus_date character varying(100),
 ADD COLUMN    interpreter character varying(100),
 ADD COLUMN    interpreter_id character varying(20),
 ADD COLUMN    interp_id_auth character varying(50),
+ADD COLUMN    interp_uid character varying(50),
 ADD COLUMN    "CLIA_ID_id" character varying(20),
 ADD COLUMN    lab_method character varying(100),
 ADD CONSTRAINT  "emr_labresult_CLIA_ID_id_fkey" FOREIGN KEY ("CLIA_ID_id")
