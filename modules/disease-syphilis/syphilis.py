@@ -162,6 +162,8 @@ class Syphilis(DiseaseDefinition):
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
             )
+        if dxrx_event_qs or lxrx_event_qs:
+            self.criteria = 'Criteria #1: syphilis diagnosis or tp-igm:positive and prescription of penicillin_g or doxycycline_7_day or ceftriaxone_1_or_2_gram w/in 14 days'
         #
         # Criteria Set #2
         #
@@ -179,6 +181,8 @@ class Syphilis(DiseaseDefinition):
             patient__event__name__in = tppa_ev_names,
             patient__event__date__lte = (F('date') + 30 ),
             )
+        if test_event_qs:
+            self.criteria = 'Criteria #2: rpr_pos or vdrl_pos and ( tppa_pos or fta-abs_pos or tp-igg_pos) w/in 30 days'
         #
         # Criteria Set #3
         #
@@ -187,6 +191,9 @@ class Syphilis(DiseaseDefinition):
                              'lx:tppa-csf:positive', 
                                 ]
         vdrl_csf_qs = Event.objects.filter(name__in=vdrl_csf_ev_names)
+        
+        if vdrl_csf_qs:
+            self.criteria = 'Criteria #3: vdrl-csf:pos or  fta-abs-csf:pos or tppa-csf:pos'
         #
         # Combined Criteria
         #
@@ -198,7 +205,7 @@ class Syphilis(DiseaseDefinition):
         counter = 0
         new_case_count = self._create_cases_from_event_qs(
             condition = 'syphilis',
-            criteria = 'combined syphilis criteria', 
+            criteria = self.criteria, 
             recurrence_interval = None, 
             event_qs = combined_criteria_qs, 
             relevant_event_names = all_event_names,

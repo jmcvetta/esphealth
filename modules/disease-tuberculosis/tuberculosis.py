@@ -130,6 +130,9 @@ class Tuberculosis(DiseaseDefinition):
         rx_event_qs = Event.objects.filter(
             name__in = rx_ev_names,
             )
+        
+        if rx_event_qs:
+            self.criteria = 'Criteria #1: Single rx:pyrazinamide'
         #
         # Criteria Set #2 
         # dx in the 14 days prior to the lab order (any test result) or 
@@ -151,6 +154,9 @@ class Tuberculosis(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 60 ),
             patient__event__date__gte = (F('date') ),
             )
+        
+        if dxlx14_event_qs or dxlx60_event_qs:
+            self.criteria = 'Criteria #2: dx:tuberculosis w/in 14 days prior to the lab order (any test result) or dx w/in 60 days following the lab order (any test result)'
         #
         # Combined Criteria
         #
@@ -177,7 +183,7 @@ class Tuberculosis(DiseaseDefinition):
                 patient = this_event.patient,
                 provider = this_event.provider,
                 date = this_event.date,
-                criteria = 'combined tuberculosis criteria a and b',
+                criteria = self.criteria,
                 source = self.uri,
                 )
             new_case.save()
@@ -211,13 +217,14 @@ class Tuberculosis(DiseaseDefinition):
             rx_qs = rx_qs.filter(patient=dx_event.patient)
             rx_qs = rx_qs.filter(date__gte=relevancy_begin, date__lte=relevancy_end)
             if rx_qs.values('name').distinct().count() >= 2:
+                self.criteria = 'Criteria #3: dx:tuberculosis and 2 or > distinct prescription orders'
                 #
                 # Patient has Tuberculosis
                 #
                 # TODO we are not getting the extra events for rx if we had an existing case see redmine #471
                 t, new_case = self._create_case_from_event_obj(
                     condition = self.conditions[0],
-                    criteria = 'Diagnosis with >=2 prescriptions',
+                    criteria = self.criteria,
                     recurrence_interval = None, # Does not recur
                     event_obj = dx_event,
                     relevant_event_qs = rx_qs,

@@ -34,6 +34,8 @@ class Chlamydia(SinglePositiveTestDiseaseDefinition):
     
     recurrence_interval = 28
     
+    criteria = 'Criteria #1:'
+    
     
 #-------------------------------------------------------------------------------
 #

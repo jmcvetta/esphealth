@@ -75,6 +75,21 @@ class Pertussis(DiseaseDefinition):
             drugs = DrugSynonym.generics_plus_synonyms(['erythromycin','clarithromycin',
                 'azithromycin','trimethoprim-sulfamethoxazole', ]),
             ))
+        
+        #
+        # Lab Orders
+        #
+        '''
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'pertussis_culture',
+             ))
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'pertussis_pcr',
+            ))
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'pertussis_serology',
+            ))
+        '''
         #
         # Lab Results
         #
@@ -129,6 +144,8 @@ class Pertussis(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 7 ),
             )
       
+        if  dxrx_event_qs or lxrx_event_qs:
+            self.criteria = 'Criteria #1: Pertusis dx or lab order(any result test) + rx w/in 7 days'
         #
         # Criteria Set #2 positive of pertussis culture or pcr
         #
@@ -137,6 +154,8 @@ class Pertussis(DiseaseDefinition):
         lx_event_qs = Event.objects.filter(
             name__in = lx_ev_names,  
             )
+        if lx_event_qs:
+            self.criteria = 'Criteria #2: pertussis_culture_pos culture or pertussis_pcr_pos'
         #
         # Combined Criteria
         #
@@ -163,7 +182,7 @@ class Pertussis(DiseaseDefinition):
                 patient = this_event.patient,
                 provider = this_event.provider,
                 date = this_event.date,
-                criteria = 'combined pertussis criteria',
+                criteria = self.criteria,
                 source = self.uri,
                 )
             new_case.save()

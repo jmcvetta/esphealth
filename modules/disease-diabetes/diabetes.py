@@ -465,7 +465,7 @@ class Diabetes(DiseaseDefinition):
             provider = c_peptide_lx_thresh[0].provider
             case_date = c_peptide_lx_thresh[0].date
             case_events_qs = trigger_events_qs | c_peptide_lx_thresh
-            criteria = 'C-Peptide result below threshold: Type 1'
+            criteria = 'Criteria #1: C-Peptide result below threshold: Type 1'
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
@@ -481,7 +481,7 @@ class Diabetes(DiseaseDefinition):
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
             case_events_qs = trigger_events_qs | aa_pos
-            criteria = 'Diabetes auto-antibodies positive: Type 1'
+            criteria = 'Criteria #2: Diabetes auto-antibodies positive: Type 1'
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
@@ -495,7 +495,7 @@ class Diabetes(DiseaseDefinition):
             provider = acetone_rx[0].provider
             case_date = acetone_rx[0].date
             case_events_qs = trigger_events_qs | acetone_rx
-            criteria = 'Acetone Rx: Type 1'
+            criteria = 'Criteria #3: Acetone Rx: Type 1'
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
@@ -518,9 +518,9 @@ class Diabetes(DiseaseDefinition):
                 case_date = trigger_events_qs[0].date
                 case_events_qs = trigger_events_qs | type_1_dx | type_2_dx
                 if glucagon_rx:
-                    criteria = 'More than 50% of dx_codes are type 1, and glucagon rx: Type 1'
+                    criteria = 'Criteria #4a: More than 50% of dx_codes are type 1, and glucagon rx: Type 1'
                 else:
-                    criteria = 'More than 50% of dx_codes are type 1, and never prescribed oral hypoglycaemics: Type 1'
+                    criteria = 'Criteria #4b: More than 50% of dx_codes are type 1, and never prescribed oral hypoglycaemics: Type 1'
                 condition = 'diabetes:type-1'
                 log.debug(criteria)
                 
@@ -533,7 +533,7 @@ class Diabetes(DiseaseDefinition):
             provider = trigger_events_qs[0].provider
             case_date = trigger_events_qs[0].date
             case_events_qs = trigger_events_qs
-            criteria = 'No Type 1 criteria met: Type 2'
+            criteria = 'Criteria #5: No Type 1 criteria met: Type 2'
             condition = 'diabetes:type-2'
             log.debug(criteria)
         
@@ -606,6 +606,7 @@ class Diabetes(DiseaseDefinition):
                 provider = trigger_event.provider,
                 date = trigger_event.date,
                 condition =  'diabetes:prediabetes',
+                criteria = 'Criteria #1: A1C >= 5.7 <= 6.4,  Fasting glucose >= 100 <= 125 and 2 random glucoses >=140 and <200',
                 source = self.uri,
                 )
             new_case.save()
@@ -724,6 +725,7 @@ class Diabetes(DiseaseDefinition):
             case_obj, created = Case.objects.get_or_create(
                 patient = ts.patient,
                 condition = 'diabetes:gestational',
+                criteria = 'Criteria #1: GDM once or twice from lab event threshold, GDM diagnosis and rx for lancets or test-strips',
                 date = first_event.date,
                 source = self.uri, 
                 defaults = {

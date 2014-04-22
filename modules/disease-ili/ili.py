@@ -135,7 +135,7 @@ class ili(DiseaseDefinition):
         
         counter = self._create_cases_from_event_qs( 
             condition = 'ili', 
-            criteria = 'dx:ili and no temp measured and dx:fever', 
+            criteria = 'Criteria #2: dx:ili and no temp measured and dx:fever', 
             recurrence_interval = 42,
             event_qs = ili_criteria_qs1, 
             relevant_event_names = all_event_names )
@@ -157,7 +157,7 @@ class ili(DiseaseDefinition):
         
         counter += self._create_cases_from_event_qs( 
             condition = 'ili', 
-            criteria = 'dx:ili and measured temp >= 100', 
+            criteria = 'Criteria #1: dx:ili and measured temp >= 100', 
             recurrence_interval = 42,
             event_qs = ili_criteria_qs2, 
             relevant_event_names = all_event_names )

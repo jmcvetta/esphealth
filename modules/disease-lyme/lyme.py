@@ -131,7 +131,7 @@ class Lyme(DiseaseDefinition):
     @transaction.commit_manually
     def generate(self):
         log.info('Generating cases of %s' % self.short_name)
-       
+    
         #
         # Criteria Set #1 condition 3 in spec
         # diagnosis and meds within 14 days
@@ -152,6 +152,9 @@ class Lyme(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 14 ),
             )
         
+        if dxrx_event_qs:
+            self.criteria =  'Criteria #1 lyme and  diagnosis and doxycycline or lyme_other_antibiotics w/in 14 days'
+     
         # Criteria #2 condition 2 in spec 
         # wb test positive or pcr
         # 
@@ -165,6 +168,9 @@ class Lyme(DiseaseDefinition):
         lx_event_qs = Event.objects.filter(
             name__in =  lx_ev_names,
             )
+        if lx_event_qs:
+            self.criteria = 'Criteria #2 lyme_pcr_pos or lyme_pcr_csf_pos or lyme_ab_csf_pos or lyme_igg_wb_pos or lyme_igm_wb_pos'
+        
         #
         # Criteria Set #3 condition 1 from spec
         # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme dx_code or Lyme Antibiotics) w/in 30 days
@@ -182,6 +188,9 @@ class Lyme(DiseaseDefinition):
             patient__event__date__gte = (F('date') - 30 ),
             patient__event__date__lte = (F('date') + 30 ),  
             )
+        if test_event_qs:
+            self.criteria= 'Criteria #3 (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme dx_code or Lyme Antibiotics) w/in 30 days'
+            
         #
         # Criteria Set #4 (lyme condition 4 from spec)
         # Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) within 30d
@@ -200,6 +209,9 @@ class Lyme(DiseaseDefinition):
 	            patient__event__date__gte = (F('date') - 30 ),
 	            patient__event__date__lte = (F('date') + 30 ),
             )
+            
+        if rash_qs:
+            self.criteria = 'Criteria #4 (Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) w/in 30d'
         #
         # Combined Criteria
         #
@@ -238,7 +250,7 @@ class Lyme(DiseaseDefinition):
                 patient = this_event.patient,
                 provider = this_event.provider,
                 date = this_event.date,
-                criteria = 'combined lyme criteria',
+                criteria = self.criteria,
                 source = self.uri,
                 )
             new_case.save()
