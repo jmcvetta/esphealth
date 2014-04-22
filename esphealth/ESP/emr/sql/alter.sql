@@ -200,9 +200,27 @@ CREATE TABLE emr_labinfo
 (
   "CLIA_ID" character varying(20) NOT NULL,
   provenance_id integer NOT NULL,
+  perf_auth_nid character varying(100),
+  perf_auth_uid character varying(100),
+  perf_auth_uidtype character varying(100),
+  perf_idtypecode character varying(100),
   laboratory_name character varying(150),
-  "Lab_Director" character varying(150),
+  lab_name_type_code character varying(100),
+  "Lab_Director_lname" character varying(100),
+  "Lab_Director_fname" character varying(100),
+  "Lab_Director_mname" character varying(100),
+  "Lab_Director_suff" character varying(100),
+  "Lab_Director_pref" character varying(100),
   "NPI_ID" character varying(60),
+  labdir_auth_nid character varying(100),
+  labdir_auth_uid character varying(100),
+  labdir_auth_uidtype character varying(100),
+  labdir_nametypecode character varying(100),
+  labdir_idtypecode character varying(100),
+  labdir_fac_nid character varying(100),
+  labdir_fac_uid character varying(100),
+  labdir_fac_uidtype character varying(100),
+  labdir_profsuff character varying(100),
   address1 character varying(200),
   address2 character varying(100),
   city character varying(50),
@@ -210,6 +228,7 @@ CREATE TABLE emr_labinfo
   zip character varying(20),
   zip5 character varying(5),
   country character varying(60),
+  addr_type character varying(10),
   county_code character varying(10),
   CONSTRAINT emr_labinfo_pkey PRIMARY KEY ("CLIA_ID"),
   CONSTRAINT emr_labinfo_provenance_id_fkey FOREIGN KEY (provenance_id)
@@ -268,8 +287,14 @@ CREATE INDEX emr_labinfo_zip_like
 
 CREATE TABLE emr_specimen
 (
-  specimen_num character varying(100) NOT NULL,
+  id serial NOT NULL,
+  order_natural_key character varying(128),
+  specimen_num character varying(100),
+  laborder_id integer NOT NULL,
   provenance_id integer NOT NULL,
+  fill_nid character varying(50),
+  fill_uid character varying(50),
+  fill_uidtype character varying(50),
   specimen_source character varying(255),
   type_modifier character varying(100),
   additives character varying(100),
@@ -278,19 +303,35 @@ CREATE TABLE emr_specimen
   "Source_site_modifier" character varying(100),
   "Specimen_role" character varying(100),
   "Collection_amount" character varying(100),
+  amount_id character varying(50),
+  range_startdt character varying(50),
+  range_enddt character varying(50),
   "Received_date" timestamp with time zone,
   creceived_date character varying(100),
   analysis_date timestamp with time zone,
   canalysis_date character varying(100),
-  CONSTRAINT emr_specimen_pkey PRIMARY KEY (specimen_num),
+  CONSTRAINT emr_specimen_pkey PRIMARY KEY (id),
+  CONSTRAINT emr_specimen_laborder_id_fkey FOREIGN KEY (laborder_id)
+      REFERENCES emr_laborder (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
   CONSTRAINT emr_specimen_provenance_id_fkey FOREIGN KEY (provenance_id)
       REFERENCES emr_provenance (provenance_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
+  CONSTRAINT emr_specimen_order_natural_key_key UNIQUE (order_natural_key, specimen_num)
 )
 WITH (
   OIDS=FALSE
 );
 ALTER TABLE emr_specimen OWNER TO esp;
+
+-- Index: emr_specimen_laborder_id
+
+-- DROP INDEX emr_specimen_laborder_id;
+
+CREATE INDEX emr_specimen_laborder_id
+  ON emr_specimen
+  USING btree
+  (laborder_id);
 
 -- Index: emr_specimen_provenance_id
 
@@ -321,7 +362,10 @@ ADD COLUMN   clin_areacode character varying(5),
 ADD COLUMN   clin_tel character varying(10),
 ADD COLUMN   clin_tel_ext character varying(10),
 ADD COLUMN   clin_call_info character varying(200),
-ADD COLUMN   suffix character varying(20);
+ADD COLUMN   suffix character varying(20),
+ADD COLUMN   dept_addr_type character varying(20),
+ADD COLUMN   clin_addr_type character varying(20);
+
  
 ALTER TABLE emr_patient
 ADD COLUMN cdate_of_birth character varying(100),
@@ -362,7 +406,10 @@ ADD COLUMN    group_id character varying(15),
 ADD COLUMN    reason_code character varying(15),
 ADD COLUMN    reason_code_type character varying(25),
 ADD COLUMN    order_info character varying(100),
-ADD COLUMN    remark text;
+ADD COLUMN    remark text,
+ADD COLUMN    obs_start_date character varying(100),
+ADD COLUMN    obs_end_date character varying(100);
+
  
 --rename tables for many to many for emr_encounter
 ALTER TABLE  emr_encounter_icd9_codes 
