@@ -338,8 +338,8 @@
 </table>
 {% endif %}
 
-
-{% if case.reportable_labs %}
+{% if case.condition_config  %}
+{% if case.reportable_labs  %}
 <h3>
     Related Labs
 </h3>
@@ -507,6 +507,15 @@
     
 </table>
 {% endif %}
+{% else %}
+<center>
+<h2>
+<font color="RED">*Warning*: Condition {{ condition }} has no Reportable Configuration. Please configure it under Administration/Site Administration/Conf - Condition Configurations</font>
+<br></h2>
+</center>
+ 
+{% endif %}
+
 
 <div id="all_records_wrapper">
 <h2>
