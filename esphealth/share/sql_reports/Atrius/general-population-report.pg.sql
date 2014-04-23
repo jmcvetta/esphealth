@@ -79,6 +79,7 @@ SELECT
 , gpr_chlamydia.recent_chlamydia
 , gpr_asthma.asthma
 , gpr_smoking.smoking
+, gpr_enc.nvis
 FROM gpr_pat 
 --
 -- Max blood pressure between two and three years
@@ -254,6 +255,11 @@ LEFT JOIN gpr_smoking
 --
 LEFT JOIN gpr_asthma
         on gpr_asthma.patient_id = gpr_pat.patient_id
+--
+-- number of visits last year
+--
+LEFT JOIN gpr_enc
+        on gpr_enc.patient_id = gpr_pat.patient_id
 --
 -- Ordering
 --

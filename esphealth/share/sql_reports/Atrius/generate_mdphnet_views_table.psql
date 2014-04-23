@@ -21,6 +21,13 @@ SELECT '1'::varchar(1) centerid,
          WHEN UPPER(race) = 'CAUCASIAN' THEN 5
          ELSE 0
        END race,
+       CASE
+         WHEN UPPER(race) = 'CAUCASIAN' THEN 1
+         WHEN UPPER(race) = 'BLACK'  THEN 2
+         WHEN UPPER(race) in ('ASIAN','INDIAN') THEN 3
+         WHEN UPPER(race) = 'HISPANIC' THEN 4
+         ELSE 5
+       END race_ethnicity,
        pat.zip5
   FROM public.emr_patient pat,
        public.emr_provenance prvn
@@ -114,6 +121,7 @@ create index esp_demographic_birth_date_idx on esp_demographic (birth_date);
 create index esp_demographic_sex_idx on esp_demographic (sex);
 create index esp_demographic_hispanic_idx on esp_demographic (hispanic);
 create index esp_demographic_race_idx on esp_demographic (race);
+create index esp_demographic_race_eth_idx on esp_demographic (race_ethnicity);
 create index esp_demographic_zip5_idx on esp_demographic (zip5);
 alter table esp_demographic add primary key (patid);
 
@@ -390,6 +398,22 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
         FROM esp_demographic pat;
         ALTER TABLE UVT_RACE ADD PRIMARY KEY (item_code);
         
+--    UVT_RACE_ETHNICITY
+      DROP TABLE if exists UVT_RACE_ETHNICITY;
+      CREATE TABLE UVT_RACE_ETHNICITY AS
+      SELECT DISTINCT
+             pat.race_ethnicity as item_code,
+             CASE
+               WHEN pat.race_ethnicity = 1 THEN 'Non-hispanic White'::varchar(50)
+               WHEN pat.race_ethnicity = 2 THEN 'Non-hispanic Black'::varchar(50)
+               WHEN pat.race_ethnicity = 3 THEN 'Asian'::varchar(50)
+               WHEN pat.race_ethnicity = 4 THEN 'Hispanic'::varchar(50)
+               WHEN pat.race_ethnicity = 5 THEN 'Other'::varchar(50)
+               ELSE 'Not Mapped'::varchar(50)
+             END item_text
+        FROM esp_demographic pat;
+        ALTER TABLE UVT_RACE_ETHNICITY ADD PRIMARY KEY (item_code);
+
 --    UVT_ZIP5
       DROP TABLE if exists uvt_zip5;
       create table uvt_zip5 as 

@@ -737,5 +737,15 @@ create table gpr_asthma as
 from nodis_case
 where condition='asthma'
 group by patient_id;
-        
+--
+-- Number of encounters last year
+--
+drop table if exists gpr_enc;
+create table gpr_enc as
+  select case when count(*) >= 2 then 2
+              else count(*) end as nvis,
+  patient_id
+  from emr_encounter
+  where date>=current_date - interval '1 year'
+  group by patient_id;        
 
