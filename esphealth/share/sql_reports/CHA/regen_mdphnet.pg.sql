@@ -8,9 +8,9 @@ CREATE TABLE mdphnet_schema_update_history
 );
 insert into mdphnet_schema_update_history
 select current_timestamp, 0;
-drop table if exists esp_temp_smoking;
+drop table if exists esp_temp_smoking cascade;
 create table esp_temp_smoking as
-   select case when t1.latest='Yes' then 'Current'
+   select case when t1.latest='YES' then 'Current'
                when t2.yesOrQuit='Quit' then 'Former'
                when t3.passive='Passive' then 'Passive'
                when t4.never='Never' then 'Never'
@@ -30,17 +30,17 @@ create table esp_temp_smoking as
    left outer join
      (select max(val) as yesOrQuit, patient_id
       from (select 'Quit'::text as val, patient_id
-            from emr_socialhistory where tobacco_use in ('Yes','Quit')) t00
+            from emr_socialhistory where tobacco_use in ('YES','QUIT')) t00
             group by patient_id) t2 on t0.id=t2.patient_id
    left outer join
      (select max(val) as passive, patient_id
       from (select 'Passive'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Passive') t00
+            from emr_socialhistory where tobacco_use ='PASSIVE') t00
             group by patient_id) t3 on t0.id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'never'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Never') t00
+      from (select 'Never'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='NEVER') t00
             group by patient_id) t4 on t0.id=t4.patient_id;
 alter table esp_temp_smoking add primary key (patid);
 drop view if exists esp_demographic_v;
@@ -66,6 +66,13 @@ SELECT '1'::varchar(1) as centerid,
          WHEN UPPER(race) in ('CAUCASIAN','WHITE') THEN 5
          ELSE 0
        END as race,
+       CASE
+         WHEN UPPER(race) in ('ASIAN','INDIAN') THEN 3
+         WHEN UPPER(race) = 'BLACK'  THEN 2
+         WHEN UPPER(race) in ('CAUCASIAN','WHITE') THEN 1
+         WHEN UPPER(race) = 'HISPANIC' then 4
+         ELSE 5
+       END as race_ethnicity,
        pat.zip5,
        smk.smoking
   FROM public.emr_patient pat,
@@ -163,6 +170,7 @@ create index esp_demographic_birth_date_idx_r on esp_demographic_r (birth_date);
 create index esp_demographic_sex_idx_r on esp_demographic_r (sex);
 create index esp_demographic_hispanic_idx_r on esp_demographic_r (hispanic);
 create index esp_demographic_race_idx_r on esp_demographic_r (race);
+create index esp_demographic_race_eth_idx_r on esp_demographic_r (race_ethnicity);
 create index esp_demographic_zip5_idx_r on esp_demographic_r (zip5);
 create index esp_demographic_smk_idx_r on esp_demographic_r (smoking);
 alter table esp_demographic_r add primary key (patid);
@@ -269,6 +277,22 @@ drop view if exists esp_demographic_v;
         FROM esp_demographic_r pat;
         ALTER TABLE UVT_RACE_r ADD PRIMARY KEY (item_code);
         
+--    UVT_RACE_ETHNICITY
+      DROP TABLE if exists UVT_RACE_ETHNICITY_r;
+      CREATE TABLE UVT_RACE_ETHNICITY_r AS
+      SELECT DISTINCT
+             pat.race_ethnicity as item_code,
+             CASE
+               WHEN pat.race_ethnicity = 1 THEN 'Non-hispanic White'::varchar(50)
+               WHEN pat.race_ethnicity = 2 THEN 'Non-hispanic Black'::varchar(50)
+               WHEN pat.race_ethnicity = 3 THEN 'Asian'::varchar(50)
+               WHEN pat.race_ethnicity = 4 THEN 'Hispanic'::varchar(50)
+               WHEN pat.race_ethnicity = 5 THEN 'Other'::varchar(50)
+               ELSE 'Not Mapped'::varchar(50)
+             END as item_text
+        FROM esp_demographic_r pat;
+        ALTER TABLE UVT_RACE_ETHNICITY_r ADD PRIMARY KEY (item_code);
+
 --    UVT_ZIP5
       DROP TABLE if exists uvt_zip5_r;
       create table uvt_zip5_r as 
@@ -457,6 +481,7 @@ drop view if exists esp_demographic_v;
         alter index esp_demographic_sex_idx_r rename to esp_demographic_sex_idx;
         alter index esp_demographic_hispanic_idx_r rename to esp_demographic_hispanic_idx;
         alter index esp_demographic_race_idx_r rename to esp_demographic_race_idx;
+        alter index esp_demographic_race_eth_idx_r rename to esp_demographic_race_eth_idx;
         alter index esp_demographic_zip5_idx_r rename to esp_demographic_zip5_idx;
         alter index esp_demographic_smk_idx_r rename to esp_demographic_smk_idx;
 
@@ -516,6 +541,8 @@ drop view if exists esp_demographic_v;
         alter table  UVT_SEX_r rename to UVT_SEX;
         drop table if exists UVT_RACE;
         alter table UVT_RACE_r rename to UVT_RACE;
+        drop table if exists UVT_RACE_ETHNICITY;
+        alter table UVT_RACE_ETHNICITY_r rename to UVT_RACE_ETHNICITY;
         drop table if exists UVT_ZIP5;
         alter table uvt_zip5_r rename to UVT_ZIP5;
         drop table if exists UVT_PROVIDER;

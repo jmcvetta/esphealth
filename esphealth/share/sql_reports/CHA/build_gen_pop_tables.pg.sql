@@ -1,4 +1,4 @@
-﻿/*--------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 --
 --                                ESP Health
 --                         General Population Report
@@ -697,10 +697,10 @@ create table gpr_chlamydia as
 --
 drop table if exists gpr_smoking;
 create table gpr_smoking as
-   select case when t1.latest='Yes' then '1'
-               when t2.yesOrQuit='Quit' then '2'
-               when t3.passive='Passive' then '4'
-               when t4.never='Never' then '3'
+   select case when t1.latest='YES' then '1'
+               when t2.yesOrQuit='QUIT' then '2'
+               when t3.passive='PASSIVE' then '4'
+               when t4.never='NEVER' then '3'
                else '5'
            end as smoking,
            t1.patient_id
@@ -714,18 +714,18 @@ create table gpr_smoking as
        group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t1
    left outer join
      (select max(val) as yesOrQuit, patient_id
-      from (select 'Quit'::text as val, patient_id
-            from emr_socialhistory where tobacco_use in ('Yes','Quit')) t00
+      from (select 'QUIT'::text as val, patient_id
+            from emr_socialhistory where tobacco_use in ('YES','QUIT')) t00
             group by patient_id) t2 on t1.patient_id=t2.patient_id
    left outer join
      (select max(val) as passive, patient_id
-      from (select 'Passive'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Passive') t00
+      from (select 'PASSIVE'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='PASSIVE') t00
             group by patient_id) t3 on t1.patient_id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'never'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Never') t00
+      from (select 'NEVER'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='NEVER') t00
             group by patient_id) t4 on t1.patient_id=t4.patient_id;
 --
 -- Asthma
@@ -737,5 +737,16 @@ create table gpr_asthma as
 from nodis_case
 where condition='asthma'
 group by patient_id;
+--
+-- Number of encounters last year
+--
+drop table if exists gpr_enc;
+create table gpr_enc as
+  select case when count(*) >= 2 then 2
+              else count(*) end as nvis,
+  patient_id
+  from emr_encounter
+  where date>=current_date - interval '1 year'
+  group by patient_id;
 
 
