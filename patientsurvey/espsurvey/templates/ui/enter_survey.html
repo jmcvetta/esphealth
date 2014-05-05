@@ -50,7 +50,7 @@
 				          	for (var j = 0; j < i; j++) {
 						        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'inline';
 						        document.getElementById('labelid_{{ field.html_name }}').style.display = 'inline';	
-						        document.getElementById('choicelabelid_{{ field.html_name }}_'+j.toString()).style.display = 'inline';	
+						        document.getElementById('id_{{ field.html_name }}_'+j.toString()).style.display = 'inline';	
 					       }			    		 	
 			    	  {% else %}
 				         document.getElementById('{{ field.html_name }}').style.display = 'inline';
@@ -63,7 +63,7 @@
 				       		 	for (var j = 0; j < i; j++) {
 							        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'none';
 							        document.getElementById('labelid_{{ field.html_name }}').style.display = 'none';	
-							        document.getElementById('choicelabelid_{{ field.html_name }}_'+j.toString()).style.display = 'none';	
+							        document.getElementById('id_{{ field.html_name }}_'+j.toString()).style.display = 'none';	
 							        document.getElementsByName('{{ field.html_name }}')[j].checked = false;
 								}			    		 					    		 
 				    	 {% else %}
@@ -99,7 +99,7 @@
        {% endif %}
       
        {% if field|field_type:'checkboxinput' %}
-   			    {{ field }} <label id= "labelid_{{ field.html_name }}"    for="{{ field.html_name }}"> {{ field.label }}</label>
+   			    {{ field }} <label id= "labelid_{{ field.html_name }}"  for="{{ field.html_name }}"> {{ field.label }}</label>
 	   {% else %}
 		    {% if field|field_inline %}
              	<label id= "labelid_{{ field.html_name }}"   for="{{ field.html_name }}"> {{ field.label }}</label>
@@ -108,20 +108,10 @@
 		            {% if not field|field_hidden  %}
 		                <li>
 		            {% endif %}
-		 	  		<label id= "labelid_{{ field.html_name }}"    for="{{ field.html_name }}"> {{ field.label }}</label>
+		 	  		<label id= "labelid_{{ field.html_name }}"  for="{{ field.html_name }}"> {{ field.label }}</label>
 		 	    	<blockquote>   
 		   {% endif %}
-		    {% if field|field_type:'radioselect' %}
-		    	 {% for choice in field.field.choices %}
-			        <label id= "choicelabelid_{{ field.html_name }}_{{ forloop.counter0 }}"  for= "{{ field.html_name }}" >
-			            <input type="radio" id="{{ field.html_name }}_{{ forloop.counter0  }}" value="{{ choice.0 }}" name="{{ field.html_name }}" />
-			            {{ choice.1 }}
-			      
-			        </label>
-			    {% endfor %}	
-		    {% else %}
-		     	{{ field }}  
-		    {% endif %} 
+		     {{field}} 
    	   {% endif %}
    	   {% if error_message %}
       				<font color="red" > {{ field.errors }} </font> 
