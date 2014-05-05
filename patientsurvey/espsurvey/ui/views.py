@@ -209,12 +209,13 @@ def save_survey_response(request):
             
             #form.cleaned_data to clear fields or show survey again
     values = _populate_status_values()
+    values['surveys'] = Response.create_survey()
     values ['error_message'] = error_message
     values ['form'] = form
     values ['mrn'] = mrn
     values ['surveyid'] = surveyid
     if error_message:
-            return render_to_response('ui/enter_survey.html', values, context_instance=RequestContext(request))
+        return render_to_response('ui/enter_survey.html', values, context_instance=RequestContext(request))
     else:
         return render_to_response('ui/thanks_for_survey.html', values, context_instance=RequestContext(request))
     
