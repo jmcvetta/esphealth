@@ -96,7 +96,7 @@ class SurveyForm (forms.Form):
     gender = forms.ChoiceField(GENDER, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label = 'What is your gender?')
     gender.question = 5
     
-    race = forms.ChoiceField(RACE, widget=forms.RadioSelect(renderer=SimpleVerticalRadioRenderer), required=True, label = 'What is your race/ethnicity?')
+    race = forms.ChoiceField(RACE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label = 'What is your race/ethnicity?')
     #race = forms.ChoiceField( RACE, widget=MyCheckboxSelectMultiple(),  required=True, label = '3. What is your race/ethnicity?')
     race.question =6 
     systolic = forms.IntegerField( required=False, label='What was your blood pressure the last time it was measured by your doctor? ')
