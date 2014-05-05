@@ -88,9 +88,7 @@
 		{{ form.non_field_errors }}
 	{% endif %}
 	<hr>
-	{% for item in surveys %}
-		   <input type="hidden" name="surveyid" value= {{ item.id }} id="surveyid"> 
-	{% endfor %}
+		<input type="hidden" name="surveyid" value= {{ surveyid }} id="surveyid"> 
 	<h3>Fill in the survey below for Participant {{ mrn }} </h3>
 	 <input type="hidden" name="mrn" value= {{ mrn }} id="mrn"> 
 	 <ol>
