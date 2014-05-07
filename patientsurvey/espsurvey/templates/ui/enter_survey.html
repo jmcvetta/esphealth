@@ -47,10 +47,11 @@
 				           		&&  document.getElementById("{{ field|field_hidden }}").checked == true
 				       {% endif %} ) {
 				       {% if field|field_type:'radioselect' %}	
-				          	for (var j = 0; j < i; j++) {
+				          	document.getElementById('choicelabelid_{{ field.html_name }}').style.display = 'inline';
+						    for (var j = 0; j < i; j++) {
 						        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'inline';
 						        document.getElementById('labelid_{{ field.html_name }}').style.display = 'inline';	
-						        document.getElementById('id_{{ field.html_name }}_'+j.toString()).style.display = 'inline';	
+						        document.getElementById('{{ field.html_name }}_'+j.toString()).style.display = 'inline';	
 					       }			    		 	
 			    	  {% else %}
 				         document.getElementById('{{ field.html_name }}').style.display = 'inline';
@@ -60,10 +61,11 @@
 				    else
 					    {   
 					     {% if field|field_type:'radioselect' %} 
-				       		 	for (var j = 0; j < i; j++) {
+				       		 	document.getElementById('choicelabelid_{{ field.html_name }}').style.display = 'none';
+							    for (var j = 0; j < i; j++) {
 							        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'none';
 							        document.getElementById('labelid_{{ field.html_name }}').style.display = 'none';	
-							        document.getElementById('id_{{ field.html_name }}_'+j.toString()).style.display = 'none';	
+							        document.getElementById('{{ field.html_name }}_'+j.toString()).style.display = 'none';	
 							        document.getElementsByName('{{ field.html_name }}')[j].checked = false;
 								}			    		 					    		 
 				    	 {% else %}
@@ -111,7 +113,17 @@
 		 	  		<label id= "labelid_{{ field.html_name }}"  for="{{ field.html_name }}"> {{ field.label }}</label>
 		 	    	<blockquote>   
 		   {% endif %}
-		     {{field}} 
+		   
+		    {% if field|field_type:'radioselect' %}
+		    	 
+			        <p id= "choicelabelid_{{ field.html_name }}"   >
+			             {{field}} 
+			        </p>
+			   	
+		    {% else %}
+		     	{{ field }}  
+		    {% endif %} 
+		   		   
    	   {% endif %}
    	   {% if error_message %}
       				<font color="red" > {{ field.errors }} </font> 
