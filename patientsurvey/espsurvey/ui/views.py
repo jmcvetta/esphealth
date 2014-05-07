@@ -9,6 +9,7 @@
 
 import datetime
 import csv
+import psycopg2
 #import django_tables as tables
 
 from django import forms
@@ -33,6 +34,7 @@ from espsurvey.settings import ROWS_PER_PAGE, VERSION
 from espsurvey.settings import PY_DATE_FORMAT
 from espsurvey.settings import SITE_NAME
 from espsurvey.settings import STATUS_REPORT_TYPE
+from espsurvey.settings import DATABASES
 
 from espsurvey.survey.models import Response
 from espsurvey.survey.models import Survey
@@ -95,11 +97,19 @@ def survey_export(request):
     admin = True
     cursor = connection.cursor()
     cursor.execute("COPY (select 1 as provenance_id,current_timestamp as \"created_timestamp\", current_timestamp as \"updated_timestamp\",survey_participant.login as mrn,\"text\" as question,response_float,response_string,response_choice,response_boolean,date from  survey_response, survey_question, survey_participant where survey_question.id = survey_response.question_id and survey_response.participant_id = survey_participant.id ) TO '/srv/esp-data/surveyresponse.copy'  WITH   DELIMITER  ','  CSV  HEADER")
-    
     values = _populate_status_values()
     values['comment'] = 'Survey Responses successfully exported'
     values['admin'] = admin
     values['surveys'] = Response.create_survey()
+    
+    conn_string = "host='"+DATABASES.get('esp').get('HOST')+"' dbname='"+DATABASES.get('esp').get('NAME')+ "' user='"+DATABASES.get('esp').get('USER')+"' password='"+DATABASES.get('esp').get('PASSWORD')+ "' port = '"+DATABASES.get('esp').get('PORT')+"'"
+    # get a connection, if a connect cannot be made an exception will be raised here
+    esp_connection = psycopg2.connect(conn_string)
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    esp_cursor = esp_connection.cursor()
+    esp_cursor.execute("TRUNCATE emr_surveyresponse CASCADE")
+    esp_cursor.execute("COPY emr_surveyresponse ( provenance_id,created_timestamp,updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+    
     return render_to_response('ui/launch_survey.html', values, context_instance=RequestContext(request))
 
 
