@@ -9,10 +9,29 @@ TEMPLATE_DEBUG = DEBUG
 
 
 ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
+     ('carolina chacin', 'cchacin@commoninf.com'),
 )
 
 MANAGERS = ADMINS
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'esp3survey',
+        'USER': 'esp',
+        'PASSWORD': 'esp',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        },
+     'esp': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'esp310',
+        'USER': 'esp',
+        'PASSWORD': 'esp',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        }
+}
 
 DATABASE_ENGINE = 'django.db.backends.postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'espsurvey'             # Or path to database file if using sqlite3.
@@ -21,12 +40,13 @@ DATABASE_PASSWORD = 'espsurvey'         # Not used with sqlite3.
 DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = '5432'            # Set to empty string for default. Not used with sqlite3.
 
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'America/New_York'
 
 PY_DATE_FORMAT ='%d %b %Y'
 ROWS_PER_PAGE ='25'
@@ -56,6 +76,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 #CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
 CONFIG_FOLDER = TOPDIR
+#CONFIG_FOLDER = TOPDIR
 version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
 
