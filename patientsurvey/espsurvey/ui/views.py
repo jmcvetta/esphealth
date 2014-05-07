@@ -169,7 +169,7 @@ def save_survey_response(request):
         error_message = CANNOT_FIND_MRN
         
     if request.method == 'POST' and not error_message:
-        form = SurveyForm(request.POST)
+        form = SurveyForm(request.POST, auto_id=True)
         if form.is_valid(): 
             if ParticipantActivity.objects.filter(participant =participant[0], survey = survey[0], completed=True):
                 error_message =SURVEY_FILLED_OUT
