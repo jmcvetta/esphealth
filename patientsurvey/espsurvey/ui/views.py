@@ -92,13 +92,14 @@ def survey_export(request):
     '''
     exporting responses from survey app.
     '''
-    
+    admin = True
     cursor = connection.cursor()
     cursor.execute("COPY (select 1 as provenance_id,current_timestamp as \"created_timestamp\", current_timestamp as \"updated_timestamp\",survey_participant.login as mrn,\"text\" as question,response_float,response_string,response_choice,response_boolean,date from  survey_response, survey_question, survey_participant where survey_question.id = survey_response.question_id and survey_response.participant_id = survey_participant.id ) TO '/srv/esp-data/surveyresponse.copy'  WITH   DELIMITER  ','  CSV  HEADER")
     
     values = _populate_status_values()
     values['comment'] = 'Survey Responses successfully exported'
-    
+    values['admin'] = admin
+    values['surveys'] = Response.create_survey()
     return render_to_response('ui/launch_survey.html', values, context_instance=RequestContext(request))
 
 
