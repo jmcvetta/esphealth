@@ -42,6 +42,14 @@ SELECT '1'::varchar(1) centerid,
          WHEN UPPER(race) = 'CAUCASIAN' THEN 5
          ELSE 0
        END race,
+       CASE 
+         WHEN UPPER(race) = 'HISPANIC' then 6::numeric
+         WHEN UPPER(race) = 'CAUCASIAN' then 5::numeric
+         WHEN UPPER(race) in ('ASIAN','NDIAN','NATIVE HAWAI') then 2::numeric
+         WHEN UPPER(race) = 'BLACK' then 3::numeric
+         WHEN UPPER(race) in ('NAT AMERICAN','ALASKAN') then 1::numeric
+         ELSE 0::numeric
+       END race_ethnicity,
        zip5
   FROM public.emr_patient pat
   inner join mdphnet_updated_patients updtpats on updtpats.patid=pat.natural_key;
@@ -178,6 +186,21 @@ insert into mdphnet_schema_update_history
              END item_text
         FROM esp_demographic_u pat
         where not exists (select null from uvt_race t0 where t0.item_code=pat.race);
+
+--    UVT_RACE_ETHNICITY
+      insert into UVT_RACE_ETHNICITY
+      SELECT DISTINCT
+             pat.race item_code,
+             CASE
+                    when pat.race_ethnicity=5 then 'White'::varchar(50)
+                    when pat.race_ethnicity=3 then 'Black'::varchar(50)
+                    when pat.race_ethnicity=2 then 'Asian'::varchar(50)
+                    when pat.race_ethnicity=6 then 'Hispanic'::varchar(50)
+                    when pat.race_ethnicity=1 then ‘Native American'::varchar(50)
+                    when pat.race_ethnicity=0 then 'Unknown'::varchar(50)
+             END item_text
+        FROM esp_demographic_u pat
+        where not exists (select null from uvt_race t0 where t0.item_code=pat.race_ethnicity);
 
 --    UVT_CENTER
       insert into UVT_CENTER 
@@ -366,6 +389,7 @@ update esp_demographic t0
       sex=t1.sex,
       hispanic=t1.hispanic,
       race=t1.race,
+      race_ethnicity=t1.race_ethnicity,
       zip5=t1.zip5
   from (select *
         from esp_demographic_u) t1
