@@ -33,10 +33,11 @@ DATABASES = {
         }
 }
 
+#espsurvey for all 3 for atrius
 DATABASE_ENGINE = 'django.db.backends.postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'espsurvey'             # Or path to database file if using sqlite3.
-DATABASE_USER = 'espsurvey'           # Not used with sqlite3.
-DATABASE_PASSWORD = 'espsurvey'         # Not used with sqlite3.
+DATABASE_NAME = 'esp3survey'             # Or path to database file if using sqlite3.
+DATABASE_USER = 'esp'           # Not used with sqlite3.
+DATABASE_PASSWORD = 'esp'         # Not used with sqlite3.
 DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = '5432'            # Set to empty string for default. Not used with sqlite3.
 
@@ -62,12 +63,13 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = True
 
-TOPDIR = '/srv/esp/espsurvey'
+TOPDIR = os.path.dirname(__file__)
+#'/srv/esp/espsurvey' #for atrius or the above code should work for both
 PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..'))
 # One could also set CONFIG_FOLDER manually, to something like '/etc/esp', if 
 # so desired.
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
+    #'django.contrib.auth.context_processors.auth', uncomment for atrius
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
@@ -76,7 +78,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 #CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
 CONFIG_FOLDER = TOPDIR
-#CONFIG_FOLDER = TOPDIR
+
 version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
 
