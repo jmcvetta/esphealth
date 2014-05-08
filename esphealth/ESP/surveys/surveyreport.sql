@@ -16,7 +16,7 @@ INSERT INTO ContinuousVariables(
      select question, count(mrn) as "No. of Respondents",
 Round( avg(response_float)::numeric,2) as "Self-Report Mean",round( stddev(response_float)::numeric,2) as  "+- SD"
 from emr_surveyresponse 
-where  response_float is not null 
+where  response_float is not null and (question <> 'inches')
 group by question ;
 
 update ContinuousVariables set NoOfEHRRespondents = 1 where Question ='What is your age?';
@@ -30,11 +30,40 @@ from emr_patient , emr_surveyresponse
 where emr_patient.mrn = emr_surveyresponse.mrn and question ='What is your age?')
 where Question ='What is your age?';
 
+-- self height reponses, mean and sd, add responses of feet and inches.
+update ContinuousVariables set NoOfRespondents = (select  count(mrn) as "No. of Respondents"
+from emr_surveyresponse where  response_float is not null and question ='What is your current height in Feet and Inches?')+
+(select  count(mrn) as "No. of Respondents"
+from emr_surveyresponse r1 where  r1.response_float is not null and r1.question ='inches' and 
+(select count(*) from emr_surveyresponse r2 where r1.created_timestamp = r2.created_timestamp and r2.response_float is null and 
+ r1.response_float is not null and r1.mrn= r2.mrn and r2.question ='What is your current height in Feet and Inches?')>0)
+ where Question ='What is your current height in Feet and Inches?';
+
 update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and height is not null )
-where Question ='What is your current height in Feet?';
+where Question ='What is your current height in Feet and Inches?';
 
---mean height and sd
+select r1.response_float*30.48 + (select  r2.response_float*2.54
+from  emr_surveyresponse r2
+where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp)
+from emr_surveyresponse r1 
+where r1.question = 'What is your current height in Feet and Inches?'  
+
+update ContinuousVariables set SelfReportMean = (select Round( avg(r1.response_float*30.48 + (select  r2.response_float*2.54
+from  emr_surveyresponse r2
+where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp))::numeric,2) 
+from emr_surveyresponse r1 
+where r1.question = 'What is your current height in Feet and Inches?' )
+where Question ='What is your current height in Feet and Inches?';
+
+update ContinuousVariables set SelfReportSD = (select Round( stddev(r1.response_float*30.48 + (select  r2.response_float*2.54
+from  emr_surveyresponse r2
+where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp))::numeric,2) 
+from emr_surveyresponse r1 
+where r1.question = 'What is your current height in Feet and Inches?' )
+where Question ='What is your current height in Feet and Inches?';
+
+--ehr mean height and sd
 update ContinuousVariables set EHRReportMean=
 (select round(avg(height )::numeric,2) as "EHR height Mean"
 from emr_patient , emr_surveyresponse, emr_encounter
@@ -42,7 +71,7 @@ where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = em
 EHRReportSD=(select round(stddev(height )::numeric,2) as "+- SD"
 from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
-where Question ='What is your current height in Feet?';
+where Question ='What is your current height in Feet and Inches?';
 
 update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and weight is not null )
@@ -336,6 +365,7 @@ INSERT INTO YesNoUnsureQuestions ( Question) values ('Do you have diabetes?');
 INSERT INTO YesNoUnsureQuestions ( Question) values ('Have you ever had your hemoglobin A1C level checked?');
 INSERT INTO YesNoUnsureQuestions ( Question) values ('Have you ever been diagnosed with high blood pressure?');
 INSERT INTO YesNoUnsureQuestions ( Question) values ('Are you currently being prescribed medications for high blood pressure?');
+INSERT INTO YesNoUnsureQuestions ( Question) values ('Have you ever had your LDL level checked?');
 INSERT INTO YesNoUnsureQuestions ( Question) values ('Do you have a history of hyperlipidemia or elevated cholesterol?');
 INSERT INTO YesNoUnsureQuestions ( Question) values ('Are you currently being prescribed medications for high cholesterol?');
 
@@ -414,6 +444,12 @@ update YesNoUnsureQuestions set NoOfRespondents =( select count(*)
   from emr_surveyresponse b
 where b.question=YesNoUnsureQuestions.question )
 where question = 'Have you ever had your hemoglobin A1C level checked?';
+
+-- ldl norespondents 
+update YesNoUnsureQuestions set NoOfRespondents =( select count(*) 
+  from emr_surveyresponse b
+where b.question=YesNoUnsureQuestions.question )
+where question = 'Have you ever had your LDL level checked?';
 
 -- diabetes norespondents 
 update YesNoUnsureQuestions set NoOfRespondents =( select count(*) 
@@ -599,6 +635,40 @@ losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprol
 nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
 diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%' )>0 )
 where question = 'Are you currently being prescribed medications for high blood pressure?';
+
+--ldl pt yes
+update YesNoUnsureQuestions set PtYes =( select count(*) 
+  from emr_surveyresponse b
+where b.question=YesNoUnsureQuestions.question and response_choice = 'Y' )
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl pt no
+update YesNoUnsureQuestions set PtNo =( select count(*) 
+  from emr_surveyresponse b
+where b.question=YesNoUnsureQuestions.question and response_choice = 'N' )
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl pt unsure
+update YesNoUnsureQuestions set PtUnsure =( select count(*) 
+  from emr_surveyresponse b
+where b.question=YesNoUnsureQuestions.question and response_choice = 'U' )
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ehr yes 
+update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p, emr_labresult
+where p.mrn in (select mrn from emr_surveyresponse b where 
+b.question=YesNoUnsureQuestions.question ) and emr_labresult.patient_id = p.id and 
+native_code in (select native_code from conf_labtestmap where test_name ='ldl'))
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ehr no
+update YesNoUnsureQuestions set ehrno =(select count(distinct(pp.mrn)) from emr_patient pp
+where pp.mrn in (select mrn from emr_surveyresponse b where 
+b.question=YesNoUnsureQuestions.question ) and 
+(select count(distinct(p.mrn)) from emr_patient p, emr_labresult
+where p.mrn = pp.mrn and emr_labresult.patient_id = p.id and 
+native_code in (select native_code from conf_labtestmap where test_name ='ldl') )=0)
+where question = 'Have you ever had your LDL level checked?';
 
 --meds for hyperlipedimia ehr yes  
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p
@@ -858,6 +928,60 @@ where emr_prescription.patient_id = p.id and
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
+
+--ldl ynu survey vs ehr yes/yes
+update YesNoUnsureQuestions set ptyesehryes = (select count(distinct(p.mrn)) as "Pt yes / EHR yes" 
+from emr_surveyresponse s, emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and 
+native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+ p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
+        response_choice='Y')  
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ynu survey vs ehr yes/no
+update YesNoUnsureQuestions set ptyesehrno = (select count(distinct(p.mrn)) as "Pt yes / EHR no" 
+from emr_surveyresponse s, emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and 
+native_code not in (select native_code from conf_labtestmap where test_name ='ldl') and 
+ p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
+        response_choice='Y')  
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ynu survey vs ehr no/yes
+update YesNoUnsureQuestions set ptnoehryes = (select count(distinct(p.mrn)) as "Pt no / EHR yes" 
+from emr_surveyresponse s, emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and 
+native_code  in (select native_code from conf_labtestmap where test_name ='ldl') and 
+ p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
+        response_choice='N')  
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ynu survey vs ehr no/no
+update YesNoUnsureQuestions set ptnoehrno = (select count(distinct(p.mrn)) as "Pt no / EHR no" 
+from emr_surveyresponse s, emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and 
+native_code not in (select native_code from conf_labtestmap where test_name ='ldl') and 
+ p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
+        response_choice='N')  
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ynu survey vs ehr unsure/yes
+update YesNoUnsureQuestions set ptunsureehryes = (select count(distinct(p.mrn)) as "Pt unsure / EHR yes" 
+from emr_surveyresponse s, emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and 
+native_code  in (select native_code from conf_labtestmap where test_name ='ldl') and 
+ p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
+        response_choice='U')  
+where question = 'Have you ever had your LDL level checked?';
+
+--ldl ynu survey vs ehr unsure/no
+update YesNoUnsureQuestions set ptunsureehrno = (select count(distinct(p.mrn)) as "Pt unsure / EHR no" 
+from emr_surveyresponse s, emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and 
+native_code not in (select native_code from conf_labtestmap where test_name ='ldl') and 
+ p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
+        response_choice='U')  
+where question = 'Have you ever had your LDL level checked?';
 
 --meds for hyperlipedimia ynu survey vs ehr yes/yes
 update YesNoUnsureQuestions set ptyesehryes =  (select count(distinct(p.mrn)) as "Pt yes / EHR yes" 
@@ -1136,7 +1260,7 @@ where c.patient_id = p.id and
 p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
 (Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
 (Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
-(Type=  'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
+(Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
 (Type=   'Gestational' and c.condition = 'diabetes:gestational') 
 ) group by c.condition);
 
@@ -1146,7 +1270,7 @@ where c.patient_id = p.id and
 p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
 (Type=   'Type 1' and c.condition <> 'diabetes:type-1'  ) or
 (Type=   'Type 2' and c.condition <> 'diabetes:type-2'  ) or
-(Type=  'Pre-diabetes' and c.condition <> 'diabetes:prediabetes'  ) or
+(Type=   'Pre-diabetes' and c.condition <> 'diabetes:prediabetes'  ) or
 (Type=   'Gestational' and c.condition <> 'diabetes:gestational') 
 ) group by Type);
 
@@ -1157,7 +1281,7 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
        c.patient_id = p.id and 
        ((Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
 	(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
-	(Type=  'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
+	(Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
 	(Type=   'Gestational' and c.condition = 'diabetes:gestational') )
      and ((c.condition = 'diabetes:type-1' and response_choice='T1') or 
 	 (c.condition = 'diabetes:type-2' and response_choice='T2') or 
@@ -1174,7 +1298,7 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
        c.patient_id = p.id and 
        ((Type=   'Type 1' and response_choice='T1'  ) or
 	(Type=   'Type 2' and response_choice='T2'  ) or
-	(Type=  'Pre-diabetes' and response_choice='PRE'  ) or
+	(Type=   'Pre-diabetes' and response_choice='PRE'  ) or
 	(Type=   'Gestational' and response_choice='GDM') )
      and ((c.condition <> 'diabetes:type-1' and response_choice='T1') or 
 	 (c.condition <> 'diabetes:type-2' and response_choice='T2') or 
@@ -1189,7 +1313,7 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
        c.patient_id = p.id and 
        ((Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
 	(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
-	(Type=  'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
+	(Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
 	(Type=   'Gestational' and c.condition = 'diabetes:gestational') )
      and ((c.condition = 'diabetes:type-1' and response_choice<>'T1') or 
 	 (c.condition = 'diabetes:type-2' and response_choice<>'T2') or 
@@ -1204,7 +1328,7 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
        c.patient_id = p.id and 
        ((Type=   'Type 1' and response_choice<>'T1'  ) or
 	(Type=   'Type 2' and response_choice<>'T2' ) or
-	(Type=  'Pre-diabetes' and response_choice<>'PRE') or
+	(Type=   'Pre-diabetes' and response_choice<>'PRE') or
 	(Type=   'Gestational' and response_choice<>'GDM') )
      and ((c.condition <> 'diabetes:type-1' and response_choice<>'T1') or 
 	 (c.condition <> 'diabetes:type-2' and response_choice<>'T2') or 
@@ -1412,4 +1536,67 @@ PtYesEHRYes as "Pt Yes / EHR Yes", PtYesEHRNo as "Pt Yes / EHR No",
 PtNoEHRYes as "Pt No / EHR Yes", PtNoEHRNo as "Pt No / EHR No",
 ptyesehrmissing as "Pt Yes / EHR Missing", ptnoehrmissing as "Pt No / EHR Missing" from WeightType;
 
+--line list
+drop TABLE if exists LineList;
 
+CREATE TEMPORARY TABLE LineList(
+    Patientid   VARCHAR(128),
+    mrn VARCHAR(50),
+    FirstName  VARCHAR(200),
+    LastName  VARCHAR(200),
+    DOB  timestamp with time zone,
+    Survey_Gender  VARCHAR(20),
+    EHR_gender VARCHAR(20),
+    Survey_Race VARCHAR(100),
+    EHR_race VARCHAR(100),
+    Survey_age INTEGER,
+    EHR_age INTEGER,
+    Survey_diastolic DECIMAL(7,2),
+    Survey_sysstolic DECIMAL(7,2),
+    EHR_diastolic DECIMAL(7,2),
+    EHR_sysstolic DECIMAL(7,2),
+    Survey_HBP BOOLEAN,
+    EHR_HBP BOOLEAN,
+    Survey_HBP_med BOOLEAN,
+    EHR_HBP_med BOOLEAN,
+    Survey_Diabetes BOOLEAN,
+    EHR_Diabetes BOOLEAN,
+    Survey_DiabetesType VARCHAR(80),
+    EHR_DiabetesType VARCHAR(80),
+    Survey_a1c BOOLEAN,
+    EHR_a1c BOOLEAN,
+    Survey_a1c_value DECIMAL(7,2),
+    EHR_a1c_value DECIMAL(7,2),
+    Survey_height DECIMAL(7,2),
+    EHR_height DECIMAL(7,2),
+    Survey_weight DECIMAL(7,2),
+    EHR_weight DECIMAL(7,2),
+    Survey_bmi DECIMAL(7,2),
+    EHR_bmi DECIMAL(7,2),
+    Survey_hyperlipidemia BOOLEAN,
+    EHR_hyperlipidemia BOOLEAN,
+    Survey_ldl BOOLEAN,
+    EHR_ldl BOOLEAN,
+    Survey_ldl_value DECIMAL(7,2),
+    EHR_ldl_value DECIMAL(7,2),
+    Survey_ldl_med BOOLEAN,
+    EHR_ldl_med BOOLEAN
+);
+
+INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race  ) 
+  select emr_patient.natural_key, emr_patient.mrn, emr_patient.first_name, emr_patient.last_name, emr_patient.date_of_birth,
+     emr_patient.gender, emr_patient.race
+     from emr_patient ;  
+
+update LineList set     
+EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+  EHR_sysstolic = (select emr_encounter.bp_systolic  from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1);
+
+select  Patientid  ,  mrn , FirstName , LastName , DOB, Survey_Gender , Survey_Race, Survey_age ,EHR_age ,
+    EHR_gender , EHR_race ,  Survey_diastolic ,  Survey_sysstolic ,    EHR_diastolic ,  EHR_sysstolic ,
+    Survey_HBP ,    EHR_HBP ,    Survey_HBP_med ,    EHR_HBP_med ,
+    Survey_Diabetes ,    EHR_Diabetes ,   Survey_DiabetesType ,    EHR_DiabetesType ,
+    Survey_a1c ,    EHR_a1c ,    Survey_a1c_value ,    EHR_a1c_value ,
+    Survey_height ,    EHR_height ,    Survey_weight ,    EHR_weight ,    Survey_bmi ,    EHR_bmi ,
+    Survey_hyperlipidemia ,    EHR_hyperlipidemia ,    Survey_ldl ,    EHR_ldl ,    Survey_ldl_value ,
+    EHR_ldl_value ,    Survey_ldl_med ,    EHR_ldl_med from LineList order by Patientid;
