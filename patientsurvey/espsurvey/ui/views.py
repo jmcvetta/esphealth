@@ -85,7 +85,6 @@ def thanks_for_survey(request):
      
     return render_to_response('ui/thanks_for_survey.html', values, context_instance=RequestContext(request))
 
-
 def survey_admin(request):
     admin = True
     return prepare_survey(request, admin)
@@ -101,15 +100,17 @@ def survey_export(request):
     values['comment'] = 'Survey Responses successfully exported'
     values['admin'] = admin
     values['surveys'] = Response.create_survey()
-    
-    conn_string = "host='"+DATABASES.get('esp').get('HOST')+"' dbname='"+DATABASES.get('esp').get('NAME')+ "' user='"+DATABASES.get('esp').get('USER')+"' password='"+DATABASES.get('esp').get('PASSWORD')+ "' port = '"+DATABASES.get('esp').get('PORT')+"'"
-    # get a connection, if a connect cannot be made an exception will be raised here
-    esp_connection = psycopg2.connect(conn_string)
-    # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    esp_cursor = esp_connection.cursor()
-    esp_cursor.execute("TRUNCATE emr_surveyresponse CASCADE")
-    esp_cursor.execute("COPY emr_surveyresponse ( provenance_id,created_timestamp,updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
-    
+    try:
+        conn_string = "host='"+DATABASES.get('esp').get('HOST')+"' dbname='"+DATABASES.get('esp').get('NAME')+ "' user='"+DATABASES.get('esp').get('USER')+"' password='"+DATABASES.get('esp').get('PASSWORD')+ "' port = '"+DATABASES.get('esp').get('PORT')+"'"
+        # get a connection, if a connect cannot be made an exception will be raised here
+        esp_connection = psycopg2.connect(conn_string)
+        # conn.cursor will return a cursor object, you can use this cursor to perform queries
+        esp_cursor = esp_connection.cursor()
+        esp_cursor.execute("TRUNCATE emr_surveyresponse CASCADE")
+        esp_cursor.execute("COPY emr_surveyresponse ( provenance_id,created_timestamp,updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+    except Exception, why:
+        values['comment'] = 'ERROR: could not Import to esp db: ' + str(why)
+        
     return render_to_response('ui/launch_survey.html', values, context_instance=RequestContext(request))
 
 
