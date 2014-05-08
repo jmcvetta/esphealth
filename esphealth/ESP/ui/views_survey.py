@@ -87,7 +87,7 @@ def survey_import(request):
     '''
     
     cursor = connection.cursor()
-    cursor.execute("COPY emr_surveyresponse ( provenance_id,\"created_timestamp\",updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+    cursor.execute("COPY emr_surveyresponse ( provenance_id,created_timestamp,updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
     
     values = _populate_status_values()
     values['comment'] = 'Survey Responses successfully imported'
@@ -151,6 +151,11 @@ def survey_report(request):
     desc = cursor.description
     rows = cursor.fetchall() 
     tables.append(('How would you classify your weight?', desc,rows))
+    
+    cursor.execute("select * from LineList;")
+    desc = cursor.description
+    rows = cursor.fetchall() 
+    tables.append(('Line List', desc,rows))
     
     values['tables'] = tables
     
