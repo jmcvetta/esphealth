@@ -131,8 +131,11 @@ class SurveyForm (forms.Form):
     a1c_unsure.inline= True
     a1c_unsure.hidden =['a1c_0','Y']
     a1c_unsure.hidden_parent_type = a1c
-    height = forms.FloatField( required=False, label='What is your current height in Feet?')
+    height = forms.FloatField( required=False, label='What is your current height in Feet and Inches?')
     height.question =16
+    height_inches = forms.FloatField( required=False, label='/')
+    height_inches.question = 28
+    height_inches.inline= True
     height.unsure = 'height_unsure'
     height_unsure = forms.BooleanField(required=False,  label = 'Unsure')
     height_unsure.question =17
@@ -147,12 +150,18 @@ class SurveyForm (forms.Form):
     weight_type.question =19
     high_cholesterol = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Do you have a history of hyperlipidemia or elevated cholesterol?')
     high_cholesterol.question =20
-    ldl = forms.FloatField( required=False, label='What was your last LDL level?')
-    ldl.question =21
-    ldl.unsure = 'ldl_unsure'
+    ldl = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Have you ever had your LDL level checked?')
+    ldl.question =27
+    ldl_value = forms.FloatField( required=False, label='What was your last LDL level?')
+    ldl_value.question =21
+    ldl_value.hidden =['ldl_0','Y'] 
+    ldl_value.hidden_parent_type = ldl
+    ldl_value.unsure = 'ldl_unsure'
     ldl_unsure = forms.BooleanField(required=False, label = 'Unsure')
     ldl_unsure.question =22
     ldl_unsure.inline= True
+    ldl_unsure.hidden =['ldl_0','Y'] 
+    ldl_unsure.hidden_parent_type = ldl
     meds_cholesterol = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Are you currently being prescribed medications for high cholesterol?')
     meds_cholesterol.question =23
         
