@@ -890,7 +890,6 @@ patientsurvey/espsurvey/media/vaers.js.svn-base -text
 patientsurvey/espsurvey/media/wbg.gif -text
 patientsurvey/espsurvey/media/wbg.gif.svn-base -text
 patientsurvey/espsurvey/settings.py -text
-patientsurvey/espsurvey/sql/surveyreport.sql -text
 patientsurvey/espsurvey/survey/__init__.py -text
 patientsurvey/espsurvey/survey/admin.py -text
 patientsurvey/espsurvey/survey/context_processors.py -text
