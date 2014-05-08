@@ -907,3 +907,6 @@ patientsurvey/espsurvey/ui/__init__.py -text
 patientsurvey/espsurvey/ui/forms.py -text
 patientsurvey/espsurvey/ui/views.py -text
 patientsurvey/espsurvey/version.txt -text
+patientsurvey/survey_participant.json -text
+patientsurvey/survey_question.json -text
+patientsurvey/survey_questiongroup.json -text
