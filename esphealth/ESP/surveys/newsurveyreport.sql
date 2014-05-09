@@ -618,7 +618,7 @@ update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )>0 or (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
@@ -658,7 +658,7 @@ where question = 'Have you ever had your LDL level checked?';
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p, emr_labresult
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl'))
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl'))
 where question = 'Have you ever had your LDL level checked?';
 
 --ldl ehr no
@@ -667,7 +667,7 @@ where pp.mrn in (select mrn from emr_surveyresponse b where
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(distinct(p.mrn)) from emr_patient p, emr_labresult
 where p.mrn = pp.mrn and emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') )=0)
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') )=0)
 where question = 'Have you ever had your LDL level checked?';
 
 --meds for hyperlipedimia ehr yes  
@@ -707,7 +707,7 @@ update YesNoUnsureQuestions set ehrno =( select count(distinct(p.mrn)) from emr_
 where p.mrn in (select mrn from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )=0 and (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0)
@@ -857,7 +857,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and   (      
 ( select count(distinct(emr_labresult.patient_id))  from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )>0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
@@ -869,7 +869,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'Y' and  (
 ( select count(distinct(emr_labresult.patient_id)) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
@@ -883,7 +883,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and  (
 ( select count(distinct(emr_labresult.patient_id)) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )>0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
@@ -896,7 +896,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'N' and  (
 ( select count(distinct(emr_labresult.patient_id)) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
@@ -909,7 +909,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and  (
 ( select count(distinct(emr_labresult.patient_id)) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )>0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
@@ -922,7 +922,7 @@ from emr_surveyresponse s, emr_patient p
 where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and  (
 ( select count(distinct(emr_labresult.patient_id)) from emr_labresult where emr_labresult.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
@@ -933,7 +933,7 @@ where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia o
 update YesNoUnsureQuestions set ptyesehryes = (select count(distinct(p.mrn)) as "Pt yes / EHR yes" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and 
-native_code in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
  p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
         response_choice='Y')  
 where question = 'Have you ever had your LDL level checked?';
@@ -942,7 +942,7 @@ where question = 'Have you ever had your LDL level checked?';
 update YesNoUnsureQuestions set ptyesehrno = (select count(distinct(p.mrn)) as "Pt yes / EHR no" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and 
-native_code not in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code not in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
  p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
         response_choice='Y')  
 where question = 'Have you ever had your LDL level checked?';
@@ -951,7 +951,7 @@ where question = 'Have you ever had your LDL level checked?';
 update YesNoUnsureQuestions set ptnoehryes = (select count(distinct(p.mrn)) as "Pt no / EHR yes" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and 
-native_code  in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code  in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
  p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
         response_choice='N')  
 where question = 'Have you ever had your LDL level checked?';
@@ -960,7 +960,7 @@ where question = 'Have you ever had your LDL level checked?';
 update YesNoUnsureQuestions set ptnoehrno = (select count(distinct(p.mrn)) as "Pt no / EHR no" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and 
-native_code not in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code not in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
  p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
         response_choice='N')  
 where question = 'Have you ever had your LDL level checked?';
@@ -969,7 +969,7 @@ where question = 'Have you ever had your LDL level checked?';
 update YesNoUnsureQuestions set ptunsureehryes = (select count(distinct(p.mrn)) as "Pt unsure / EHR yes" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and 
-native_code  in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code  in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
  p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
         response_choice='U')  
 where question = 'Have you ever had your LDL level checked?';
@@ -978,7 +978,7 @@ where question = 'Have you ever had your LDL level checked?';
 update YesNoUnsureQuestions set ptunsureehrno = (select count(distinct(p.mrn)) as "Pt unsure / EHR no" 
 from emr_surveyresponse s, emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and 
-native_code not in (select native_code from conf_labtestmap where test_name ='ldl') and 
+native_code not in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
  p.mrn=s.mrn and s.question=YesNoUnsureQuestions.question and
         response_choice='U')  
 where question = 'Have you ever had your LDL level checked?';
@@ -1552,48 +1552,111 @@ CREATE TEMPORARY TABLE LineList(
     Survey_age INTEGER,
     EHR_age INTEGER,
     Survey_diastolic DECIMAL(7,2),
-    Survey_sysstolic DECIMAL(7,2),
+    Survey_systolic DECIMAL(7,2),
     EHR_diastolic DECIMAL(7,2),
-    EHR_sysstolic DECIMAL(7,2),
-    Survey_HBP BOOLEAN,
-    EHR_HBP BOOLEAN,
-    Survey_HBP_med BOOLEAN,
-    EHR_HBP_med BOOLEAN,
-    Survey_Diabetes BOOLEAN,
-    EHR_Diabetes BOOLEAN,
+    EHR_systolic DECIMAL(7,2),
+    Survey_HBP VARCHAR(20),
+    EHR_HBP VARCHAR(20),
+    Survey_HBP_med VARCHAR(20),
+    EHR_HBP_med VARCHAR(20),
+    Survey_Diabetes VARCHAR(20),
+    EHR_Diabetes VARCHAR(20),
     Survey_DiabetesType VARCHAR(80),
     EHR_DiabetesType VARCHAR(80),
-    Survey_a1c BOOLEAN,
-    EHR_a1c BOOLEAN,
+    Survey_a1c VARCHAR(20),
+    EHR_a1c VARCHAR(20),
     Survey_a1c_value DECIMAL(7,2),
     EHR_a1c_value DECIMAL(7,2),
     Survey_height DECIMAL(7,2),
     EHR_height DECIMAL(7,2),
     Survey_weight DECIMAL(7,2),
     EHR_weight DECIMAL(7,2),
-    Survey_bmi DECIMAL(7,2),
-    EHR_bmi DECIMAL(7,2),
-    Survey_hyperlipidemia BOOLEAN,
-    EHR_hyperlipidemia BOOLEAN,
-    Survey_ldl BOOLEAN,
-    EHR_ldl BOOLEAN,
+    Survey_bmi VARCHAR(80),
+    EHR_bmi VARCHAR(80),
+    Survey_hyperlipidemia VARCHAR(20),
+    EHR_hyperlipidemia VARCHAR(20),
+    Survey_ldl VARCHAR(20),
+    EHR_ldl VARCHAR(20),
     Survey_ldl_value DECIMAL(7,2),
     EHR_ldl_value DECIMAL(7,2),
-    Survey_ldl_med BOOLEAN,
-    EHR_ldl_med BOOLEAN
+    Survey_ldl_med VARCHAR(20),
+    EHR_ldl_med VARCHAR(20)
 );
 
-INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race  ) 
+INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race , EHR_age ) 
   select emr_patient.natural_key, emr_patient.mrn, emr_patient.first_name, emr_patient.last_name, emr_patient.date_of_birth,
-     emr_patient.gender, emr_patient.race
+     emr_patient.gender, emr_patient.race, date_part('year',age(emr_patient.date_of_birth))
      from emr_patient ;  
 
 update LineList set     
 EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
-  EHR_sysstolic = (select emr_encounter.bp_systolic  from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1);
+  EHR_systolic = (select emr_encounter.bp_systolic  from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+  survey_gender = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your gender?'),
+  survey_race = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your race/ethnicity?'),
+  survey_age = (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your age?'),
+  Survey_diastolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your last diastolic blood pressure?'),
+  Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your blood pressure the last time it was measured by your doctor?'),
+  Survey_HBP = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever been diagnosed with high blood pressure?'),
+  EHR_HBP = (select 'Y' where  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )<2 
+ or (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient where 
+ emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and 
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0),
+ Survey_HBP_med =(select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high blood pressure?'),    
+ Survey_Diabetes = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Do you have diabetes?'),
+ Survey_DiabetesType  = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What kind of diabetes do you have?'),
+ Survey_a1c = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your hemoglobin A1C level checked?'),
+ Survey_a1c_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your most recent hemoglobin A1C value?'),
+ Survey_height =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your current height in Feet and Inches?'),
+ Survey_weight =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your current weight in pounds?'),
+ Survey_bmi = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='How would you classify your weight?'),
+ Survey_hyperlipidemia = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Do you have a history of hyperlipidemia or elevated cholesterol?'),
+ Survey_ldl = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your LDL level checked?'),
+ Survey_ldl_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your last LDL level?'),
+ Survey_ldl_med = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high cholesterol?'),
+ EHR_height = (select emr_encounter.height from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ EHR_weight = (select emr_encounter.weight from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ EHR_bmi = (select emr_encounter.bmi from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ EHR_HBP_med = (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient  
+ where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and 
+lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
+eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
+losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
+nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0),
+EHR_hyperlipidemia = (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient 
+where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0),
+EHR_ldl = (select 'Y' where (select count(distinct(p.mrn)) from  emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and LineList.mrn =p.mrn and 
+native_code  in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl')  )>0),
+EHR_a1c = (select 'Y' where (select count(distinct(p.mrn)) from  emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and LineList.mrn =p.mrn and 
+native_code  in (select native_code from conf_labtestmap where test_name ='a1c') )>0),
+EHR_Diabetes =  (select 'Y' where (select count(distinct(p.mrn)) from  emr_patient p , nodis_case c 
+ where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
+       (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )))>0),
+EHR_DiabetesType =  (select c.condition from  emr_patient p , nodis_case c 
+ where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
+       (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )) order by c.date desc limit 1),
+EHR_ldl_value = (select c.result_float from  emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and LineList.mrn =p.mrn and native_code  in 
+(select native_code from conf_labtestmap where test_name ='cholesterol-ldl') order by c.date desc limit 1 ),
+EHR_a1c_value  =  (select c.result_float from  emr_patient p ,  emr_labresult c
+where  c.patient_id = p.id and LineList.mrn =p.mrn and native_code  in
+ (select native_code from conf_labtestmap where test_name ='a1c') order by c.date desc limit 1 ),
+EHR_ldl_med =  (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient 
+where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
+lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0);
 
-select  Patientid  ,  mrn , FirstName , LastName , DOB, Survey_Gender , Survey_Race, Survey_age ,EHR_age ,
-    EHR_gender , EHR_race ,  Survey_diastolic ,  Survey_sysstolic ,    EHR_diastolic ,  EHR_sysstolic ,
+
+select  Patientid  ,  mrn , FirstName , LastName , DOB, Survey_Gender ,EHR_gender , Survey_Race,EHR_race ,  
+ Survey_age ,EHR_age ,   Survey_diastolic ,  Survey_systolic ,    EHR_diastolic ,  EHR_systolic ,
     Survey_HBP ,    EHR_HBP ,    Survey_HBP_med ,    EHR_HBP_med ,
     Survey_Diabetes ,    EHR_Diabetes ,   Survey_DiabetesType ,    EHR_DiabetesType ,
     Survey_a1c ,    EHR_a1c ,    Survey_a1c_value ,    EHR_a1c_value ,
