@@ -124,7 +124,7 @@ def survey_report(request):
     rows = cursor.fetchall() 
     tables = [('Continuous variables', desc, rows)]
 
-    cursor.execute("select Question, NoOfRespondents as \"No. of Respondents\", PtYes as \"Pt Yes\",PTNo  as \"Pt No\",    EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,"+
+    cursor.execute("select Question, NoOfRespondents as \"No. of Respondents\", PtYes as \"Pt Yes\",PTNo  as \"Pt No\", PtUnsure as \"Pt Unsure\",  EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,"+
         "PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\","+
         "PtUnsureEHRYes as \"Pt Unsure / EHR Yes\", PtUnsureEHRNo as \"Pt Unsure / EHR Yes\" from YesNoUnsureQuestions order by question;")
     desc = cursor.description

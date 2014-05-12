@@ -176,7 +176,7 @@ NoOfEHRRespondents as "No. of EHR Respondents",
 selfreportmean::text   as "Self-Report Mean",  ' +/- ' || selfreportsd::text  as "SD",
 EHRReportMean::text  as "EHR Mean",  ' +/- ' || EHRReportSD::text as "SD"
  from ContinuousVariables where selfreportmean>0;
- 
+
 drop TABLE if exists CategoricalVariables;
 
 CREATE TEMPORARY TABLE CategoricalVariables(
@@ -388,6 +388,8 @@ where b.question='What is your gender?' and response_choice <> 'M' )
 where question = 'Male gender';
 
 --NA male pt unsure 
+update YesNoUnsureQuestions set PtUnsure =( select 0  )
+where question = 'Male gender';
 
 --male ehr yes 
 update YesNoUnsureQuestions set ehryes =( select count(*) 
@@ -431,7 +433,13 @@ select count(*) as "Pt no / EHR no" from emr_surveyresponse s, emr_patient p
          and (response_choice<>'M' and gender<> 'M') )
 where question = 'Male gender';
 
--- male  no pt unsure vs columns ... 
+-- NA male  pt unsure ehr yes ... 
+update YesNoUnsureQuestions set ptunsureehryes =( select 0  )
+where question = 'Male gender';
+
+-- NA male  pt unsure ehr no ... 
+update YesNoUnsureQuestions set ptunsureehrno =( select 0  )
+where question = 'Male gender';
 
 -- hypertension norespondents 
 update YesNoUnsureQuestions set NoOfRespondents =( select count(*) 
@@ -1207,7 +1215,7 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
 select Question, NoOfRespondents as "No. of Respondents", PtYes as "Pt Yes",
-PTNo  as "Pt No",    EHRYes as "EHR Yes",  EHRNo as "EHR No" ,
+PTNo  as "Pt No",  PtUnsure as "Pt Unsure",  EHRYes as "EHR Yes",  EHRNo as "EHR No" ,
 PtYesEHRYes as "Pt Yes / EHR Yes", PtYesEHRNo as "Pt Yes / EHR No", 
 PtNoEHRYes as "Pt No / EHR Yes", PtNoEHRNo as "Pt No / EHR No",
 PtUnsureEHRYes as "Pt Unsure / EHR Yes", PtUnsureEHRNo as "Pt Unsure / EHR Yes" from YesNoUnsureQuestions order by question;
@@ -1545,16 +1553,17 @@ CREATE TEMPORARY TABLE LineList(
     FirstName  VARCHAR(200),
     LastName  VARCHAR(200),
     DOB  timestamp with time zone,
+    Survey_age INTEGER,
+    EHR_age INTEGER,
     Survey_Gender  VARCHAR(20),
     EHR_gender VARCHAR(20),
     Survey_Race VARCHAR(100),
     EHR_race VARCHAR(100),
-    Survey_age INTEGER,
-    EHR_age INTEGER,
     Survey_diastolic DECIMAL(7,2),
     Survey_systolic DECIMAL(7,2),
     EHR_diastolic DECIMAL(7,2),
     EHR_systolic DECIMAL(7,2),
+    Survey_BP_unsure VARCHAR(20),
     Survey_HBP VARCHAR(20),
     EHR_HBP VARCHAR(20),
     Survey_HBP_med VARCHAR(20),
@@ -1567,10 +1576,13 @@ CREATE TEMPORARY TABLE LineList(
     EHR_a1c VARCHAR(20),
     Survey_a1c_value DECIMAL(7,2),
     EHR_a1c_value DECIMAL(7,2),
+    Survey_a1c_value_unsure VARCHAR(20),
     Survey_height DECIMAL(7,2),
     EHR_height DECIMAL(7,2),
+    Survey_height_unsure VARCHAR(20),
     Survey_weight DECIMAL(7,2),
     EHR_weight DECIMAL(7,2),
+    Survey_weight_unsure VARCHAR(20),
     Survey_bmi VARCHAR(80),
     EHR_bmi VARCHAR(80),
     Survey_hyperlipidemia VARCHAR(20),
@@ -1579,6 +1591,7 @@ CREATE TEMPORARY TABLE LineList(
     EHR_ldl VARCHAR(20),
     Survey_ldl_value DECIMAL(7,2),
     EHR_ldl_value DECIMAL(7,2),
+    Survey_ldl_value_unsure VARCHAR(20),
     Survey_ldl_med VARCHAR(20),
     EHR_ldl_med VARCHAR(20)
 );
@@ -1596,6 +1609,7 @@ EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter where Lin
   survey_age = (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your age?'),
   Survey_diastolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your last diastolic blood pressure?'),
   Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your blood pressure the last time it was measured by your doctor?'),
+  Survey_BP_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='systolic-diastolic / unsure'),
   Survey_HBP = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever been diagnosed with high blood pressure?'),
   EHR_HBP = (select 'Y' where  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )<2 
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient where 
@@ -1610,6 +1624,7 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  Survey_DiabetesType  = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What kind of diabetes do you have?'),
  Survey_a1c = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your hemoglobin A1C level checked?'),
  Survey_a1c_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your most recent hemoglobin A1C value?'),
+ Survey_a1c_value_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='a1c unsure'),
  Survey_height =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your current height in Feet and Inches?'),
  Survey_weight =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your current weight in pounds?'),
  Survey_bmi = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='How would you classify your weight?'),
@@ -1619,6 +1634,8 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  Survey_ldl_med = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high cholesterol?'),
  EHR_height = (select emr_encounter.height from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
  EHR_weight = (select emr_encounter.weight from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ Survey_height_unsure =  (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='height/unsure'),
+ Survey_weight_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='weight/ unsure'),
  EHR_bmi = (select emr_encounter.bmi from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
  EHR_HBP_med = (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient  
  where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and 
@@ -1649,17 +1666,16 @@ where  c.patient_id = p.id and LineList.mrn =p.mrn and native_code  in
 EHR_a1c_value  =  (select c.result_float from  emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and LineList.mrn =p.mrn and native_code  in
  (select native_code from conf_labtestmap where test_name ='a1c') order by c.date desc limit 1 ),
+Survey_ldl_value_unsure =  (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='ldl unsure'), 
 EHR_ldl_med =  (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient 
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0);
 
-
 select  Patientid  ,  mrn , FirstName , LastName , DOB, Survey_Gender ,EHR_gender , Survey_Race,EHR_race ,  
- Survey_age ,EHR_age ,   Survey_diastolic ,  Survey_systolic ,    EHR_diastolic ,  EHR_systolic ,
-    Survey_HBP ,    EHR_HBP ,    Survey_HBP_med ,    EHR_HBP_med ,
-    Survey_Diabetes ,    EHR_Diabetes ,   Survey_DiabetesType ,    EHR_DiabetesType ,
-    Survey_a1c ,    EHR_a1c ,    Survey_a1c_value ,    EHR_a1c_value ,
-    Survey_height ,    EHR_height ,    Survey_weight ,    EHR_weight ,    Survey_bmi ,    EHR_bmi ,
+ Survey_age ,EHR_age ,   Survey_diastolic ,  Survey_systolic ,    EHR_diastolic ,  EHR_systolic , Survey_BP_unsure,
+    Survey_HBP ,    EHR_HBP ,    Survey_HBP_med ,    EHR_HBP_med ,    Survey_Diabetes ,    EHR_Diabetes ,   Survey_DiabetesType ,    EHR_DiabetesType ,
+    Survey_a1c ,    EHR_a1c ,    Survey_a1c_value ,    EHR_a1c_value , Survey_a1c_value_unsure,
+    Survey_height ,    EHR_height ,  Survey_height_unsure,  Survey_weight ,    EHR_weight , Survey_weight_unsure,   Survey_bmi ,    EHR_bmi ,
     Survey_hyperlipidemia ,    EHR_hyperlipidemia ,    Survey_ldl ,    EHR_ldl ,    Survey_ldl_value ,
-    EHR_ldl_value ,    Survey_ldl_med ,    EHR_ldl_med from LineList order by Patientid;
+    EHR_ldl_value ,  Survey_ldl_value_unsure,  Survey_ldl_med ,    EHR_ldl_med from LineList order by Patientid;
