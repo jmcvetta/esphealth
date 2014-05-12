@@ -26,21 +26,26 @@
     
     <tr>
      {% for item in table.1 %}
-           <th> {{ item.name }}   
+           <th> {{ item.name }}   </th>
             
          {% endfor %}
         {% for row in table.2 %}
          <tr> 
          
         {% for col in row %}
-            <td>{{ col }}
+            {% if col %}
+                <td> {{ col }} </td>
+            {% else %}
+                <td> </td>
+            {% endif %}
+         {% endfor %}
             
-            {% endfor %}
         </tr>
         {% endfor %}
     </table>
     
 </div>
+
   {% endfor %}
  
  
