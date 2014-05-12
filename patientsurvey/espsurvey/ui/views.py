@@ -10,8 +10,10 @@
 import datetime
 import csv
 import psycopg2
-#import django_tables as tables
 
+
+#import django_tables as tables
+from django.db import load_backend
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
@@ -32,7 +34,7 @@ from django.http import HttpResponse
 from dateutil.relativedelta import relativedelta
 from espsurvey.settings import ROWS_PER_PAGE, VERSION
 from espsurvey.settings import PY_DATE_FORMAT
-from espsurvey.settings import SITE_NAME
+from espsurvey.settings import SITE_NAME, TIME_ZONE
 from espsurvey.settings import STATUS_REPORT_TYPE
 from espsurvey.settings import DATABASES
 
@@ -101,13 +103,24 @@ def survey_export(request):
     values['admin'] = admin
     values['surveys'] = Response.create_survey()
     try:
-        conn_string = "host='"+DATABASES.get('esp').get('HOST')+"' dbname='"+DATABASES.get('esp').get('NAME')+ "' user='"+DATABASES.get('esp').get('USER')+"' password='"+DATABASES.get('esp').get('PASSWORD')+ "' port = '"+DATABASES.get('esp').get('PORT')+"'"
+        espbackend =  load_backend(DATABASES.get('esp').get('ENGINE'))
         # get a connection, if a connect cannot be made an exception will be raised here
-        esp_connection = psycopg2.connect(conn_string)
+        esp_connection =  espbackend.DatabaseWrapper({
+            'DATABASE_HOST': DATABASES.get('esp').get('HOST'),
+            'DATABASE_NAME': DATABASES.get('esp').get('NAME'),
+            'DATABASE_OPTIONS': {},
+            'DATABASE_PASSWORD': DATABASES.get('esp').get('PASSWORD'),
+            'DATABASE_PORT': DATABASES.get('esp').get('PORT'),
+            'DATABASE_USER': DATABASES.get('esp').get('USER'),
+            'TIME_ZONE': TIME_ZONE,
+})
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
         esp_cursor = esp_connection.cursor()
         esp_cursor.execute("TRUNCATE emr_surveyresponse CASCADE")
-        esp_cursor.execute("COPY emr_surveyresponse ( provenance_id,created_timestamp,updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+        esp_connection.connection.commit()
+        esp_cursor.execute("COPY emr_surveyresponse ( provenance_id,\"created_timestamp\" , \"updated_timestamp\" ,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+        esp_connection.connection.commit()
+        esp_connection.close()
     except Exception, why:
         values['comment'] = 'ERROR: could not Import to esp db: ' + str(why)
         
