@@ -726,7 +726,8 @@ class LabResultLoader(BaseLoader):
         'procedure_name' ,      # 22
         'natural_key',          # 23 added in 3
         'patient_class',        # 24 added in 3
-        'patient_status'        # 25 added in 3
+        'patient_status',       # 25 added in 3
+        'CLIA_ID' 
 
         ]
 
@@ -797,6 +798,7 @@ class LabResultLoader(BaseLoader):
         'natural_key' : natural_key,
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
+        'CLIA_ID' : string_or_none(row['CLIA_ID']),
          }
         try:
             lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
