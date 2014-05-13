@@ -247,8 +247,9 @@ class LabResultWriter(EpicWriter):
         'impression',           # 19
         'specimen_source',      # 20
         'collection_date',      # 21
-        'procedure_name',        #22
-        'natural_key'           #23
+        'procedure_name',       # 22
+        'natural_key',          # 23
+        'CLIA_ID'               # 24
         ]
 
 
@@ -276,7 +277,8 @@ class LabResultWriter(EpicWriter):
                 'specimen_source' : lx.specimen_source,
                 'collection_date' : str_from_date(lx.collection_date),
                 'procedure_name' : lx.procedure_name,
-                'natural_key'   : lx.natural_key
+                'natural_key'   : lx.natural_key,
+                'CLIA_ID'      : lx.CLIA_ID
                 })
         
 
