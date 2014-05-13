@@ -614,7 +614,7 @@ class LabResult(BasePatientRecord):
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     collection_date = models.DateField(blank=True, null=True, db_index=True)
-    status = models.CharField('Result Status', max_length=50, blank=True, null=True)
+    status = models.CharField('Result Status', max_length=200, blank=True, null=True)
     order_type = models.CharField('Order type', max_length=20, null=True)
     patient_class = models.CharField('Patient class',max_length=5, null=True)
     patient_status = models.CharField('Patient status',max_length=5, null=True)
@@ -637,11 +637,12 @@ class LabResult(BasePatientRecord):
     #
     # Wide fields
     #
-    specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
-    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
+    specimen_num = models.CharField('Specimen ID Number', max_length=100, blank=True, null=True)
+    specimen_source = models.CharField('Specimen Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
+    CLIA_ID = models.CharField('CLIA ID', max_length=20, blank=True)
     
     class Meta:
         verbose_name = 'Lab Test Result'
@@ -687,14 +688,14 @@ class LabResult(BasePatientRecord):
             
             lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=provenance, natural_key=now)
             lx.pk = 0
-            lx.result_date = date
+            lx.result_date = datetime.datetime.today()
             lx.date = order_date
             lx.native_code = 'MDPH-250' #this is the loinc
         
             lx.order_natural_key = lx.natural_key # same order and key
             lx.native_name = 'TB NO TEST'
-            lx.collection_date = order_date
-        
+            lx.collection_date = lx.result_date
+            
         return lx 
         
     @staticmethod
@@ -1843,3 +1844,21 @@ class Pregnancy(BasePatientRecord):
     def  __unicode__(self):
         return u"Pregnancy for %s expected %s and delivered %s" % (
             self.patient.full_name, self.edd, self.actual_date)
+        
+class SurveyResponse(BasePatientRecord):
+    question = models.CharField('Question Name',max_length=80, null=True, blank=True, db_index=False)
+    response_float = models.FloatField('response float', null=True, default=0)
+    response_string = models.CharField('response string',max_length=30, null=True, blank=True, db_index=False)
+    response_choice = models.CharField('response choice', max_length=3,null=True, blank=True,  db_index=False)
+    response_boolean = models.BooleanField('response boolean', blank=True, default=False)
+
+    def __str__(self):
+        return '%s | %s ' % (self.id, self.survey.id )
+
+    class Meta:
+        verbose_name = 'Survey Response'
+        ordering = ['date']  
+
+    def  __unicode__(self):
+        return u"Survey Response for %s  on %s" % (
+            self.mrn,  self.date)
