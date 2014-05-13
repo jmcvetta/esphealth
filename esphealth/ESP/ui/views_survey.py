@@ -87,10 +87,12 @@ def survey_import(request):
     '''
     
     cursor = connection.cursor()
-    cursor.execute("COPY emr_surveyresponse ( provenance_id,created_timestamp,updated_timestamp,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
-    
+    cursor.execute("TRUNCATE emr_surveyresponse CASCADE")
+    connection.connection.commit()
+    cursor.execute("COPY emr_surveyresponse ( provenance_id,\"created_timestamp\" , \"updated_timestamp\" ,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+    connection.connection.commit()
     values = _populate_status_values()
-    values['comment'] = 'Survey Responses successfully imported'
+    values['comment'] = 'Survey Responses successfully imported, please import them from the survey app'
     
     return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
 
