@@ -681,6 +681,10 @@ modules/heuristic-pregnancy/pregnancy.py -text
 modules/heuristic-pregnancy/setup.py -text
 modules/heuristic-pregnancy/tests.py -text
 patientsurvey/espsurvey/__init__.py -text
+patientsurvey/espsurvey/json/survey_participant.json -text
+patientsurvey/espsurvey/json/survey_question.json -text
+patientsurvey/espsurvey/json/survey_questiongroup.json -text
+patientsurvey/espsurvey/json/survey_survey.json -text
 patientsurvey/espsurvey/manage.py -text
 patientsurvey/espsurvey/media/ChangeLog.txt -text
 patientsurvey/espsurvey/media/accept.png -text
