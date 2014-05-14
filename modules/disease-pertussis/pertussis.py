@@ -145,7 +145,7 @@ class Pertussis(DiseaseDefinition):
             )
       
         if  dxrx_event_qs or lxrx_event_qs:
-            self.criteria = 'Criteria #1: Pertusis dx or lab order(any result test) + rx w/in 7 days'
+            self.criteria = 'Criteria #1: (Pertusis dx or lab order(any pertussis test)) + + AND pertussis antibiotic Rx w/in 7 days'
         #
         # Criteria Set #2 positive of pertussis culture or pcr
         #
