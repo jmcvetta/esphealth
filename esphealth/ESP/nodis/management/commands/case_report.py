@@ -715,6 +715,11 @@ class hl7Batch:
                 obx2_type = 'ST'
                 obx5_type = ''
                 ref_unit = ''
+                
+            clia  = lxRec.CLIA_ID
+            if not clia:
+                clia = INSTITUTION.clia # it was hard coded to '22D0076229'    
+            
             if not snomed: ##like ALT/AST
                 #ALT/AST must be number
                 obx1 = self.makeOBX(
@@ -726,7 +731,7 @@ class hl7Batch:
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
                     obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
+                    obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     )
             else:
                 obx1 = self.makeOBX(
@@ -737,7 +742,7 @@ class hl7Batch:
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
                     obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
+                    obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     )
             orcs.appendChild(obx1)
             if snomed2:
@@ -749,7 +754,7 @@ class hl7Batch:
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
                     obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
+                    obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     ))
                         
     def getSNOMED(self, lxRec,condition):
