@@ -182,7 +182,7 @@ class Syphilis(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 30 ),
             )
         if test_event_qs:
-            self.criteria = 'Criteria #2: rpr_pos or vdrl_pos and ( tppa_pos or fta-abs_pos or tp-igg_pos) w/in 30 days'
+            self.criteria = 'Criteria #2: rpr_pos or vdrl_pos and ( tppa_pos or fta-abs_pos or tp-igg_pos) ever in the past up to 1 month following positive rpr or vdrl'
         #
         # Criteria Set #3
         #
