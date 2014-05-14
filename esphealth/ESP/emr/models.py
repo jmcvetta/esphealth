@@ -642,7 +642,7 @@ class LabResult(BasePatientRecord):
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
-    CLIA_ID = models.CharField('CLIA ID', max_length=20, blank=True)
+    CLIA_ID = models.CharField('CLIA ID', max_length=20, blank=True, null=True)
     
     class Meta:
         verbose_name = 'Lab Test Result'
