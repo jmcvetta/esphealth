@@ -217,7 +217,7 @@ class Tuberculosis(DiseaseDefinition):
             rx_qs = rx_qs.filter(patient=dx_event.patient)
             rx_qs = rx_qs.filter(date__gte=relevancy_begin, date__lte=relevancy_end)
             if rx_qs.values('name').distinct().count() >= 2:
-                self.criteria = 'Criteria #3: dx:tuberculosis and 2 or > distinct prescription orders'
+                self.criteria = 'Criteria #3: dx:tuberculosis and 2 or > distinct prescription orders within 60 days either forward or backward in time'
                 #
                 # Patient has Tuberculosis
                 #
