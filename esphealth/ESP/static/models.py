@@ -258,7 +258,7 @@ class hl7_vocab(models.Model):
     value = models.CharField('HL7 value',max_length=26)
     description = models.CharField('HL7 value description',max_length=250)
     codesys = models.CharField('HL7 code system name',max_length=10)
-    version = models.CharField('HL7 code system name',max_length=25)
+    version = models.CharField('HL7 version',max_length=25)
     
     def __str__(self):
         return '%s -- %s -- %s' % (self.value, self.description, self.codesys)
