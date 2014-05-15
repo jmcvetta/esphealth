@@ -24,6 +24,15 @@ from ESP.emr.models import Allergy
 from ESP.emr.models import Problem
 from ESP.emr.models import Hospital_Problem
 from ESP.emr.models import SocialHistory, Pregnancy
+from ESP.emr.models import Patient_Addr
+from ESP.emr.models import Patient_ExtraData
+from ESP.emr.models import Patient_Guardian
+from ESP.emr.models import Provider_idInfo
+from ESP.emr.models import Provider_phones
+from ESP.emr.models import Order_idInfo
+from ESP.emr.models import LabInfo
+from ESP.emr.models import Specimen
+from ESP.emr.models import SpecObs
 
 STANDARD_SEARCH_FIELDS = ['natural_key', 'patient__mrn', 'patient__last_name', 'provider__last_name']
 STANDARD_RAW_ID_FIELDS = ['provenance', 'patient', 'provider']
@@ -36,6 +45,31 @@ class ProviderAdmin(admin.ModelAdmin):
 class PatientAdmin(admin.ModelAdmin):
     list_display = ['natural_key', 'name', 'pcp', 'zip']
     search_fields = ['natural_key', 'last_name']
+
+class Patient_AddrAdmin(admin.ModelAdmin):
+    ordering = ['mrn']
+    list_display = ['mrn', 'address1']
+    search_fields = ['address1', 'mrn']
+    
+class Patient_ExtraDataAdmin (admin.ModelAdmin):
+    ordering = ['mrn']
+    list_display = ['mrn', 'auth_nid']
+    search_fields = ['mrn', 'auth_nid']
+    
+class Patient_GuardianAdmin(admin.ModelAdmin):
+    ordering = ['mrn','first_name','last_name']
+    list_display = [  'mrn','first_name','last_name']
+    search_fields = [  'first_name','last_name']
+    
+class Provider_idInfoAdmin(admin.ModelAdmin):
+    ordering = ['provider_natural_key']
+    list_display = ['provider_natural_key', 'provider_nistid']
+    search_fields = ['provider_natural_key', 'provider_nistid']
+    
+class Provider_phonesAdmin(admin.ModelAdmin):
+    ordering = ['provider_natural_key']
+    list_display = ['provider_natural_key', 'provider_phone_id']
+    search_fields = ['provider_natural_key', 'provider_phone_id']
 
 class LabResultAdmin(admin.ModelAdmin):
     list_display = ['pk', 'natural_key', 'native_name', 'native_code', 'patient', 'provider', 'result_string']
@@ -50,6 +84,11 @@ class LabOrderAdmin(admin.ModelAdmin):
     search_fields = STANDARD_SEARCH_FIELDS + ['procedure_name', 'procedure_code']
     ordering = ['-date']
 
+class Order_idInfoAdmin(admin.ModelAdmin):
+    ordering = ['order_natural_key']
+    list_display = ['order_natural_key', 'placer_ord_eid']
+    search_fields = ['order_natural_key', 'placer_ord_eid']
+    
 class EncounterAdmin(admin.ModelAdmin):
     list_display = ['pk', 'natural_key', 'patient', 'provider', 'date']
     raw_id_fields = STANDARD_RAW_ID_FIELDS + ['dx_codes','encounter_type']
@@ -74,6 +113,11 @@ class ImmunizationAdmin(admin.ModelAdmin):
     search_fields = STANDARD_SEARCH_FIELDS + ['name']
     ordering = ['-date']
     
+class LabInfoAdmin(admin.ModelAdmin):
+    ordering = ['CLIA_ID']
+    list_display = ['CLIA_ID', 'laboratory_name']
+    search_fields = ['CLIA_ID']
+
 class AllergyAdmin(admin.ModelAdmin):
     list_display = ['date', 'patient', 'name','status','description']
     raw_id_fields = STANDARD_RAW_ID_FIELDS 
@@ -98,6 +142,16 @@ class SocialHistoryAdmin(admin.ModelAdmin):
     search_fields = STANDARD_SEARCH_FIELDS + ['tobacco_use','alcohol_use']
     ordering = ['-date']
     
+class SpecimenAdmin(admin.ModelAdmin):
+    ordering = ['specimen_num']
+    list_display = ['specimen_num', 'order_natural_key']
+    search_fields = ['specimen_num']
+
+class SpecObsAdmin(admin.ModelAdmin):
+    ordering = ['specimen_num']
+    list_display = ['specimen_num', 'order_natural_key']
+    search_fields = ['specimen_num','result']
+
 class PregnancyAdmin(admin.ModelAdmin):
     list_display = ['actual_date', 'patient','edd', 'outcome','ga_delivery', 'birth_weight']
     raw_id_fields = STANDARD_RAW_ID_FIELDS
@@ -126,3 +180,13 @@ admin.site.register(Hospital_Problem, HospitalProblemAdmin)
 admin.site.register(SocialHistory, SocialHistoryAdmin)
 admin.site.register(Pregnancy, PregnancyAdmin)
 admin.site.register(Provenance, ProvenanceAdmin)
+#added for meaninful use
+admin.site.register(Patient_Addr, Patient_AddrAdmin)
+admin.site.register(Patient_ExtraData, Patient_ExtraDataAdmin)
+admin.site.register(Patient_Guardian, Patient_GuardianAdmin)
+admin.site.register(Provider_idInfo, Provider_idInfoAdmin)
+admin.site.register(Provider_phones, Provider_phonesAdmin)
+admin.site.register(Order_idInfo, Order_idInfoAdmin)
+admin.site.register(LabInfo, LabInfoAdmin)
+admin.site.register(Specimen, SpecimenAdmin)
+admin.site.register(SpecObs, SpecObsAdmin)
