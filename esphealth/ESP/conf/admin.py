@@ -7,6 +7,11 @@ from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableDx_Code
 from ESP.conf.models import ReportableMedication
 from ESP.conf.models import ResultString
+from ESP.conf.models import HL7Map
+from ESP.conf.models import ImmuExclusion
+from ESP.conf.models import SiteHL7
+from ESP.conf.models import VaccineCodeMap
+from ESP.conf.models import VaccineManufacturerMap
 
 
 class LabTestMapAdmin(admin.ModelAdmin):
@@ -87,7 +92,7 @@ class ConditionConfigAdmin(admin.ModelAdmin):
 	    'med_days_after',
         ]
     list_filter = ['initial_status']
-
+    
 class ReportableLabAdmin(admin.ModelAdmin):
     ordering = ['condition', 'native_code']
     list_display = ['condition', 'native_code', 'output_code']
@@ -107,6 +112,28 @@ class ReportableDx_CodeAdmin(admin.ModelAdmin):
 class ResultStringAdmin(admin.ModelAdmin):
     list_display = ['value', 'indicates', 'match_type', 'applies_to_all']
     list_filter = ['indicates', 'match_type', 'applies_to_all']
+    
+class HL7MapAdmin(admin.ModelAdmin):
+    search_fields = ['model']
+    ordering = ['hl7']
+
+class ImmuExclusionAdmin (admin.ModelAdmin):
+    search_fields = ['non_immu_name']
+    ordering = ['non_immu_name']
+    
+class SiteHL7Admin (admin.ModelAdmin):
+    search_fields = ['location']
+    ordering = ['location']
+
+class VaccineCodeMapAdmin (admin.ModelAdmin):
+    list_display = ['native_code', 'native_name','canonical_code']
+    search_fields = ['native_code', 'canonical_code']
+    ordering = ['native_code']
+
+class VaccineManufacturerMapAdmin (admin.ModelAdmin):
+    list_display = ['id', 'native_name','canonical_code']
+    search_fields = ['native_name', 'canonical_code']
+    ordering = ['native_name']
 
 admin.site.register(IgnoredCode, IgnoredCodeAdmin)
 admin.site.register(ConditionConfig, ConditionConfigAdmin)
@@ -115,3 +142,9 @@ admin.site.register(ReportableMedication, ReportableMedicationAdmin)
 admin.site.register(ReportableDx_Code, ReportableDx_CodeAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(ResultString, ResultStringAdmin)
+admin.site.register(HL7Map, HL7MapAdmin)
+admin.site.register(ImmuExclusion, ImmuExclusionAdmin)
+admin.site.register(SiteHL7, SiteHL7Admin)
+admin.site.register(VaccineCodeMap, VaccineCodeMapAdmin)
+admin.site.register(VaccineManufacturerMap, VaccineManufacturerMapAdmin)
+
