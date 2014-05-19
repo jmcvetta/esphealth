@@ -1204,13 +1204,13 @@ class LabResultLoader(BaseLoader):
         'natural_key',          # 23 added in 3
         'patient_class',        # 24 added in 3
         'patient_status',       # 25 added in 3
+        'CLIA_ID', 
         'collection_date_end', 
         'status_date', 
         'interpreter', 
         'interpreter_id', 
         'interp_id_auth', 
         'interp_uid',
-        'CLIA_ID', 
         'lab_method', 
         'ref_text',
         ]
