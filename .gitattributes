@@ -565,8 +565,11 @@ esphealth/unit-test/diabetes/frank/epicmem.esp.01302012 -text
 esphealth/unit-test/diabetes/frank/epicpro.esp.01302012 -text
 esphealth/unit-test/diabetes/frank/epicres.esp.01302012 -text
 esphealth/unit-test/diabetes/frank/epicvis.esp.01302012 -text
+esphealth/unit-test/diabetes/gestational/epicimm.esp.08222012 -text
 esphealth/unit-test/diabetes/gestational/epicmed.esp.01262012 -text
 esphealth/unit-test/diabetes/gestational/epicmem.esp.01262012 -text
+esphealth/unit-test/diabetes/gestational/epicord.esp.08222012 -text
+esphealth/unit-test/diabetes/gestational/epicprg.esp.05222012 -text
 esphealth/unit-test/diabetes/gestational/epicpro.esp.01262012 -text
 esphealth/unit-test/diabetes/gestational/epicres.esp.01262012 -text
 esphealth/unit-test/diabetes/gestational/epicvis.esp.01262012 -text
