@@ -559,7 +559,7 @@ esphealth/unit-test/asthma/epicpro.esp.02282012 -text
 esphealth/unit-test/asthma/epicvis.esp.02282012 -text
 esphealth/unit-test/chlamydia/epicmem.esp.02202012 -text
 esphealth/unit-test/chlamydia/epicpro.esp.02202012 -text
-esphealth/unit-test/chlamydia/epicres.esp.02202012 -text
+esphealth/unit-test/chlamydia/epicres.esp.02262012 -text
 esphealth/unit-test/diabetes/frank/epicmed.esp.01302012 -text
 esphealth/unit-test/diabetes/frank/epicmem.esp.01302012 -text
 esphealth/unit-test/diabetes/frank/epicpro.esp.01302012 -text
@@ -581,13 +581,9 @@ esphealth/unit-test/giardiasis/epicres.esp.02222012 -text
 esphealth/unit-test/gonorrhea/epicmem.esp.02232012 -text
 esphealth/unit-test/gonorrhea/epicpro.esp.02232012 -text
 esphealth/unit-test/gonorrhea/epicres.esp.02232012 -text
-esphealth/unit-test/hep_c/epicmem.esp.02012012 -text
 esphealth/unit-test/hep_c/epicmem.esp.02032012 -text
-esphealth/unit-test/hep_c/epicpro.esp.02012012 -text
 esphealth/unit-test/hep_c/epicpro.esp.02032012 -text
-esphealth/unit-test/hep_c/epicres.esp.02012012 -text
 esphealth/unit-test/hep_c/epicres.esp.02032012 -text
-esphealth/unit-test/hep_c/epicvis.esp.02012012 -text
 esphealth/unit-test/hep_c/epicvis.esp.02032012 -text
 esphealth/unit-test/ili/epicmem.esp.10122012 -text
 esphealth/unit-test/ili/epicpro.esp.02202012 -text
@@ -598,7 +594,7 @@ esphealth/unit-test/lyme/epicord.esp.02292012 -text
 esphealth/unit-test/lyme/epicpro.esp.02292012 -text
 esphealth/unit-test/lyme/epicres.esp.02292012 -text
 esphealth/unit-test/lyme/epicvis.esp.02292012 -text
-esphealth/unit-test/pertussis/epicmed.esp.02282012 -text
+esphealth/unit-test/pertussis/epicmed.esp.02252012 -text
 esphealth/unit-test/pertussis/epicmem.esp.02282012 -text
 esphealth/unit-test/pertussis/epicord.esp.02282012 -text
 esphealth/unit-test/pertussis/epicpro.esp.02282012 -text
