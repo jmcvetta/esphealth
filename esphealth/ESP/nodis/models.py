@@ -184,13 +184,6 @@ class Case(models.Model):
     
     reportable_labs = property(__get_reportable_labs)
 
-    @property
-    def reportable_dx_codes(self):
-        
-        if self.reportable_encounters:
-            return Dx_code.objects.filter(encounter__in=self.reportable_encounters)
-        return None
-   
     def __get_reportable_dx_codes(self):
         
         from ESP.nodis.base import DiseaseDefinition
@@ -199,7 +192,7 @@ class Case(models.Model):
         if conf:
             dx_code_objs = Dx_code.objects.filter(reportabledx_code__condition=conf)
         else:
-            dx_code_objs = None
+            dx_code_objs = Dx_code.objects.none()
         disease_def_event_heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
         for heuristic in  disease_def_event_heuristics:
             if isinstance(heuristic, DiagnosisHeuristic):
@@ -212,13 +205,14 @@ class Case(models.Model):
             return dx_code_objs.distinct()
         else:
             return Dx_code.objects.none()
-    reportable_dx_codes_list = property(__get_reportable_dx_codes)
+    reportable_dx_codes = property(__get_reportable_dx_codes)
 
     #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
     def __get_reportable_encounters(self):
         q_obj = Q(patient=self.patient)
-        if self.reportable_dx_codes_list:
-            q_obj &= Q(dx_codes__in=self.reportable_dx_codes_list)
+        rep_dx_codes = self.reportable_dx_codes
+        if rep_dx_codes:
+            q_obj &= Q(dx_codes__in=rep_dx_codes)
         conf = self.condition_config
         if conf:
             start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
@@ -227,7 +221,7 @@ class Case(models.Model):
             q_obj &= Q(date__lte=end)
         encs = Encounter.objects.filter(q_obj)
         #log_query('Encounters for %s' % self, encs)
-        return encs
+        return encs, rep_dx_codes
     reportable_encounters = property(__get_reportable_encounters)
 
     def __get_reportable_prescriptions(self):

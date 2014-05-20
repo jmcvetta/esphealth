@@ -269,8 +269,8 @@ class hl7Batch:
         ##Clinical information
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
-        dx_codes = case.reportable_dx_codes
-        self.addCaseOBR(condition=case.condition, dx_code=dx_codes, orcs=orcs, gender=case.patient.gender)
+        rep_encounters, rep_dx_codes = case.reportable_encounters
+        self.addCaseOBR(condition=case.condition, dx_code=rep_dx_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
             rx=rxobjs[0]
         else:
@@ -281,9 +281,9 @@ class hl7Batch:
             lx =lxobjs[0]
         else:
             lx = None
-        self.addCaseOBX(demog=patient, orcs=orcs, dx_code=dx_codes, lx=lx, rx=rx,
-            encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
-            caseid=case.pk)
+        self.addCaseOBX(demog=patient, orcs=orcs, dx_code=rep_dx_codes, lx=lx, rx=rx,
+            encounters=rep_encounters, condition=case.condition, casenote=case.notes,
+            caseid=case.pk)  
                       
         totallxs = list(lxobjs)
         # need check if any Gonorrhea test for Chlamydia
@@ -524,21 +524,22 @@ class hl7Batch:
         #
         #
         case = Case.objects.get(pk=caseid)
-        first_event = case.events.order_by('date')[0]
-        start_date = first_event.date
-        end_date = start_date + datetime.timedelta(days=30)
         if case.patient.gender and case.patient.gender.upper().startswith('M'):
             return ('60001007' ,None)  
-        
-        preg_encounters = Encounter.objects.filter(patient=case.patient, pregnant=True, date__gte=start_date,
-            date__lte=end_date)
-        if not preg_encounters:
-            return ('261665006', None)
-        edd_encs = preg_encounters.filter(edd__isnull=False).order_by('date')
-        if not edd_encs:
-            raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDD.')
-        edd = edd_encs[0].edd
-        return ('77386006', edd)
+        if case.events.order_by('date'):
+            first_event = case.events.order_by('date')[0]
+            start_date = first_event.date
+            end_date = start_date + datetime.timedelta(days=30)
+            preg_encounters = Encounter.objects.filter(patient=case.patient, pregnant=True, date__gte=start_date,
+                date__lte=end_date)
+            if not preg_encounters:
+                return ('261665006', None)
+            edd_encs = preg_encounters.filter(edd__isnull=False).order_by('date')
+            if not edd_encs:
+                raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDD.')
+            edd = edd_encs[0].edd
+            return ('77386006', edd)
+        return ('261665006', None)
 
     def addCaseOBX(self, demog=None, orcs=None,dx_code=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
         """
