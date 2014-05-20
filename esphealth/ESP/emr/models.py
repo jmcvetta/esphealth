@@ -2043,14 +2043,15 @@ class Allergy(BasePatientRecord):
         date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         # not adding status or description
         #get the first fake allergen randomly
-        allergen = FakeAllergen.objects.order_by('?')[0]
+        # no need to use fake allergens since we have the real allergens filled out 
+        allergen = Allergen.objects.order_by('?')[0]
         allergy = Allergy(patient=patient, provenance=Provenance.fake(),
                              date=date, date_noted=date, 
-                              name=allergen.name,
+                              name=allergen.name,allergen = allergen,
                              provider=patient.pcp, natural_key=now)
             
         if save_on_db: allergy.save()
-        return allergy, allergen.code
+        return allergy
             
 
     def document_summary(self):
