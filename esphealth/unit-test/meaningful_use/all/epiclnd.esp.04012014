@@ -1,0 +1,76 @@
+111_TEST000123A_OBS_1_RES_1^=^9.2^^^0.0 - 5.0^ ^^^^
+112_TEST0001365_OBS_1_RES_1^=^65^^^7-56 units per liter of serum^^^^^
+113_3456723_OBS_1_RES_1^=^440^^^649-1346 cells/mcL^^^^^
+211_PN-F20120325-1_OBS_1_RES_1^^27.0^^^0.5-2.0 ug/L^^^^^
+212_PN-F20120325-1_OBS_1_RES_1^^19.5^^^0.5-2.0 ug/L^^^^^
+213_PN-F20120325-1_OBS_1_RES_1^^60^^^<40.0 ug/dL^^^^^
+311_ORD723222-4_OBS_1_RES_1^^^^^^Campylobacter jejuni^Campylobacter jejuni^1^^
+311_ORD723222-4_OBS_1_RES_2^^^^^^Shigella flexneri^Shigella flexneri^2^^
+312_ORD723225_OBS_1_RES_1^^^^^^Salmonella species (organism)^Salmonella species^1^^
+312_ORD723225_OBS_1_RES_2^^^^^^Escherichia coli (organism)^Escherichia coli^2^^
+313_ORD72387593_OBS_1_RES_1^^^^^^Staphylococcus aureus (organism)^Staphylococcus aureus^1^^
+313_ORD72387593_OBS_1_RES_2^^^^^^Haemophilus influenzae (organism)^Haemophilus influenzae^2^^
+411_ORD723222-4_OBS_1_RES_1^^^^^^Shigella flexneri 2^Shigella flexneri^^^
+411_ORD723222-4_OBS_2_RES_2^=^16^^^^^^^^
+411_ORD723222-4_OBS_2_RES_3^=^8^/^152^^^^^^
+411_ORD723222-4_OBS_2_RES_4^<=^0.06^^^^^^^^
+412_VM8907334_OBS_1_RES_1^^^^^^Mycobacterium tuberculosis complex (organism)^Mycobacterium tuberculosis complex^^^
+412_VM8907334_OBS_2_RES_1^<^100^^^^^^^^
+412_VM8907334_OBS_2_RES_2^>^100^^^^^^^^
+412_VM8907334_OBS_2_RES_3^<^100^^^^^^^^
+412_VM8907334_OBS_2_RES_4^<^100^^^^^^^^
+413_ORD2113586-3_OBS_1_RES_1^^^^^^Streptococcus pneumoniae (organism)^Streptococcus pneumoniae^^^
+413_ORD2113586-3_OBS_2_RES_1^<^2^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_2^^2^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_3^^4^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_4^^2^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_5^>^32^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_6^>^32^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_7^^4^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_8^<^2^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_9^^4^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_10^>^32^^^^^^^^
+413_ORD2113586-3_OBS_2_RES_11^^2^^^^^^^^
+5A11_ORD723222_OBS_1_RES_1^^^^^Negative^Negative (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_2^^^^^Negative^Negative (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_3^^^^^Negative^Negative (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_4^^^^^Negative^Positive (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_5^^10.8^^^0.0-0.9 s/co^^^^^
+5A11_ORD723222_OBS_1_RES_6^^7611200^^^<43 IU/mL^^^^^
+5A13_OR723222980_OBS_1_RES_1^^^^^non-reactive^Reactive^^^^
+5A13_OR723222980_OBS_1_RES_2^^8.0^^^<1.0 S/CO^^^^^
+5A13_OR723222980_OBS_1_RES_3^^1111100^^^<43 IU/mL^^^^^
+5B11_ORD723222_OBS_1_RES_1^^^^^Negative^Negative (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_2^^^^^Negative^Negative (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_3^^^^^Negative^Negative (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_4^^^^^Negative^Positive (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_5^^10.8^^^0.0-0.9 s/co^^^^^
+5B11_ORD723222_OBS_2_RES_1^^7611200^^^<43 IU/mL^^^^^
+5B13_OR723222980_OBS_1_RES_1^^^^^non-reactive^Reactive^^^^
+5B13_OR723222980_OBS_1_RES_2^^8.0^^^<1.0 S/CO^^^^^
+5B13_OR723222980_OBS_2_RES_1^^1111100^^^<43 IU/mL^^^^^
+611_OR980768901-1_RES_1^^1^:^256^<1:64^^^^^
+612_2012-0987890001_RES_1^^1^:^4^<1:1^^^^^
+613_ord12-0987066712_RES_1^^1^:^32^<1:8^^^^^
+711_O12-897451-23_RES_1^^^^^^Positive2^Positive^^R^L
+712_TR09820981-2012_RES_1^^^^^^Detected^detected^^R^L
+713_Ord2012-568798-1_RES_1^^^^^^Reactive (qualifier value)^Reactive^^R^L
+811_Ord89017782_RES_1^^^^^^Positive3^Positive^^^
+811_Ord89017782_RES_2^^^^^^Positive3^Positive^^^
+812_O2012-8711-12_RES_1^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_2^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_3^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_4^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_5^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_6^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_7^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_8^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_9^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_10^^^^^^Detected (qualifier value)^Detected^^^
+812_O2012-8711-12_RES_11^^^^^^Not detected (qualifier value)^Not Detected^^^
+812_O2012-8711-12_RES_12^^^^^^Not detected (qualifier value)^Not Detected^^^
+813_TPMG097865_RES_1^^^^^^Positive3^Positive^^^
+813_TPMG097865_RES_2^^^^^^Positive3^Positive^^^
+911_Ord123499_RES_1^^^^^^Corynebacterium diphtheriae^Corynebacterium diphtheriae isolated^^R^L
+912_Ord68034987_RES_1^^^^^^Mycobacterium avium^Mycobacterium avium^^R^L
+913_Ord12389600762_RES_1^^^^^^Neisseria meningitidis^Neisseria meningitidis^^R^L

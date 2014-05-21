@@ -1,0 +1,28 @@
+001.01^18547545^Lerr^Todd^G.^^^^^^^^^^20090607^Male^W1^^111111111^^^^Theodore F Gwinn Jr^^^^NH1^Dr Ramona G. Doolittle Jr PhD^201206170000-0500^University H^^Jr,,,L^Patient is English speaker.
+001.02^18568545^HepBee^Harry^G.^^^^^^^^^^20000801^Male^A1^^121121212^^^^Jae Kuk Ryu Jr^^^^NH1^Dr Lee G. HepBee Sr PhD^201208060000-0500^Sick Kids Hosp^^Jr,,,A^Patient is English speaker.
+001.03^18789547^Sanchez^Abel^G.^^^^^^^^^^19800320^Male^W1^^131131313^^^^Luis Munoz Caliez Jr^^^^H3^Dr Rose G. Sanchez Sr CPA^201208021600-0500^Shady Tree^^Jr,,,A^Patient is English speaker.
+002.01^12346^Diode^Maria^^^^^^^^^^^19660130^Female^W2^^^^^^^^^^H1^^^^^,,,L^
+002.02^12346^Caddis^Carol^^^^^^^^^^^19851113^Female^W2^^^^^^^^^^NH2^^^^^,,,L^
+002.03^12346^Parmanti^Sandy^^^^^^^^^^^19900401^Female^I1^^^^^^^^^^NH2^^^^^,,,L^
+003.01^PATID1234^Jones^William^A^^^^^^^^^^19630615^Male^W3^^^^^^^^^^NH2^^^^^,,,L^
+003.02^PATID123487^Kamehameha^Lahela^^^^^^^^^^^19910615^Female^I2^^^^^^^^^^NH2^^^^^,,,L^
+003.03^2012BJ123498^Birdfeather^Jay^^^^^^^^^^^19930415^Male^AI^^^^^^^^^^NH2^^^^^,,,L^
+004.01^PATID1234^Jones^William^A^^^^^^^^^^19610615^Male^W4^^^^^^^^^^NH2^^^^^,,,L^
+004.02^PATID1234^Lung^Neil^^^^^^^^^^^19480802^Male^A2^^^^^^^^^^NH2^^^^^,,,L^
+004.03^P12345887^Hisan^Toyoto^^^^^^^^^^^19870517^Male^A3^^^^^^^^^^NH2^^^^^,,,L^
+005A.01^PATID1234^Smirnoff^Peggy^^^^^^^^^^^19750401^Female^W5^^^^^^^^^^NH3^^^^^,,,L^
+005A.03^SMB3948814^Smith^Beatrice^^^^^^^^^^^19650501^Female^B1^^^^^^^^^^NH3^^^^^,,,^
+005B.01^PATID1234^Smirnoff^Peggy^^^^^^^^^^^19750401^Female^W5^^^^^^^^^^NH2^^^^^,,,L^
+005B.03^SMB3948814^Smith^Beatrice^^^^^^^^^^^19650501^Female^B1^^^^^^^^^^NH3^^^^^,,,^
+006.01^PATID1234^Skeeto^Maurice^^^^^^^^^^^19471101^Male^W6^^^^^^^^^^H2^^^^^,,,L^
+006.02^PATID125789^Smiley^Horace^T^^^^^^^^^^19841101^Male^W6^^^^^^^^^^NH6^^^^^,,,L^
+006.03^PATID139948312^Hogg^Jimbo^Skeeter^^^^^^^^^^19870215^Male^W6^^^^^^^^^^NH2^^^^^,,,N^
+007.01^PATID1234^Lopez^Luiz^^^^^^^^^^^20081101^Male^W7^^^^^^^^201207100423^^H2^^^^^,,,L^
+007.02^NJ2012-08556^Nguyen^Jessie^^^^^^^^^^^19161016^Female^A3^^^^^^^^201208081415^^NH3^^^^^,,,L^
+007.03^PATID5678^Lung^Neil^^^^^^^^^^^19480802^Male^A3^^^^^^^^201203162130^^NH3^^^^^,,,L^
+008.01^WILJ2012-979952^Jones^William^T^^^^^^^^^^19930619^Male^B1^^^^^^^^^^NH4^^^^^,,,L^
+008.02^P2008-706781-2^Yee^Sue^^^^^^^^^^^19161019^Female^A3^^^^^^^^^^NH4^^^^^,,,L^
+008.03^MJ200978990544^Montoro^Jovelyn^^^^^^^^^^^19920923^Female^A3^^^^^^^^^^NH4^^^^^,,,L^
+009.01^ShuA20120618-1^Shultz^Anna^A^^^^^^^^^^19461115^Female^W8^^^^^^^^^^NH5^^^^^Jr,DR,PhD,L^
+009.02^BB20120315-351^Bird^Barry^A^^^^^^^^^^19881031^Male^W2^^^^^^^^^^NH5^^^^^III,DR,DVM,L^
+009.03^NECS2012080-2^Neck^Steve^L^^^^^^^^^^19630626^Male^W2^^^^^^^^^^NH5^^^^^Sr,DR,DDS,L^
