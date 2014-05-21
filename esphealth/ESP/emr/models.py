@@ -688,7 +688,7 @@ class LabResult(BasePatientRecord):
             
             lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=provenance, natural_key=now)
             lx.pk = 0
-            lx.result_date = datetime.datetime.today()
+            lx.result_date =  date # for 3.1 -> datetime.datetime.today()
             lx.date = order_date
             lx.native_code = 'MDPH-250' #this is the loinc
         

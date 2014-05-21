@@ -593,7 +593,7 @@ class hl7Batch:
             except:
                 temperature=0
             if lxresd:
-                dur = enc.date - lxresd.date()
+                dur = enc.date - lxresd #-> in 3.1 .date()
             else:
                 dur = datetime.timedelta(days=0)
             if abs(dur.days)<15 or temperature>100.4:
