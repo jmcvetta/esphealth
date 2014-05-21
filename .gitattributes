@@ -612,6 +612,14 @@ esphealth/unit-test/meaningful_use/all/epicres.esp.04012014 -text
 esphealth/unit-test/meaningful_use/all/epicsob.esp.04012014 -text
 esphealth/unit-test/meaningful_use/all/epicspc.esp.04012014 -text
 esphealth/unit-test/meaningful_use/all/epicvis.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epiclnd.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicmad.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicmem.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicmud.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicoid.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicord.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicres.esp.04012014 -text
+esphealth/unit-test/meaningful_use/alt_9.03/epicspc.esp.04012014 -text
 esphealth/unit-test/other/epicall.esp.05312012 -text
 esphealth/unit-test/other/epicmed.esp.02282013 -text
 esphealth/unit-test/other/epicmed.esp.05312012 -text
