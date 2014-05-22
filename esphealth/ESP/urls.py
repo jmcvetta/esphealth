@@ -29,7 +29,7 @@ urlpatterns = patterns('',
     # Vaers
     url(r'^vaers/', include('ESP.vaers.urls')),
     
-    #TODO add here the esp survey menu links
+    # Survey 
     url(r'^survey_import/', survey_import, name='survey_import'),
     url(r'^survey_report/', survey_report, name='survey_report'),
 
