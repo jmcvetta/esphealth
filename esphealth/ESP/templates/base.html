@@ -3,7 +3,7 @@
 
 <head>
     <title>
-        {% if title %}{{ title }} -{% endif %} Electronic Support for Public Health
+        {% if title %}{{ title }} -{% endif %} Electronic medical record Support for Public Health (ESPnet)
     </title>
 
     <link href="{{ site_css_folder }}base.css" rel="stylesheet" type="text/css" />
@@ -46,8 +46,8 @@
 	</span>
         <h1>
 	<img src="{{ site_image_folder }}/caduceus.gif" alt="caduceus" border=0 />
-	<img src="{{ site_image_folder }}/all_seeing_eye.png" alt="all-seeing eye" border=0 />
-		<span id="main_title">ESP &mdash; Electronic Support for Public Health</span>
+	
+		<span id="main_title">ESP &mdash; Electronic medical record Support for Public Health (ESPnet)</span>
         </h1>
     </div>
 
@@ -56,6 +56,16 @@
     <div id="navigation">
         <ul class='jd_menu'>
             <li><a href="{% url status %}">Status</a></li>
+            <li>Surveys &raquo;
+            	<ul>
+            		<li><a href="{% url survey_import %}">Import Responses</a></li>
+            		<li>Survey Results &raquo;
+            		<ul>
+            			<li><a href="{% url survey_report %}">BRFSS Demo</a></li>
+            		</ul>
+            		</li>
+             	</ul>
+             	</li>
             <li>Nodis &raquo;
                 <ul>
                     <li><a href="{% url nodis_cases_all %}">Cases - All</a></li>
