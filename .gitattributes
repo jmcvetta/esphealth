@@ -207,6 +207,8 @@ esphealth/ESP/static/sql/fakelabs.postgresql.sql -text
 esphealth/ESP/static/sql/icd9.postgresql.sql -text
 esphealth/ESP/static/tests.py -text
 esphealth/ESP/static/views.py -text
+esphealth/ESP/surveys/newsurveyreport.sql -text
+esphealth/ESP/surveys/surveyreport.sql -text
 esphealth/ESP/templates/404.html -text
 esphealth/ESP/templates/500.html -text
 esphealth/ESP/templates/about.html -text
@@ -281,6 +283,7 @@ esphealth/ESP/templates/ui/labtest_lookup.html -text
 esphealth/ESP/templates/ui/map_native_code.html -text
 esphealth/ESP/templates/ui/status.html -text
 esphealth/ESP/templates/ui/status.txt -text
+esphealth/ESP/templates/ui/survey_report.html -text
 esphealth/ESP/templates/ui/unmapped_labs.html -text
 esphealth/ESP/templates/widgets/fixture_builder.json -text
 esphealth/ESP/templates/widgets/ss/day_map_report.html -text
@@ -298,6 +301,7 @@ esphealth/ESP/ui/management/commands/validate_cases.py -text
 esphealth/ESP/ui/tests.py -text
 esphealth/ESP/ui/urls.py -text
 esphealth/ESP/ui/views.py -text
+esphealth/ESP/ui/views_survey.py -text
 esphealth/ESP/urls.py -text
 esphealth/ESP/utils/bogus_events_cleanup.py -text
 esphealth/ESP/utils/common.py -text
