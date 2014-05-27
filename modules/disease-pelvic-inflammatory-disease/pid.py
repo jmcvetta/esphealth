@@ -67,7 +67,7 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
             ).order_by('date')
         
         if ev_qs:
-            self.criteria = 'Criteria #1: Pelvic inflammatory disease criteria: pid_diagnosis and chlamydia_pos or gonorrhea_pos w/in 28 days'
+            self.criteria = 'Criteria #1: Pelvic inflammatory disease criteria: pid_diagnosis and (chlamydia_pos or gonorrhea_pos) w/in 28 days'
         counter = 0
         for ev in ev_qs:
             existing_cases = Case.objects.filter(

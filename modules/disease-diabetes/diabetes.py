@@ -380,10 +380,13 @@ class Diabetes(DiseaseDefinition):
         #
         # Frank DM critiera
         #
+        criteria = ''
         # Start with a query of event types which need only a single event to indicate a case of DM
         once_and_insulin = self.__FRANK_DM_ONCE + ['rx:insulin']
         once_qs = Event.objects.filter(name__in=once_and_insulin)
         once_qs = once_qs.exclude(patient__case__condition__in=self.__FRANK_DM_CONDITIONS)
+        if once_qs:
+            criteria = 'Criteria #1: Hemoglobin A1C >= 6.5 or Fasting glucose (FG) >=126 or prescription for any of GLYBURIDE, GLICLAZIDE, GLIPIZIDE, GLIMEPIRIDE,  PIOGLITAZONE, ROSIGLITAZONE, REPAGLINIDE, NATEGLINIDE, MEGLITINIDE,  SITAGLIPTIN , EXENATIDE, PRAMLINTIDE or prescription for insulin'
         dm_criteria_list = [once_qs]
         # Add event types which must occur >=2 times to indicate DM
         for event_name in self.__FRANK_DM_TWICE:
@@ -394,6 +397,9 @@ class Diabetes(DiseaseDefinition):
             twice_patients = twice_vqs.values_list('patient')
             twice_criteria_qs = Event.objects.filter(name=event_name, patient__in=twice_patients)
             dm_criteria_list.append(twice_criteria_qs)
+            
+        if twice_criteria_qs:
+            criteria += ' Criteria #2: Random glucoses (RG) >=200 on two or more occasions, ICD9 code for diabetes 250.x on two or more occasions'
         for criteria_qs in dm_criteria_list:
             for this_event in criteria_qs:
                 if this_event.name == 'rx:insulin' and Timespan.objects.filter(
@@ -418,11 +424,11 @@ class Diabetes(DiseaseDefinition):
             trigger_date = date_list[0] # Trigger DM on earliest event date
             trigger_event_pks = pat_date_events[pat_pk][trigger_date]
             pat_serial += 1
-            f = partial(self._determine_frank_dm_type, pat_pk, trigger_date, trigger_event_pks, pat_serial, total_pats)
+            f = partial(self._determine_frank_dm_type, pat_pk, trigger_date, trigger_event_pks, pat_serial, total_pats, criteria)
             funcs.append( f )
         return wait_for_threads(funcs)
     
-    def _determine_frank_dm_type(self, pat_pk, trigger_date, trigger_event_pks, pat_serial, total_pats):
+    def _determine_frank_dm_type(self, pat_pk, trigger_date, trigger_event_pks, pat_serial, total_pats, criteria):
         '''
         Determine type of Frank DM and generate a case, based on supplied patient 
             and trigger date.
@@ -442,7 +448,6 @@ class Diabetes(DiseaseDefinition):
         log.debug('Checking patient %8s / %s' % (pat_serial, total_pats))
         patient = Patient.objects.get(pk=pat_pk)
         condition = None
-        criteria = None
         provider = None
         case_date = None
         case_events_qs = None
@@ -465,7 +470,7 @@ class Diabetes(DiseaseDefinition):
             provider = c_peptide_lx_thresh[0].provider
             case_date = c_peptide_lx_thresh[0].date
             case_events_qs = trigger_events_qs | c_peptide_lx_thresh
-            criteria = 'Criteria #1: C-Peptide result below threshold: Type 1'
+            criteria += ' (C-Peptide result below threshold)'
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
@@ -481,7 +486,7 @@ class Diabetes(DiseaseDefinition):
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
             case_events_qs = trigger_events_qs | aa_pos
-            criteria = 'Criteria #2: Diabetes auto-antibodies positive: Type 1'
+            criteria += ' (Diabetes auto-antibodies positive)'
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
@@ -495,7 +500,7 @@ class Diabetes(DiseaseDefinition):
             provider = acetone_rx[0].provider
             case_date = acetone_rx[0].date
             case_events_qs = trigger_events_qs | acetone_rx
-            criteria = 'Criteria #3: Acetone Rx: Type 1'
+            criteria += '(Acetone Rx)'
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
@@ -518,9 +523,9 @@ class Diabetes(DiseaseDefinition):
                 case_date = trigger_events_qs[0].date
                 case_events_qs = trigger_events_qs | type_1_dx | type_2_dx
                 if glucagon_rx:
-                    criteria = 'Criteria #4a: More than 50% of dx_codes are type 1, and glucagon rx: Type 1'
+                    criteria += ' (More than 50% of dx_codes and glucagon rx)'
                 else:
-                    criteria = 'Criteria #4b: More than 50% of dx_codes are type 1, and never prescribed oral hypoglycaemics: Type 1'
+                    criteria += ' (More than 50% of dx_codes, and never prescribed oral hypoglycaemics)'
                 condition = 'diabetes:type-1'
                 log.debug(criteria)
                 
@@ -533,7 +538,6 @@ class Diabetes(DiseaseDefinition):
             provider = trigger_events_qs[0].provider
             case_date = trigger_events_qs[0].date
             case_events_qs = trigger_events_qs
-            criteria = 'Criteria #5: No Type 1 criteria met: Type 2'
             condition = 'diabetes:type-2'
             log.debug(criteria)
         
@@ -579,9 +583,19 @@ class Diabetes(DiseaseDefinition):
         qs = qs.annotate(count=Count('pk'))
         patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct()
         patient_pks = set(patient_pks)
-        patient_pks |= set( Event.objects.filter(name__in=ONCE_CRITERIA).values_list('patient', flat=True).distinct() )
+        criteria = ''
+        if patient_pks:
+            criteria  = 'Criteria #2: 2 random glucoses >=140 and <200; '
+        patient_pks2 = Event.objects.filter(name__in=ONCE_CRITERIA).values_list('patient', flat=True).distinct()
+        if (patient_pks2):
+            criteria += ' Criteria #1: A1C >= 5.7 <= 6.4 or ( Fasting glucose >= 100 <= 125 )'
+        patient_pks |= set( patient_pks2 )
         # Ignore patients who already have a prediabetes case
         patient_pks = patient_pks - set( Case.objects.filter(condition='diabetes:prediabetes').values_list('patient', flat=True) )
+        
+        # TODO ignore Known frank diabetes ON THE DAY the patient fulfills above criteria for pre-diabetes OR ANY TIME IN THE PAST 
+        # condition_exclude = ['diabetes:prediabetes','diabetes:type-2', 'diabetes:type-1']
+        # patient_pks = patient_pks - set( Case.objects.filter(condition__in=condition_exclude).values_list('patient', flat=True) )
         total = len(patient_pks)
         counter = 0
         for pat_pk in patient_pks:
@@ -606,7 +620,7 @@ class Diabetes(DiseaseDefinition):
                 provider = trigger_event.provider,
                 date = trigger_event.date,
                 condition =  'diabetes:prediabetes',
-                criteria = 'Criteria #1: A1C >= 5.7 <= 6.4,  Fasting glucose >= 100 <= 125 and 2 random glucoses >=140 and <200',
+                criteria = criteria ,
                 source = self.uri,
                 )
             new_case.save()
@@ -617,7 +631,7 @@ class Diabetes(DiseaseDefinition):
         return counter
     
     GDM_ONCE = [
-        
+            
         'lx:ogtt100-fasting:threshold:gte:126',
         'lx:ogtt75-fasting:threshold:gte:126',
         'lx:ogtt75-fasting:threshold:gte:92',
@@ -658,6 +672,7 @@ class Diabetes(DiseaseDefinition):
         gdm_timespan_pks = set()
         ts_qs = Timespan.objects.filter(name__startswith='pregnancy')
         ts_qs = ts_qs.exclude(case__condition='diabetes:gestational')
+        criteria =''
         #
         # Single event
         #
@@ -667,6 +682,9 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__lte = F('end_date'),
             ).distinct().order_by('end_date')
         gdm_timespan_pks.update(once_qs.values_list('pk', flat=True))
+        if once_qs:
+            criteria = 'Criteria #1: Patient pregnant and one of the following: OB Fasting glucose >=126, OGTT50 with single value >=190, OGTT75-intrapartum with >=1 value above threshold'
+    
         #
         # 2 or more events
         #
@@ -676,6 +694,9 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__lte = F('end_date'),
             ).annotate(count=Count('patient__event__id')).filter(count__gte=2).distinct()
         gdm_timespan_pks.update(twice_qs.values_list('pk', flat=True))
+        if twice_qs:
+            criteria += ' Criteria #2: Patient pregnant and one of the following: OGTT75-intrapartum with >=2 value above threshold, OGTT100 with >=2 values above threshold '
+    
         #
         # Dx or Rx
         #
@@ -694,12 +715,15 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__gte = F('start_date'),
             patient__event__date__lte = F('end_date'),
             )
-        # Currently preganant patients have a null end date
+        # Currently pregnant patients have a null end date
         dxrx_qs |= ts_qs.filter(
             end_date__isnull=True,
             patient__event__in = _event_qs,
             patient__event__date__gte = F('start_date'),
             )
+        if dxrx_qs:
+            criteria += ' Criteria #3: Patient pregnant and [ICD9 648.8x and (prescription containing the term LANCETS or TEST STRIPS)] within 14 days AND no ICD9 250.x prior to pregnancy start date'
+       
         gdm_timespan_pks.update(dxrx_qs.values_list('pk', flat=True))
         #===============================================================================
         #
@@ -725,7 +749,7 @@ class Diabetes(DiseaseDefinition):
             case_obj, created = Case.objects.get_or_create(
                 patient = ts.patient,
                 condition = 'diabetes:gestational',
-                criteria = 'Criteria #1: GDM once or twice from lab event threshold, GDM diagnosis and rx for lancets or test-strips',
+                criteria = criteria,
                 date = first_event.date,
                 source = self.uri, 
                 defaults = {

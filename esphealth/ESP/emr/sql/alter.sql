@@ -159,13 +159,12 @@ CREATE TABLE conf_labtestmap_donotsend_results (
 )
 ;
 -- ------------------------------------------------------------------------------
--- redmine 496 to expand nodis case criteria column 
-ALTER TABLE nodis_case 
-  ALTER COLUMN criteria TYPE character varying(500); 
-
----------------------------------------------
 -- support for icd10 codes and meaningful use 
 -- 2014-04-09 CCHACIN
+
+-- redmine 496 to expand nodis case criteria column 
+ALTER TABLE nodis_case 
+  ALTER COLUMN criteria TYPE character varying(2000); 
 
 --static model changes 
 ALTER TABLE static_fakeicd9s

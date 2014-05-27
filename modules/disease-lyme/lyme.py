@@ -131,7 +131,7 @@ class Lyme(DiseaseDefinition):
     @transaction.commit_manually
     def generate(self):
         log.info('Generating cases of %s' % self.short_name)
-    
+        self.criteria = ''
         #
         # Criteria Set #1 condition 3 in spec
         # diagnosis and meds within 14 days
@@ -153,7 +153,7 @@ class Lyme(DiseaseDefinition):
             )
         
         if dxrx_event_qs:
-            self.criteria =  'Criteria #1 lyme and  diagnosis and doxycycline or lyme_other_antibiotics w/in 14 days'
+            self.criteria =  'Criteria #3 lyme dx_code and doxycycline or lyme_other_antibiotics w/in 14 days'
      
         # Criteria #2 condition 2 in spec 
         # wb test positive or pcr
@@ -169,7 +169,7 @@ class Lyme(DiseaseDefinition):
             name__in =  lx_ev_names,
             )
         if lx_event_qs:
-            self.criteria = 'Criteria #2 lyme_pcr_pos or lyme_pcr_csf_pos or lyme_ab_csf_pos or lyme_igg_wb_pos or lyme_igm_wb_pos'
+            self.criteria += ' Criteria #2 lyme_pcr_pos or lyme_pcr_csf_pos or lyme_ab_csf_pos or lyme_igg_wb_pos or lyme_igm_wb_pos'
         
         #
         # Criteria Set #3 condition 1 from spec
@@ -189,7 +189,7 @@ class Lyme(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 30 ),  
             )
         if test_event_qs:
-            self.criteria= 'Criteria #3 (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme dx_code or Lyme Antibiotics) w/in 30 days'
+            self.criteria += ' Criteria #1 (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme dx_code or Lyme Antibiotics) w/in 30 days'
             
         #
         # Criteria Set #4 (lyme condition 4 from spec)
@@ -211,7 +211,7 @@ class Lyme(DiseaseDefinition):
             )
             
         if rash_qs:
-            self.criteria = 'Criteria #4 (Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) w/in 30d'
+            self.criteria += ' Criteria #4 (Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) w/in 30d'
         #
         # Combined Criteria
         #

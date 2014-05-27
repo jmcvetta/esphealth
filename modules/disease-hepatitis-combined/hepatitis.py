@@ -222,7 +222,7 @@ class Hepatitis_A(HepatitisCombined):
         relevant_event_names = [primary_event_name] + secondary_event_names
         counter = self._create_cases_from_event_qs(
             condition = 'hepatitis_a:acute', 
-            criteria = 'Criteria #1: jaundice or (alt or ast) > 2x and positive of hep_a_igm w/in 14 days', 
+            criteria = 'Criteria #1: [(jaundice (not of newborn) or (alt or ast) > 2x ULN) and positive of hep_a_igm] w/in 14 days', 
             recurrence_interval = None,
             event_qs = event_qs, 
             relevant_event_names = relevant_event_names,
@@ -288,7 +288,7 @@ class Hepatitis_B(HepatitisCombined):
                 continue
             created, this_case = self._create_case_from_event_obj(
                 condition = self.conditions[0],
-                criteria = 'Criteria #1: positive Hep B core antigen igm antibody and either jaundice or ast or alt >5x w/in 14 days', 
+                criteria = 'Criteria #1: [positive Hep B core antigen igm antibody and (jaundice (not of newborn) or ast>5x ULN or alt >5x ULN)] w/in 14 days', 
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
                 relevant_event_qs = pat_conf_qs,
@@ -397,9 +397,9 @@ class Hepatitis_B(HepatitisCombined):
                 date__lte = relevancy_end,
                 ).order_by('date')
             if pat_total_bili_qs:
-                criteria = 'total bilirubin'
+                criteria = 'total bilirubin>1.5'
             else:
-                criteria = 'calculated bilirubin'
+                criteria = 'calculated bilirubin >1.5'
                 calculated_bilirubin = 0
                 bili_date_list = either_bili_qs.values_list('date', flat=True)
                 for bili_date in bili_date_list:
@@ -421,7 +421,7 @@ class Hepatitis_B(HepatitisCombined):
                 
             created, this_case = self._create_case_from_event_obj(
                 condition = self.conditions[0], 
-                criteria = 'Criteria #2/3: jaundice or alt or ast >5x and positive of hep_b_surface or hep_b_viral_dna and %s w/in 21 days; exclude prior chronic_hep_b or positive of hep_b_surface or hep_b_viral_dna ever' % criteria,
+                criteria = 'Criteria #2/3: [(jaundice (not of newborn) or alt>5x ULN or ast >5x ULN) and (positive of hep_b_surface or positive of hep_b_viral_dna) and (%s) ]  w/in 21 days;  exclude if: prior/current dx=chronic hepatitis B or prior positive hep_b_surface ever or prior positive hep_b_viral_dna ever' % criteria,
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
                 relevant_event_qs = jaundice_qs | total_bili_qs
@@ -481,7 +481,7 @@ class Hepatitis_B(HepatitisCombined):
             #
             created, this_case = self._create_case_from_event_obj(
                 condition = self.conditions[0],
-                criteria = 'Criteria #4: positive hep b surface and prior neg of hep b surface w/in 12 months; exclude chronic hep b and no prior chronic hep b or positive hep b surface or viral dna',
+                criteria = 'Criteria #4: positive hep b surface and prior neg of hep b surface w/in 12 months; exclude if:  prior/current dx=chronic hepatitis B or prior positive hep_b_surface ever or prior positive hep_b_viral_dna ever',
                 recurrence_interval = None,  # Does not recur
                 event_obj = surface_pos_event,
                 relevant_event_qs = prior_neg_qs,
@@ -705,13 +705,16 @@ class Hepatitis_C(HepatitisCombined):
             # Date the case based on the earliest criterion.
             # NOTE: Is this the desired behavior?
             
-            criteria = 'Acute hep C definition '
+            criteria = ''
             if trigger_event.name == 'lx:hepatitis_c_elisa:positive':
-                criteria += 'Criteria #1: positive c-elisa '
+                criteria += 'Criteria #1: {(3)positive c-elisa '
             else:
-                criteria += 'Criteria #2: positive c-rna '
-            criteria += ' and jaundice or alt>400 and no hep a nor hep b; exclude negatives hep c signal cutoff, riba and rna; exclude prior positives of c-elisa, c-riba c-rna and chronic hep b'
-           
+                criteria += 'Criteria #2: {(6) positive c-rna '
+                
+            criteria += ' AND (1 OR 2)(jaundice (not of newborn) OR alt>400) AND ((7)positive hep a igm' 
+            criteria += ' or (11)positive hep a total antibodies)  AND [(8)negative hep b igm OR (9)negative hep b antibody OR ((8) hep b igm not done '
+            criteria += ' AND (10)positive hep b surface) AND NOT (4) negative hep c signal cutoff AND NOT (5)negative c-riba)} within 28 days; exclude if:'
+            criteria += '  prior/current dx=chronic hep c OR prior/current dx=unspecified hep c OR (3)prior positive c-elisa ever OR (5)prior positive c-riba ever OR (6)prior positive c-rna ever'
             created, this_case = self._create_case_from_event_obj(
                 condition = 'hepatitis_c:acute', 
                 criteria = criteria, 
@@ -872,7 +875,7 @@ class Hepatitis_C(HepatitisCombined):
             
             created, this_case = self._create_case_from_event_obj(
                 condition = 'hepatitis_c:acute', 
-                criteria = 'Criteria #4: c-elisa positive and c-elisa negative w/in the prior 12 months and no prior positive of elisa, riba or rna ever',  
+                criteria = 'Criteria #4: c-elisa positive and c-elisa negative w/in the prior 12 months and no prior positive of c-elisa, c-riba or c-rna ever',  
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
                 relevant_event_qs = prior_neg_qs,

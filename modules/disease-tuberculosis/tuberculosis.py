@@ -130,9 +130,9 @@ class Tuberculosis(DiseaseDefinition):
         rx_event_qs = Event.objects.filter(
             name__in = rx_ev_names,
             )
-        
+        self.criteria = ''
         if rx_event_qs:
-            self.criteria = 'Criteria #1: Single rx:pyrazinamide'
+            self.criteria = 'Criteria #1: Single rx:pyrazinamide '
         #
         # Criteria Set #2 
         # dx in the 14 days prior to the lab order (any test result) or 
@@ -156,7 +156,7 @@ class Tuberculosis(DiseaseDefinition):
             )
         
         if dxlx14_event_qs or dxlx60_event_qs:
-            self.criteria = 'Criteria #2: dx:tuberculosis w/in 14 days prior to the lab order (any test result) or dx w/in 60 days following the lab order (any test result)'
+            self.criteria += ' Criteria #2: dx:tuberculosis w/in 14 days prior to the lab order (any test result) or dx w/in 60 days following the lab order (any test result)'
         #
         # Combined Criteria
         #
