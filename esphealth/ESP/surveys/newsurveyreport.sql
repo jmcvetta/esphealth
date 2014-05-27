@@ -43,12 +43,6 @@ update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_e
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and height is not null )
 where Question ='What is your current height in Feet and Inches?';
 
-select r1.response_float*30.48 + (select  r2.response_float*2.54
-from  emr_surveyresponse r2
-where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp)
-from emr_surveyresponse r1 
-where r1.question = 'What is your current height in Feet and Inches?';  
-
 update ContinuousVariables set SelfReportMean = (select Round( avg(r1.response_float*30.48 + (select  r2.response_float*2.54
 from  emr_surveyresponse r2
 where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp))::numeric,2) 
