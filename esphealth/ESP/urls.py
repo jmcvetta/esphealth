@@ -16,7 +16,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
 #from ESP.esp.views import index, esplogin
 from ESP.ui.views import status_page
-from ESP.ui.views_survey import  survey_report, survey_import
+from ESP.ui.views_survey import  generate_survey_report, view_survey_report, survey_import
 
 
 admin.autodiscover()
@@ -31,7 +31,8 @@ urlpatterns = patterns('',
     
     # Survey 
     url(r'^survey_import/', survey_import, name='survey_import'),
-    url(r'^survey_report/', survey_report, name='survey_report'),
+    url(r'^view_survey_report/', view_survey_report, name='view_survey_report'),
+    url(r'^generate_survey_report/', generate_survey_report, name='generate_survey_report'),
 
     # Syndromic Surveillance
     url(r'^ss/', include('ESP.ss.urls')),

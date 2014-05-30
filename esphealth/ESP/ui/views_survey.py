@@ -31,27 +31,17 @@ from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic.simple import redirect_to
 from django.http import HttpResponse
+from django.core.servers.basehttp import FileWrapper
 
 from dateutil.relativedelta import relativedelta
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import PY_DATE_FORMAT
 from ESP.settings import SITE_NAME
+from ESP.settings import DATA_DIR
 from ESP.settings import STATUS_REPORT_TYPE
 from ESP.ui.views import _populate_status_values
 
-#from ESP.hef import events # Required to register hef events
-from ESP.nodis.base import DiseaseDefinition
-from ESP.nodis.models import Case
-from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import Report
-from ESP.nodis.models import ReferenceCase
-from ESP.nodis.models import ValidatorRun
-from ESP.nodis.models import ValidatorResult
-from ESP.vaers.heuristics import VaersLxHeuristic
-from ESP.ui.forms import CaseStatusForm
-from ESP.ui.forms import CodeMapForm
-from ESP.ui.forms import ConditionForm
-from ESP.ui.forms import ReferenceCaseForm
+
 #from ESP.ui.management.commands.validate_cases import RELATED_MARGIN
 from ESP.utils import log
 from ESP.utils import log_query
@@ -96,12 +86,33 @@ def survey_import(request):
     
     return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
 
-def survey_report(request):
+def view_survey_report(request): 
+    
+    filename=DATA_DIR+"survey_report.csv"
+    vfile=open(filename,'r')        
+    response = HttpResponse(FileWrapper(vfile), content_type='application/csv')
+    
+    response['Content-Disposition'] = 'attachment;filename=survey_report.csv'
+    return response
+
+
+def write_survey_report (title, desc, rows, writer):
+    header = []
+    writer.writerow([title])
+    for description in desc:
+        header.append(description.name)
+    writer.writerow(header)
+    for row in rows:
+        writer.writerow(row)
+    writer.writerow('')
+        
+        
+def generate_survey_report(request):
     
     '''
     survey report tables from running a query
     '''
-    
+   
     cursor = connection.cursor()    
     sqlfile =  os.path.join(TOPDIR+"/surveys/", 'newsurveyreport.sql')
     f = open(sqlfile)
@@ -109,81 +120,39 @@ def survey_report(request):
     f.close()
     response = cursor.execute(sql)
     
-    full_path = request.get_full_path()
-    # If path does not contain a query string (beginning with '?'), add a '?' 
-    # so the template forms a valid query
-    query_index = full_path.find('?')
-    if query_index == -1:
-        full_path += '?'
-    values = _populate_status_values()
-    values['full_path'] = full_path
-    values['title'] = 'BRFSS Results'
-    values['subtitle'] = 'ESP Survey vs EHR report'
+    file_path = os.path.join(DATA_DIR,  'survey_report.csv')
+    file_handle = open(file_path, 'w')
+    writer = csv.writer(file_handle, dialect='excel')
     
     cursor.execute("select question as \"Questions\", noofrespondents as \"No. of Respondents\", NoOfEHRRespondents as \"No. of EHR Respondents\", selfreportmean::text   as \"Self-Report Mean\",  ' +/- ' || selfreportsd::text  as \"SD\", "+
         " EHRReportMean::text  as \"EHR Mean\",  ' +/- ' || EHRReportSD::text as \"SD\"  from ContinuousVariables where selfreportmean>0")
-    desc = cursor.description
-    rows = cursor.fetchall() 
-    tables = [('Continuous variables', desc, rows)]
-
+    write_survey_report('Continuous variables', cursor.description, cursor.fetchall() , writer)
+    
     cursor.execute("select Question, NoOfRespondents as \"No. of Respondents\", PtYes as \"Pt Yes\",PTNo  as \"Pt No\", PtUnsure as \"Pt Unsure\",  EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,"+
         "PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\","+
         "PtUnsureEHRYes as \"Pt Unsure / EHR Yes\", PtUnsureEHRNo as \"Pt Unsure / EHR Yes\" from YesNoUnsureQuestions order by question;")
-    desc = cursor.description
-    rows = cursor.fetchall() 
-    tables.append(('Yes / No / Unsure Questions',desc,rows))
+    write_survey_report('Yes / No / Unsure Questions',cursor.description, cursor.fetchall() , writer)
         
     cursor.execute("select  RaceEthnicity as \"Race-Ethnicity\" , SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\","+  
       "EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
       "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\" from CategoricalVariables;")
-    desc = cursor.description
-    rows = cursor.fetchall() 
-    tables.append(('Categorical variables',desc,rows))
+    write_survey_report('Categorical variables',cursor.description, cursor.fetchall() , writer)
        
     cursor.execute("select type as \"Diabetes Type\", SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\", EHRYes as \"EHR Yes\","+
        "EHRNo as \"EHR No\" ,PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
        "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\" from DiabetesType;")
-    desc = cursor.description
-    rows = cursor.fetchall() 
-    tables.append(('What type of diabetes do you have?', desc,rows))
+    write_survey_report('What type of diabetes do you have?', cursor.description, cursor.fetchall() , writer)
     
     cursor.execute("select type as \"BMI Category\", SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\",  EHRYes as \"EHR Yes\", "+
       "EHRNo as \"EHR No\" ,EHRMissing as \"EHR Missing\",PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", "+
       "PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\", ptyesehrmissing as \"Pt Yes / EHR Missing\", ptnoehrmissing as \"Pt No / EHR Missing\" from WeightType;")
-    desc = cursor.description
-    rows = cursor.fetchall() 
-    tables.append(('How would you classify your weight?', desc,rows))
+    write_survey_report('How would you classify your weight?', cursor.description, cursor.fetchall() , writer)
     
     cursor.execute("select * from LineList;")
-    desc = cursor.description
-    rows = cursor.fetchall() 
-    tables.append(('Line List', desc,rows))
+    write_survey_report('Line List', cursor.description, cursor.fetchall() , writer)
     
-    values['tables'] = tables
+    values = _populate_status_values()       
+    values['comment'] = 'Survey Responses successfully generated, please select: View Last BRFSS Demo from: Survey Results menu option'
     
-    if request.GET.get('export_csv', None) == 'brfssdemo_report':
-        return export_survey_report(request, tables)
+    return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
    
-    return render_to_response('ui/survey_report.html', values, context_instance=RequestContext(request))
-
-def export_survey_report(request, tables):
-    '''
-    Exports case list from a queryset as a CSV file
-    '''
-    response = HttpResponse(mimetype='text/csv')
-    response['Content-Disposition'] = 'attachment;filename=survey_report.csv'
-    writer = csv.writer(response)
-    
-    if tables:
-        for table in tables:
-            header = [table[0]] #table title
-            for description in table[1]:
-                header.append(description.name)
-            
-            writer.writerow(header)
-            for element in table[2]:
-                row=[''] #leave empty column for table title column in csv 
-                for column in element:
-                    row.append( column)
-                writer.writerow(row)
-    return response
