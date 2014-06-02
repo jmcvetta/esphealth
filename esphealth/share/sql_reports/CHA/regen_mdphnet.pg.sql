@@ -67,11 +67,12 @@ SELECT '1'::varchar(1) as centerid,
          ELSE 0
        END as race,
        CASE
-         WHEN UPPER(race) in ('ASIAN','INDIAN') THEN 3
-         WHEN UPPER(race) = 'BLACK'  THEN 2
-         WHEN UPPER(race) in ('CAUCASIAN','WHITE') THEN 1
-         WHEN UPPER(race) = 'HISPANIC' then 4
-         ELSE 5
+         WHEN UPPER(race) = 'HISPANIC' then 6
+         WHEN UPPER(race) in ('CAUCASIAN','WHITE') then 5
+         WHEN UPPER(race) in ('ASIAN','INDIAN','NATIVE HAWAI','PACIFIC ISLANDER/HAWAIIAN') then 2
+         WHEN UPPER(race) = 'BLACK'  THEN 3
+         WHEN UPPER(race) in ('NAT AMERICAN','ALASKAN','AMERICAN INDIAN/ALASKAN NATIVE') then 1
+         ELSE 0
        END as race_ethnicity,
        pat.zip5,
        smk.smoking
@@ -283,12 +284,15 @@ drop view if exists esp_demographic_v;
       SELECT DISTINCT
              pat.race_ethnicity as item_code,
              CASE
-               WHEN pat.race_ethnicity = 1 THEN 'Non-hispanic White'::varchar(50)
-               WHEN pat.race_ethnicity = 2 THEN 'Non-hispanic Black'::varchar(50)
-               WHEN pat.race_ethnicity = 3 THEN 'Asian'::varchar(50)
-               WHEN pat.race_ethnicity = 4 THEN 'Hispanic'::varchar(50)
-               WHEN pat.race_ethnicity = 5 THEN 'Other'::varchar(50)
-               ELSE 'Not Mapped'::varchar(50)
+               when pat.race_ethnicity=5 then 'White'::varchar(50)
+               when pat.race_ethnicity=3 then 'Black'::varchar(50)
+               when pat.race_ethnicity=2 then 'Asian'::varchar(50)
+               when pat.race_ethnicity=6 then 'Hispanic'::varchar(50)
+               when pat.race_ethnicity=1 then 'Native American'::varchar(50)
+               when pat.race_ethnicity=0 then 'Unknown'::varchar(50)
+             END as item_text
+        FROM esp_demographic_r pat;
+
              END as item_text
         FROM esp_demographic_r pat;
         ALTER TABLE UVT_RACE_ETHNICITY_r ADD PRIMARY KEY (item_code);
@@ -601,6 +605,7 @@ drop view if exists esp_demographic_v;
         GRANT SELECT ON uvt_period TO mdphnet_user;
         GRANT SELECT ON uvt_provider TO mdphnet_user;
         GRANT SELECT ON uvt_race TO mdphnet_user;
+        GRANT SELECT ON uvt_race_ethnicity TO mdphnet_user;
         GRANT SELECT ON uvt_sex TO mdphnet_user;
         GRANT SELECT ON uvt_site TO mdphnet_user;
         GRANT SELECT ON uvt_zip5 TO mdphnet_user;
