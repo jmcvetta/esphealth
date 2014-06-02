@@ -196,7 +196,7 @@ insert into mdphnet_schema_update_history
                     when pat.race_ethnicity=3 then 'Black'::varchar(50)
                     when pat.race_ethnicity=2 then 'Asian'::varchar(50)
                     when pat.race_ethnicity=6 then 'Hispanic'::varchar(50)
-                    when pat.race_ethnicity=1 then ‘Native American'::varchar(50)
+                    when pat.race_ethnicity=1 then 'Native American'::varchar(50)
                     when pat.race_ethnicity=0 then 'Unknown'::varchar(50)
              END item_text
         FROM esp_demographic_u pat
