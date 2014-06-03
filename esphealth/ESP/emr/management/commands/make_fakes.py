@@ -320,9 +320,6 @@ class EncounterWriter(EpicWriter):
     
     feet_regex = re.compile('(?P<feet>\d)\' *(?P<inches>\d{1,2})')
     
-    # Please see Caching Note on EpicWriter.
-    __dx_code_cache = set() # {code: dx_code_obj}
-    
     fields = [
         'patient_id',
         'mrn',
