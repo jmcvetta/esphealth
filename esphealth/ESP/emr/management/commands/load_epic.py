@@ -142,9 +142,10 @@ class BaseLoader(object):
     # a preference toggle -- or file a ticket w/ the project requesting
     # the same.
     #
-    __patient_cache = {} # {patient_id: Patient instance}
+    __dx_code_cache = {}  # {combotypecode: dx_codes instance}
+    __patient_cache = {}  # {patient_id: Patient instance}
     __provider_cache = {} # {provider_id: Provider instance}
-    __labOrd_cache = {} # {order_natural_key: order instance}
+    __labOrd_cache = {}   # {order_natural_key: order instance}
     __labSpec_cache = {}  # {specimen_num: Specimen instance}
     __labCLIA_cache = {}  # {CLIA_id: LabInfo instance}
     
@@ -356,19 +357,18 @@ class BaseLoader(object):
     def get_dx_code(self, code, code_type, name, cache):
     
         '''
-        Given an diagnostic code and code type strings, return a Dx_code model instance
+        Given an diagnostic code and code type as strings, return a Dx_code model instance
         '''
         if not code:
             log.info("Dx code is empty")
             return None
         code = code.upper()
-        combotypecode=code_type + ':' + code
-        match = DXPAT_REGEX.match(combotypecode)
+        match = DXPAT_REGEX.match(code_type + ':' + code)
         if match:
             dx_code = match.group()
             #BZ not sure why match.group() is being used here.  Isn't that the same as match?
             if not dx_code in cache:
-                i, created = Dx_code.objects.get_or_create(combotypecode=dx_code, defaults={
+                i, created = Dx_code.objects.get_or_create(combotypecode__exact=dx_code, defaults={
                      'combotypecode':dx_code, 'type':code_type,'code': code,'name':name + ' (Added by load_epic.py)'})
     
                 if created:
@@ -1584,9 +1584,6 @@ class EncounterLoader(BaseLoader):
     
     feet_regex = re.compile('(?P<feet>\d)\' *(?P<inches>\d{1,2})')
     
-    # Please see Caching Note on BaseLoader.
-    __dx_code_cache = {} # {dx_codes obj}
-    
     fields = [
         'patient_id',
         'mrn',
@@ -1626,9 +1623,9 @@ class EncounterLoader(BaseLoader):
         # and load encounter type with the mapping table which is loaded manually
         # 
        
-        #overriding the icd9 to unknown problem if it is empty 
+        #overriding the dx code to unknown problem if it is empty 
         if not row['dxlist'] or row['dxlist'] =='':
-            row['dxlist'] = '799.9'
+            row['dxlist'] = 'icd9:799.9'
         # Util methods    
         cap = self.capitalize
         up = self.up
@@ -1716,34 +1713,36 @@ class EncounterLoader(BaseLoader):
         # within a code string, the code and optional text are separated by white space 
         for code_string in row['dxlist'].strip().split(';'):
             code_string = code_string.strip()
-            #until we go live with icd10 send a warning that we are loading icd10
-            type = code_string.find(':') 
-            if  code_string[:type] == 'icd10':
-                log.error('ICD10 codes are not allowed yet and you are attempting to load one %s: ' % self.provenance.provenance_id)
-                raise BaseException(e)
-                    
-            firstspace = code_string.find(' ')
-            if firstspace >= 0:
-                firststring = code_string[:firstspace].strip()
-                if firststring.lower() in ['icd9','icd10']:
-                    code_type = firststring.lower()
-                    sndspace = code_string.find(' ',firstspace+1)
-                    if sndspace>firstspace:
-                        code = code_string[firstspace:sndspace].strip()
-                        diagnosis_text = code_string[sndspace:].strip()
+            # find new code types
+            type = code_string.find(':')
+            if type >= 0:
+                code_type = code_string[:type].strip().lower()
+                if code_type in ['icd9','icd10']:
+                    firstspace = code_string.find(' ',type)
+                    if firstspace>type:
+                        code = code_string[type+1:firstspace].strip()
+                        diagnosis_text = code_string[firstspace:].strip()
                     else:
-                        log.info('Could not parse dx code string %' % code_string)
-                        continue
+                        # no diagnosis text
+                        code = code_string[type+1:].strip()
+                        diagnosis_text = ''  
                 else:
+                    log.info('Could not parse dx code string, unsupported dx type %s' % code_string)
+                    continue
+            # no new format : found, old icd9 format
+            else:
+                code_type='icd9'
+                firstspace = code_string.find(' ')
+                if firstspace>= 0:
                     code = code_string[:firstspace].strip()
                     diagnosis_text = code_string[firstspace:].strip()
-                    code_type = 'icd9'
-            else:
-                code = code_string
-                code_type='icd9'
-                diagnosis_text = ''
-            if len(code) >= 1 and any(c in string.digits for c in code):
-                e.dx_codes.add(self.get_dx_code(code, code_type, diagnosis_text, self.__dx_code_cache))  
+                else:
+                    # no diagnosis text
+                    code = code_string
+                    diagnosis_text = ''
+                    
+            if len(code) >= 1 :
+                e.dx_codes.add(self.get_dx_code(code, code_type, diagnosis_text, self._BaseLoader__dx_code_cache))  
         try:
             e.save()
             log.debug('Saved encounter object: %s' % e)
