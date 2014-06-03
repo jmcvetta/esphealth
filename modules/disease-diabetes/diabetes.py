@@ -48,7 +48,7 @@ class Diabetes(DiseaseDefinition):
     '''
     
     conditions = [
-        'diabetes:prediabetes'
+        'diabetes:prediabetes',
         'diabetes:type-1',
         'diabetes:type-2',
         'diabetes:gestational'
@@ -81,7 +81,7 @@ class Diabetes(DiseaseDefinition):
         # No event Result Tests, only defined for lab mapping.
         #
         for test_name in [
-             # for use in p30 report but not for hef events.
+            # for use in p30 report but not for hef events.
             'cholesterol-hdl',
             'cholesterol-ldl',
             'cholesterol-total',
@@ -197,18 +197,24 @@ class Diabetes(DiseaseDefinition):
             name = 'gestational-diabetes',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with = '648.8', type='icd9'),
+                Dx_CodeQuery(starts_with = 'O24.4', type='icd10'),
+                
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:all-types',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with = '250.', type='icd9'),
+                Dx_CodeQuery(starts_with = 'E10', type='icd10'),
+                Dx_CodeQuery(starts_with = 'E11', type='icd10'),
+                Dx_CodeQuery(starts_with = 'E14', type='icd10'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:type-1-not-stated',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with = '250.', ends_with='1', type='icd9'),
+                Dx_CodeQuery(starts_with = 'E10', type='icd10'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
@@ -221,6 +227,7 @@ class Diabetes(DiseaseDefinition):
             name = 'diabetes:type-2-not-stated',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with = '250.', ends_with='0', type='icd9'),
+                Dx_CodeQuery(starts_with = 'E11', type='icd10'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
@@ -399,7 +406,7 @@ class Diabetes(DiseaseDefinition):
             dm_criteria_list.append(twice_criteria_qs)
             
         if twice_criteria_qs:
-            criteria += ' Criteria #2: Random glucoses (RG) >=200 on two or more occasions, ICD9 code for diabetes 250.x on two or more occasions'
+            criteria += 'Criteria #2: Random glucoses (RG) >=200 on two or more occasions, dx code for diabetes on two or more occasions'
         for criteria_qs in dm_criteria_list:
             for this_event in criteria_qs:
                 if this_event.name == 'rx:insulin' and Timespan.objects.filter(
@@ -585,7 +592,7 @@ class Diabetes(DiseaseDefinition):
         patient_pks = set(patient_pks)
         criteria = ''
         if patient_pks:
-            criteria  = 'Criteria #2: 2 random glucoses >=140 and <200; '
+            criteria  = 'Criteria #2: 2 random glucoses >=140 and <200 '
         patient_pks2 = Event.objects.filter(name__in=ONCE_CRITERIA).values_list('patient', flat=True).distinct()
         if (patient_pks2):
             criteria += ' Criteria #1: A1C >= 5.7 <= 6.4 or ( Fasting glucose >= 100 <= 125 )'
@@ -695,7 +702,7 @@ class Diabetes(DiseaseDefinition):
             ).annotate(count=Count('patient__event__id')).filter(count__gte=2).distinct()
         gdm_timespan_pks.update(twice_qs.values_list('pk', flat=True))
         if twice_qs:
-            criteria += ' Criteria #2: Patient pregnant and one of the following: OGTT75-intrapartum with >=2 value above threshold, OGTT100 with >=2 values above threshold '
+            criteria += ' Criteria #2: Patient pregnant and one of the following: OGTT75-intrapartum with >=2 value above threshold, OGTT100 with >=2 values above threshold'
     
         #
         # Dx or Rx
@@ -722,7 +729,7 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__gte = F('start_date'),
             )
         if dxrx_qs:
-            criteria += ' Criteria #3: Patient pregnant and [ICD9 648.8x and (prescription containing the term LANCETS or TEST STRIPS)] within 14 days AND no ICD9 250.x prior to pregnancy start date'
+            criteria += ' Criteria #3: Patient pregnant and [dx code for GDM and (prescription containing the term LANCETS or TEST STRIPS)] within 14 days AND no frank diabetes dx code prior to pregnancy start date'
        
         gdm_timespan_pks.update(dxrx_qs.values_list('pk', flat=True))
         #===============================================================================
@@ -815,9 +822,9 @@ class GestationalDiabetesReport(Report):
         'ga_gdm_met', #(days) #added
         'prior_gdm_case', # Boolean
         'prior_gdm_case_date',
-        'gdm_icd9_this_preg', # extra?
-        'prior_gdm_icd9', #extra ?
-        'prior_gdm_icd9_date', #added
+        'gdm_this_preg', # extra?
+        'prior_gdm', #extra ?
+        'prior_gdm_date', #added
         'prior_polycystic',#added 
         'prior_pre_eclampsia',#added 
         'prior_hypertension',#added 
@@ -898,7 +905,6 @@ class GestationalDiabetesReport(Report):
         'postpartum_a1c_highest_date1',
         'postpartum_a1c_highest_result2',
         'postpartum_a1c_highest_date2',
-
         'postpartum_a1c_gte5_7_lte6_4',
         'postpartum_a1c_gte5_7_lte6_4_max_val',
         'postpartum_a1c_gte5_7_lte6_4_date',
@@ -916,7 +922,7 @@ class GestationalDiabetesReport(Report):
         'any_a1c_6_5_date',
         'referral_to_nutrition',
         'lancets_test_strips_this_preg',
-        'lancets_test_strips_14_days_gdm_icd9',
+        'lancets_test_strips_14_days_gdm',
         'insulin_rx',
         'ga_1st_insulin',#added 
         'insulin_basal',#added 
@@ -1098,20 +1104,21 @@ class GestationalDiabetesReport(Report):
                     gdm_case_date = gdm_case_qs[0].date
             else:
                 gdm_case_date = gdm_case_qs[0].date
-        prior_gdm_icd9 = None
-        prior_gdm_icd9_date = None 
+         
+        prior_gdm = None
+        prior_gdm_date = None 
         if not preg_ts_qs:
-            prior_gdm_icd9 = event_qs.filter(self.dxgdm_q).order_by('date')
-            if prior_gdm_icd9:
-                prior_gdm_icd9_date = prior_gdm_icd9[0].date                
+            prior_gdm = event_qs.filter(self.dxgdm_q).order_by('date')
+            if prior_gdm:
+                prior_gdm_date = prior_gdm[0].date                
     
         
         values = {
                 'gdm_case': binary( gdm_case_qs ),
                 'gdm_case_date': gdm_case_date,
                 # these two will be overriden if the patient has any prengancy timespan
-                'prior_gdm_icd9': binary( prior_gdm_icd9 ),
-                'prior_gdm_icd9_date': prior_gdm_icd9_date, 
+                'prior_gdm': binary( prior_gdm ),
+                'prior_gdm_date': prior_gdm_date, 
                 
             }      
         
@@ -1236,7 +1243,7 @@ class GestationalDiabetesReport(Report):
                 end_date = preg_ts.start_date + relativedelta(days=280)
                 
             # within pregnacy timespan, anchored in dx 
-            lancets_and_icd9 = event_qs.filter(
+            lancets_and_dx = event_qs.filter(
                 name='dx:gestational-diabetes',
                 patient__event__name__in=['rx:lancets', 'rx:test-strips'],
                 patient__event__date__gte =  (F('date') - 14),
@@ -1308,12 +1315,12 @@ class GestationalDiabetesReport(Report):
                 gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date).order_by('date')
                 if gdm_prior:
                     gdm_prior_date = gdm_prior[0].date
-               
-            gdm_icd9_prior_this_preg = prepartum.filter(self.dxgdm_q).order_by('date')
-            if gdm_icd9_prior_this_preg:
-                gdm_icd9_prior_this_preg_date = gdm_icd9_prior_this_preg[0].date
+                    
+            gdm_prior_this_preg = prepartum.filter(self.dxgdm_q).order_by('date')
+            if gdm_prior_this_preg:
+                gdm_prior_this_preg_date = gdm_prior_this_preg[0].date
             else:
-                gdm_icd9_prior_this_preg_date = None   
+                gdm_prior_this_preg_date = None   
                 
             nutrition_referral = Encounter.objects.filter(
                 patient=patient,
@@ -1350,13 +1357,13 @@ class GestationalDiabetesReport(Report):
                                    '642.5','642.50','642.51','642.52','642.53','642.54',
                                    '642.6','642.60','642.61','642.62','642.63','642.64',
                                    '642.7','642.70','642.71','642.72','642.73','642.74']
+            
             #TODO add real codes for icd10 
-            '''
             pre_eclampsia_icd10s = ['642.4','642.40','642.41','642.42','642.43','642.44',
                                    '642.5','642.50','642.51','642.52','642.53','642.54',
                                    '642.6','642.60','642.61','642.62','642.63','642.64',
                                    '642.7','642.70','642.71','642.72','642.73','642.74']
-            '''
+            
             
             pre_eclampsia = Encounter.objects.filter(
                 patient = patient,
@@ -1366,7 +1373,6 @@ class GestationalDiabetesReport(Report):
                 dx_codes__type__exact='icd9',
                 )
             #TODO check for codeset and add another query for icd10s
-            '''
             pre_eclampsia |= Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
@@ -1374,10 +1380,11 @@ class GestationalDiabetesReport(Report):
                 dx_codes__code__in = pre_eclampsia_icd10s ,
                 dx_codes__type__exact='icd10',
                 ) 
-            '''          
+                       
             hypertension_inpreg_icd9s = ['642.3','642.9']
-            # TODO 
-            #hypertension_inpreg_icd10s = ['642.3','642.9']
+            # TODO for icd10 codes
+            hypertension_inpreg_icd10s = ['642.3','642.9']
+            
             hypertension = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
@@ -1385,7 +1392,6 @@ class GestationalDiabetesReport(Report):
                 dx_codes__code__in=hypertension_inpreg_icd9s, 
                 dx_codes__type__exact='icd9',
                 )
-            '''
             hypertension |= Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
@@ -1394,7 +1400,7 @@ class GestationalDiabetesReport(Report):
                 dx_codes__type__exact='icd10',
                 )
             
-            '''
+            
             # there is a relationship between the order by and the distinct clause
             # needed to force the order by because date is included in the meta of encounter
             # for default ordering
@@ -1409,23 +1415,43 @@ class GestationalDiabetesReport(Report):
                 dx_codes__code = polycystic_icd9,
                 dx_codes__type__exact='icd9'
                 ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
+            polycystic_icd10 = '256.4'
+            prior_polycystic_twice |= prior_encounter.filter(
+                dx_codes__code = polycystic_icd10,
+                dx_codes__type__exact='icd10'
+                ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
              
             prior_pre_eclampsia_twice = prior_encounter.filter(
                 dx_codes__code__in=pre_eclampsia_icd9s,
                 dx_codes__type__exact='icd9'
                 ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
+            prior_pre_eclampsia_twice |= prior_encounter.filter(
+                dx_codes__code__in=pre_eclampsia_icd10s,
+                dx_codes__type__exact='icd10'
+                ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
                     
-            history_hypertension = '401'#outside pregnancy
+            history_hypertension_icd9 = '401'#outside pregnancy
+            history_hypertension_icd10 = '401'#outside pregnancy
             prior_hypertension_twice = prior_encounter.filter(
-                dx_codes__code__startswith= history_hypertension ,
+                dx_codes__code__startswith= history_hypertension_icd9 ,
                 dx_codes__type__exact='icd9'
+                ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
+            prior_hypertension_twice |= prior_encounter.filter(
+                dx_codes__code__startswith= history_hypertension_icd10 ,
+                dx_codes__type__exact='icd10'
                 ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
                 
             liver_fatty_disease_icd9s = ['571.0', '571.8' ]
+            liver_fatty_disease_icd10s = ['571.0', '571.8' ]
             prior_liver_fatty_disease =  prior_encounter.filter(
                  dx_codes__code__in=liver_fatty_disease_icd9s ,
                  dx_codes__type__exact='icd9'
                 )
+            prior_liver_fatty_disease =  prior_encounter.filter(
+                 dx_codes__code__in=liver_fatty_disease_icd10s ,
+                 dx_codes__type__exact='icd10'
+                )
+            
             # any lab result in the past two years. 
             prior_2y_lab = LabResult.objects.filter(
                 patient = patient,
@@ -1691,9 +1717,9 @@ class GestationalDiabetesReport(Report):
                 'ga_gdm_met': ga_gdm_met ,  #added
                 'prior_gdm_case': binary( gdm_prior ),
                 'prior_gdm_case_date': gdm_prior_date,
-                'gdm_icd9_this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
-                'prior_gdm_icd9': binary( gdm_icd9_prior_this_preg ),
-                'prior_gdm_icd9_date': gdm_icd9_prior_this_preg_date, 
+                'gdm_this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
+                'prior_gdm': binary( gdm_prior_this_preg ),
+                'prior_gdm_date': gdm_prior_this_preg_date, 
                 'prior_polycystic': binary( prior_polycystic_twice), #added 
                 'prior_pre_eclampsia': binary(prior_pre_eclampsia_twice),#added 
                 'prior_hypertension': binary(prior_hypertension_twice),#added 
@@ -1791,7 +1817,7 @@ class GestationalDiabetesReport(Report):
                 'any_a1c_6_5_date': any_a1c_6_5_date,
                 'referral_to_nutrition': binary(nutrition_referral),
                 'lancets_test_strips_this_preg': binary( intrapartum.filter(self.lancets_q) ),
-                'lancets_test_strips_14_days_gdm_icd9': binary( lancets_and_icd9 ),
+                'lancets_test_strips_14_days_gdm': binary( lancets_and_dx ),
                 'insulin_rx': binary( insulin_qs ),
                 'ga_1st_insulin': ga_1st_insulin, # added
                 'insulin_basal': binary(insulin_basal),
