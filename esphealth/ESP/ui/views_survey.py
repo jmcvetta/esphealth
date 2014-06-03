@@ -89,9 +89,15 @@ def survey_import(request):
 def view_survey_report(request): 
     
     filename=DATA_DIR+"survey_report.csv"
-    vfile=open(filename,'r')        
-    response = HttpResponse(FileWrapper(vfile), content_type='application/csv')
+    try: 
+        vfile=open(filename,'r')       
     
+    except:
+        values = _populate_status_values()
+        values['comment'] = 'The %s file was not found, please generate the report first. ' % filename
+        return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
+    
+    response = HttpResponse(FileWrapper(vfile), content_type='application/csv')
     response['Content-Disposition'] = 'attachment;filename=survey_report.csv'
     return response
 
