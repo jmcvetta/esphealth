@@ -43,12 +43,6 @@ update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_e
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and height is not null )
 where Question ='What is your current height in Feet and Inches?';
 
-select r1.response_float*30.48 + (select  r2.response_float*2.54
-from  emr_surveyresponse r2
-where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp)
-from emr_surveyresponse r1 
-where r1.question = 'What is your current height in Feet and Inches?';  
-
 update ContinuousVariables set SelfReportMean = (select Round( avg(r1.response_float*30.48 + (select  r2.response_float*2.54
 from  emr_surveyresponse r2
 where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp))::numeric,2) 
@@ -170,12 +164,6 @@ order by emr_labresult.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What was your last LDL level?'; 
-
-select question as "Questions", noofrespondents as "No. of Respondents", 
-NoOfEHRRespondents as "No. of EHR Respondents",
-selfreportmean::text   as "Self-Report Mean",  ' +/- ' || selfreportsd::text  as "SD",
-EHRReportMean::text  as "EHR Mean",  ' +/- ' || EHRReportSD::text as "SD"
- from ContinuousVariables where selfreportmean>0;
 
 drop TABLE if exists CategoricalVariables;
 
@@ -336,11 +324,6 @@ INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo 
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
   sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno) from CategoricalVariables;
   
-select  RaceEthnicity as "Race-Ethnicity" , SelfReportYes as "Self-Report Yes",
-SelfReportNo  as "Self-Report No",    EHRYes as "EHR Yes",  EHRNo as "EHR No" ,
-PtYesEHRYes as "Pt Yes / EHR Yes", PtYesEHRNo as "Pt Yes / EHR No", 
-PtNoEHRYes as "Pt No / EHR Yes", PtNoEHRNo as "Pt No / EHR No" from CategoricalVariables;
-
 --yes/no/unsure questions
 drop TABLE if exists YesNoUnsureQuestions;
 
@@ -1214,12 +1197,6 @@ nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isra
 diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high blood pressure?';
 
-select Question, NoOfRespondents as "No. of Respondents", PtYes as "Pt Yes",
-PTNo  as "Pt No",  PtUnsure as "Pt Unsure",  EHRYes as "EHR Yes",  EHRNo as "EHR No" ,
-PtYesEHRYes as "Pt Yes / EHR Yes", PtYesEHRNo as "Pt Yes / EHR No", 
-PtNoEHRYes as "Pt No / EHR Yes", PtNoEHRNo as "Pt No / EHR No",
-PtUnsureEHRYes as "Pt Unsure / EHR Yes", PtUnsureEHRNo as "Pt Unsure / EHR Yes" from YesNoUnsureQuestions order by question;
-
 --type of diabetes 
 drop TABLE if exists DiabetesType;
 
@@ -1297,8 +1274,6 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
 	 (c.condition = 'diabetes:gestational' and response_choice='GDM')
 	 ) group by c.condition);
 
-
-
 --diabetes survey vs ehr yes/no 
 update DiabetesType set ptyesehrno = (select count(*) as "Pt yes / EHR no" 
 from emr_surveyresponse s, emr_patient p , nodis_case c 
@@ -1351,11 +1326,6 @@ INSERT INTO DiabetesType  (Type  , SelfReportYes ,SelfReportNo  ,
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
   sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno) from DiabetesType;
 	 
-select type as "Diabetes Type", SelfReportYes as "Self-Report Yes",
-SelfReportNo  as "Self-Report No", EHRYes as "EHR Yes",  EHRNo as "EHR No" ,
-PtYesEHRYes as "Pt Yes / EHR Yes", PtYesEHRNo as "Pt Yes / EHR No", 
-PtNoEHRYes as "Pt No / EHR Yes", PtNoEHRNo as "Pt No / EHR No" from DiabetesType;
-
 --weight type
 drop TABLE if exists WeightType;
 
@@ -1538,12 +1508,6 @@ INSERT INTO WeightType  (Type  , SelfReportYes ,SelfReportNo  ,
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ehrmissing), sum(ptyesehryes),
   sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno), sum(ptyesehrmissing), sum(ptnoehrmissing) from WeightType;
  
-select type as "BMI Category", SelfReportYes as "Self-Report Yes",
-SelfReportNo  as "Self-Report No",  EHRYes as "EHR Yes",  EHRNo as "EHR No" ,EHRMissing as "EHR Missing",
-PtYesEHRYes as "Pt Yes / EHR Yes", PtYesEHRNo as "Pt Yes / EHR No", 
-PtNoEHRYes as "Pt No / EHR Yes", PtNoEHRNo as "Pt No / EHR No",
-ptyesehrmissing as "Pt Yes / EHR Missing", ptnoehrmissing as "Pt No / EHR Missing" from WeightType;
-
 --line list
 drop TABLE if exists LineList;
 
@@ -1671,11 +1635,3 @@ EHR_ldl_med =  (select 'Y' where (select count(distinct(emr_prescription.patient
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0);
-
-select  Patientid  ,  mrn , FirstName , LastName , DOB, Survey_Gender ,EHR_gender , Survey_Race,EHR_race ,  
- Survey_age ,EHR_age ,   Survey_diastolic ,  Survey_systolic ,    EHR_diastolic ,  EHR_systolic , Survey_BP_unsure,
-    Survey_HBP ,    EHR_HBP ,    Survey_HBP_med ,    EHR_HBP_med ,    Survey_Diabetes ,    EHR_Diabetes ,   Survey_DiabetesType ,    EHR_DiabetesType ,
-    Survey_a1c ,    EHR_a1c ,    Survey_a1c_value ,    EHR_a1c_value , Survey_a1c_value_unsure,
-    Survey_height ,    EHR_height ,  Survey_height_unsure,  Survey_weight ,    EHR_weight , Survey_weight_unsure,   Survey_bmi ,    EHR_bmi ,
-    Survey_hyperlipidemia ,    EHR_hyperlipidemia ,    Survey_ldl ,    EHR_ldl ,    Survey_ldl_value ,
-    EHR_ldl_value ,  Survey_ldl_value_unsure,  Survey_ldl_med ,    EHR_ldl_med from LineList order by Patientid;
