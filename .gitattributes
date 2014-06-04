@@ -209,6 +209,7 @@ esphealth/ESP/static/tests.py -text
 esphealth/ESP/static/views.py -text
 esphealth/ESP/surveys/newsurveyreport.sql -text
 esphealth/ESP/surveys/surveyreport.sql -text
+esphealth/ESP/surveys/surveyreportquery.sql -text
 esphealth/ESP/templates/404.html -text
 esphealth/ESP/templates/500.html -text
 esphealth/ESP/templates/about.html -text
