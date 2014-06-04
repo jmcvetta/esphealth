@@ -35,7 +35,7 @@ update ContinuousVariables set NoOfRespondents = (select  count(mrn) as "No. of 
 from emr_surveyresponse where  response_float is not null and question ='What is your current height in Feet and Inches?')+
 (select  count(mrn) as "No. of Respondents"
 from emr_surveyresponse r1 where  r1.response_float is not null and r1.question ='inches' and 
-(select count(*) from emr_surveyresponse r2 where r1.created_timestamp = r2.created_timestamp and r2.response_float is null and 
+(select count(*) from emr_surveyresponse r2 where  r2.response_float is null and 
  r1.response_float is not null and r1.mrn= r2.mrn and r2.question ='What is your current height in Feet and Inches?')>0)
  where Question ='What is your current height in Feet and Inches?';
 
@@ -45,16 +45,14 @@ where Question ='What is your current height in Feet and Inches?';
 
 update ContinuousVariables set SelfReportMean = (select Round( avg(r1.response_float*30.48 + (select  r2.response_float*2.54
 from  emr_surveyresponse r2
-where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp))::numeric,2) 
-from emr_surveyresponse r1 
-where r1.question = 'What is your current height in Feet and Inches?' )
+where r2.question = 'inches' and r2.response_float is not null and r1.mrn= r2.mrn ))::numeric,2) 
+from emr_surveyresponse r1 where r1.question = 'What is your current height in Feet and Inches?'   )
 where Question ='What is your current height in Feet and Inches?';
 
 update ContinuousVariables set SelfReportSD = (select Round( stddev(r1.response_float*30.48 + (select  r2.response_float*2.54
 from  emr_surveyresponse r2
-where r2.question = 'inches' and r2.response_float is not null and r1.created_timestamp = r2.created_timestamp))::numeric,2) 
-from emr_surveyresponse r1 
-where r1.question = 'What is your current height in Feet and Inches?' )
+where r2.question = 'inches' and r2.response_float is not null and r1.mrn= r2.mrn ))::numeric,2) 
+from emr_surveyresponse r1 where r1.question = 'What is your current height in Feet and Inches?' )
 where Question ='What is your current height in Feet and Inches?';
 
 --ehr mean height and sd
