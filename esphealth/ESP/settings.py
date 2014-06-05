@@ -80,6 +80,7 @@ VERSION = open(version_path).readline().strip()
 
 SECRET_KEY = secrets['General']['secret_key']
 DEBUG = config['General']['django_debug']
+ICD10_SUPPORT = config['General']['icd10_support']
 CODEDIR = TOPDIR
 TEMPLATE_DEBUG = DEBUG
 ADMINS = [(i,i) for i in config['General']['admins']]

@@ -32,7 +32,8 @@ from django.db import IntegrityError, transaction
 from django.utils.encoding import DjangoUnicodeDecodeError
 from django.core.mail import EmailMultiAlternatives
 
-from ESP.settings import DEBUG, ETL_MEDNAMEREVERSE, ROW_LOG_COUNT, TRANSACTION_ROW_LIMIT, USE_FILENAME_DATE
+from ESP.settings import DEBUG, ETL_MEDNAMEREVERSE, ROW_LOG_COUNT
+from ESP.settings import TRANSACTION_ROW_LIMIT, USE_FILENAME_DATE, ICD10_SUPPORT
 from ESP.utils import log
 from ESP.utils.utils import float_or_none
 from ESP.utils.utils import string_or_none
@@ -263,7 +264,7 @@ class BaseLoader(object):
                      'specimen_num': specid, 'order_natural_key':order_key, 'provenance': self.provenance})
             self.__labSpec_cache[specid+'_'+order_key]=i    
             if created:
-                log.info('Creating new Specimen stub for id %s, %s.' % specid, order_key)
+                log.info('Creating new Specimen stub for id %s, %s.' % (specid, order_key) )
         return self.__labSpec_cache[specid+'_'+order_key]
     
     def insert_or_update(self, model, field_values, key_fields):
@@ -372,7 +373,7 @@ class BaseLoader(object):
                      'combotypecode':dx_code, 'type':code_type,'code': code,'name':name + ' (Added by load_epic.py)'})
     
                 if created:
-                    log.warning('Could not find dx code "%s" with type "%s" - creating new dx_code entry.' % dx_code, code_type)
+                    log.warning('Could not find dx code "%s" - creating new dx_code entry.' % dx_code  )
                 cache[dx_code] = i
                 
             return cache[dx_code]
@@ -1717,6 +1718,10 @@ class EncounterLoader(BaseLoader):
             type = code_string.find(':')
             if type >= 0:
                 code_type = code_string[:type].strip().lower()
+                if  code_type == 'icd10' and not ICD10_SUPPORT :
+                    log.error('ICD10 codes are not allowed code %s' % code_string )
+                    raise BaseException(e)
+            
                 if code_type in ['icd9','icd10']:
                     firstspace = code_string.find(' ',type)
                     if firstspace>type:
