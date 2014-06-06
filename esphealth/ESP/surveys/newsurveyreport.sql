@@ -1561,7 +1561,7 @@ CREATE TEMPORARY TABLE LineList(
 INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race , EHR_age ) 
   select emr_patient.natural_key, emr_patient.mrn, emr_patient.first_name, emr_patient.last_name, emr_patient.date_of_birth,
      emr_patient.gender, emr_patient.race, date_part('year',age(emr_patient.date_of_birth))
-     from emr_patient ;  
+     from emr_patient p, emr_surveyresponse b where p.mrn = b.mrn ;  
 
 update LineList set     
 EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
