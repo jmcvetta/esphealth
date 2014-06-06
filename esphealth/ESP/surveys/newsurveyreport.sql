@@ -1559,8 +1559,8 @@ CREATE TEMPORARY TABLE LineList(
 );
 
 INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race , EHR_age ) 
-  select emr_patient.natural_key, emr_patient.mrn, emr_patient.first_name, emr_patient.last_name, emr_patient.date_of_birth,
-     emr_patient.gender, emr_patient.race, date_part('year',age(emr_patient.date_of_birth))
+  select p.natural_key, p.mrn, p.first_name, p.last_name, p.date_of_birth,
+     p.gender, p.race, date_part('year',age(p.date_of_birth))
      from emr_patient p, emr_surveyresponse b where p.mrn = b.mrn ;  
 
 update LineList set     
