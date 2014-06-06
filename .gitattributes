@@ -481,6 +481,7 @@ esphealth/share/gen_pop_functions.pg.sql -text
 esphealth/share/general-population-report.pg.sql -text
 esphealth/share/genpop.sh -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
+esphealth/share/reindex_function.pg.sql -text
 esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
