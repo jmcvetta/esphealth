@@ -174,29 +174,24 @@ ALTER TABLE static_fakeicd9s
 ALTER TABLE static_fakeicd9s
  RENAME TO static_fakedx_codes;
 
-DROP TABLE static_icd9;
-CREATE TABLE static_dx_code
-(
-  combotypecode character varying(20) NOT NULL,
-  code character varying(10) NOT NULL,
-  "type" character varying(10) NOT NULL,
-  "name" character varying(150) NOT NULL,
-  longname character varying(1000) NOT NULL,
-  CONSTRAINT static_dx_code_pkey PRIMARY KEY (combotypecode)
-)
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE static_dx_code OWNER TO esp;
+DROP TABLE static_dx_code;
+ALTER TABLE static_icd9
+ ADD COLUMN "type" character varying(10);
+ALTER TABLE static_icd9
+ RENAME COLUMN code TO combotypecode;
+ALTER TABLE static_icd9 
+ ADD COLUMN code character varying(10),
+ ALTER COLUMN combotypecode TYPE character varying(20);
+ALTER TABLE static_icd9
+ RENAME TO static_dx_code;
+ 
+UPDATE  static_dx_code SET "type" = 'icd9', code = combotypecode;
 
 -- conf model changes    
 ALTER TABLE  conf_conditionconfig
   RENAME COLUMN icd9_days_before TO dx_code_days_before;
 ALTER TABLE  conf_conditionconfig    
   RENAME COLUMN icd9_days_after TO  dx_code_days_after;
- 
-ALTER TABLE conf_labtestmap_donotsend_results
- DROP CONSTRAINT conf_labtestmap_donotsend_resultstring_labtestmap_id_key;
  
 ALTER TABLE conf_reportableicd9
  DROP CONSTRAINT conf_reportableicd9_icd9_id_fkey;
@@ -207,12 +202,7 @@ ALTER TABLE  conf_reportabledx_code
  RENAME COLUMN icd9_id TO dx_code_id;
 ALTER TABLE  conf_reportabledx_code
   ALTER COLUMN dx_code_id TYPE character varying(20);
-    
-ALTER TABLE conf_hl7map
-ADD CONSTRAINT conf_hl7map_hl7_id_fkey FOREIGN KEY (hl7_id)
-      REFERENCES static_hl7_vocab (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
-      
+  
 -- dependency tables for emr changes 
 CREATE TABLE emr_labinfo
 (
@@ -397,11 +387,13 @@ ADD COLUMN   remark text,
 ALTER COLUMN date_of_birth SET DATA TYPE timestamp with time zone,
 ALTER COLUMN date_of_death SET DATA TYPE timestamp with time zone;
  
+ 
+ALTER TABLE emr_labresult
+RENAME COLUMN  "CLIA_ID"  TO  "CLIA_ID_id" ;
 ALTER TABLE emr_labresult
 ADD COLUMN    cresult_date character varying(100),
 ADD COLUMN    ccollection_date character varying(100),
 ADD COLUMN    ref_text character varying(100),
-ADD COLUMN    specimen_num character varying(100),
 ADD COLUMN    collection_date_end timestamp with time zone,
 ADD COLUMN    ccollection_date_end character varying(100),
 ADD COLUMN    status_date timestamp with time zone,
@@ -410,7 +402,6 @@ ADD COLUMN    interpreter character varying(100),
 ADD COLUMN    interpreter_id character varying(20),
 ADD COLUMN    interp_id_auth character varying(50),
 ADD COLUMN    interp_uid character varying(50),
-ADD COLUMN    "CLIA_ID_id" character varying(20),
 ADD COLUMN    lab_method character varying(100),
 ADD CONSTRAINT  "emr_labresult_CLIA_ID_id_fkey" FOREIGN KEY ("CLIA_ID_id")
       REFERENCES emr_labinfo ("CLIA_ID"),
@@ -467,6 +458,8 @@ ALTER TABLE  vaers_excludedicd9code
  RENAME TO vaers_excludeddx_code;
 ALTER TABLE  vaers_excludeddx_code
  ADD COLUMN   "type" character varying(10)  NULL;
+ 
+UPDATE vaers_excludeddx_code SET "type" = 'icd9';
   
 --rename tables for many to many for diagnosiseventrule
 ALTER TABLE   vaers_diagnosticseventrule_heuristic_defining_codes
