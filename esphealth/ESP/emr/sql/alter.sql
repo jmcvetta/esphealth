@@ -174,7 +174,7 @@ ALTER TABLE static_fakeicd9s
 ALTER TABLE static_fakeicd9s
  RENAME TO static_fakedx_codes;
 
-DROP TABLE static_dx_code;
+--DROP TABLE static_dx_code;
 ALTER TABLE static_icd9
  ADD COLUMN "type" character varying(10);
 ALTER TABLE static_icd9
@@ -194,8 +194,6 @@ ALTER TABLE  conf_conditionconfig
   RENAME COLUMN icd9_days_after TO  dx_code_days_after;
  
 ALTER TABLE conf_reportableicd9
- DROP CONSTRAINT conf_reportableicd9_icd9_id_fkey;
- ALTER TABLE conf_reportableicd9
  RENAME TO conf_reportabledx_code;
  
 ALTER TABLE  conf_reportabledx_code
@@ -419,10 +417,7 @@ ADD COLUMN    remark text,
 ADD COLUMN    obs_start_date character varying(100),
 ADD COLUMN    obs_end_date character varying(100);
 
- 
 --rename tables for many to many for emr_encounter
-ALTER TABLE  emr_encounter_icd9_codes 
- DROP CONSTRAINT emr_encounter_icd9_codes_icd9_id_fkey;
 ALTER TABLE  emr_encounter_icd9_codes 
  RENAME COLUMN icd9_id  TO dx_code_id;
       
@@ -433,8 +428,6 @@ ALTER TABLE  emr_encounter_dx_codes
   ALTER COLUMN dx_code_id TYPE character varying(20);
   
 ALTER TABLE emr_problem 
-DROP CONSTRAINT emr_problem_icd9_id_fkey;
-ALTER TABLE emr_problem 
  RENAME COLUMN icd9_id TO dx_code_id;
 
 ALTER TABLE  emr_problem
@@ -442,12 +435,9 @@ ALTER TABLE  emr_problem
 ALTER TABLE  emr_problem
   DROP COLUMN raw_icd9_code;
   
-  
 ALTER TABLE emr_hospital_problem
  DROP COLUMN raw_icd9_code ;
- ALTER TABLE emr_hospital_problem 
- DROP CONSTRAINT emr_hospital_problem_icd9_id_fkey;
- ALTER TABLE emr_hospital_problem
+ALTER TABLE emr_hospital_problem
  RENAME COLUMN icd9_id TO dx_code_id;
  
 ALTER TABLE  emr_hospital_problem
@@ -462,8 +452,6 @@ ALTER TABLE  vaers_excludeddx_code
 UPDATE vaers_excludeddx_code SET "type" = 'icd9';
   
 --rename tables for many to many for diagnosiseventrule
-ALTER TABLE   vaers_diagnosticseventrule_heuristic_defining_codes
- DROP CONSTRAINT  vaers_diagnosticseventrule_heuristic_defining_code_icd9_id_fkey;
 ALTER TABLE   vaers_diagnosticseventrule_heuristic_defining_codes 
  RENAME COLUMN icd9_id  TO dx_code_id;
  
@@ -471,10 +459,11 @@ ALTER TABLE  vaers_diagnosticseventrule_heuristic_defining_codes
   ALTER COLUMN dx_code_id TYPE character varying(20);
 
 ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes 
-  DROP CONSTRAINT vaers_diagnosticseventrule_heuristic_discarding_co_icd9_id_fkey;
-ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes 
   RENAME COLUMN icd9_id  TO dx_code_id;
    
 ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes
   ALTER COLUMN dx_code_id TYPE character varying(20);
+  
+ALTER TABLE  emr_surveyresponse
+ ADD COLUMN survey_id character varying(20);
   
