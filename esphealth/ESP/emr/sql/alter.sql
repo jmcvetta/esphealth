@@ -174,7 +174,6 @@ ALTER TABLE static_fakeicd9s
 ALTER TABLE static_fakeicd9s
  RENAME TO static_fakedx_codes;
 
---DROP TABLE static_dx_code;
 ALTER TABLE static_icd9
  ADD COLUMN "type" character varying(10);
 ALTER TABLE static_icd9
@@ -463,7 +462,4 @@ ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes
    
 ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes
   ALTER COLUMN dx_code_id TYPE character varying(20);
-  
-ALTER TABLE  emr_surveyresponse
- ADD COLUMN survey_id character varying(20);
-  
+    
