@@ -97,7 +97,7 @@ def survey_export(request):
     '''
     admin = True
     cursor = connection.cursor()
-    cursor.execute("COPY (select 1 as provenance_id, date as \"created_timestamp\", current_timestamp as \"updated_timestamp\",survey_participant.login as mrn,\"text\" as question,response_float,response_string,response_choice,response_boolean,date from  survey_response, survey_question, survey_participant where survey_question.id = survey_response.question_id and survey_response.participant_id = survey_participant.id ) TO '/srv/esp-data/surveyresponse.copy'  WITH   DELIMITER  ','  CSV  HEADER")
+    cursor.execute("COPY (select 1 as provenance_id, survey_id, date as \"created_timestamp\", current_timestamp as \"updated_timestamp\",survey_participant.login as mrn,\"text\" as question,response_float,response_string,response_choice,response_boolean,date from  survey_response, survey_question, survey_participant where survey_question.id = survey_response.question_id and survey_response.participant_id = survey_participant.id ) TO '/srv/esp-data/surveyresponse.copy'  WITH   DELIMITER  ','  CSV  HEADER")
     values = _populate_status_values()
     values['comment'] = 'Survey Responses successfully exported'
     values['admin'] = admin
@@ -118,7 +118,7 @@ def survey_export(request):
         esp_cursor = esp_connection.cursor()
         esp_cursor.execute("TRUNCATE emr_surveyresponse CASCADE")
         esp_connection.connection.commit()
-        esp_cursor.execute("COPY emr_surveyresponse ( provenance_id,\"created_timestamp\" , \"updated_timestamp\" ,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
+        esp_cursor.execute("COPY emr_surveyresponse ( provenance_id, survey_id, \"created_timestamp\" , \"updated_timestamp\" ,mrn,question,response_float,response_string,response_choice,response_boolean,date ) FROM '/srv/esp-data/surveyresponse.copy'  WITH  DELIMITER  ',' CSV  HEADER")
         esp_connection.connection.commit()
         esp_connection.close()
     except Exception, why:
