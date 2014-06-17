@@ -66,19 +66,19 @@ SELECT '1'::varchar(1) as centerid,
        enc.date - ('1960-01-01'::date) as a_date,
        prov.natural_key as provider,
        'AV'::varchar(10) as enc_type, --this is initial value for Mass League data
-       diag.icd9_id as dx,
-       icd9_prefix(diag.icd9_id, 3)::varchar(4) as dx_code_3dig,
-       icd9_prefix(diag.icd9_id, 4)::varchar(5) as dx_code_4dig,
+       diag.dx_code_id as dx,
+       icd9_prefix(diag.dx_code_id, 3)::varchar(4) as dx_code_3dig,
+       icd9_prefix(diag.dx_code_id, 4)::varchar(5) as dx_code_4dig,
        case 
-         when length(icd9_prefix(diag.icd9_id, 4))=5
-	   then substr(diag.icd9_id,1,6)
-         else substr(diag.icd9_id,1,5)
+         when length(icd9_prefix(diag.dx_code_id, 4))=5
+	   then substr(diag.dx_code_id,1,6)
+         else substr(diag.dx_code_id,1,5)
        end as dx_code_4dig_with_dec,
-       icd9_prefix(diag.icd9_id, 5)::varchar(6) as dx_code_5dig,
+       icd9_prefix(diag.dx_code_id, 5)::varchar(6) as dx_code_5dig,
        case 
-         when length(icd9_prefix(diag.icd9_id, 4))=6
-	   then substr(diag.icd9_id,1,7)
-         else substr(diag.icd9_id,1,6)
+         when length(icd9_prefix(diag.dx_code_id, 4))=6
+	   then substr(diag.dx_code_id,1,7)
+         else substr(diag.dx_code_id,1,6)
        end as dx_code_5dig_with_dec,
        enc.site_name as facility_location,
        enc.site_natural_key as facility_code,
@@ -90,9 +90,9 @@ SELECT '1'::varchar(1) as centerid,
   FROM public.emr_encounter enc
          INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
-         INNER JOIN (select * from public.emr_encounter_icd9_codes 
-                     where strpos(trim(icd9_id),'.')<>3
-                       and length(trim(icd9_id))>=3 ) diag ON enc.id = diag.encounter_id
+         INNER JOIN (select * from public.emr_encounter_dx_codes 
+                     where strpos(trim(dx_code_id),'.')<>3
+                       and length(trim(dx_code_id))>=3 ) diag ON enc.id = diag.encounter_id
          LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
   WHERE prvn.source ilike 'epicmem%';
 
@@ -203,9 +203,9 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_3dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9 
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
+                       and length(trim(code))>=3  ) icd9 
                  ON t1.code_ = replace(icd9.code, '.', '')
 UNION
 -- Add the summary information for the 10 year age groups
@@ -220,8 +220,8 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_3dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '')
 UNION
@@ -237,9 +237,9 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_3dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
+                       and length(trim(code))>=3  ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '');
 create index diag3dig_centerid_idx on esp_diagnosis_icd9_3dig (centerid);
 create index diag3dig_age_group_type_idx on esp_diagnosis_icd9_3dig (age_group_type);
@@ -262,9 +262,9 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_4dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
+                       and length(trim(code))>=3  ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '')
 UNION
 -- Add the summary information for the 10 year age groups
@@ -279,8 +279,8 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_4dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '')
 UNION
@@ -296,9 +296,9 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_4dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
+                       and length(trim(code))>=3  ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '');
 create index diag4dig_centerid_idx on esp_diagnosis_icd9_4dig (centerid);
 create index diag4dig_age_group_type_idx on esp_diagnosis_icd9_4dig (age_group_type);
@@ -321,7 +321,7 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_5dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
+         LEFT JOIN (select * from public.static_dx_code
                     where strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '')
@@ -338,9 +338,9 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_5dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
+                       and length(trim(code))>=3  ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '')
 UNION
 -- Add the summary information for the mini-Sentinel age groups
@@ -355,9 +355,9 @@ SELECT t1.*, icd9.name as dx_name
                  INNER JOIN esp_demographic pat ON diag.patid = pat.patid
         GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_5dig,
                  diag.enc_type) t1
-         LEFT JOIN (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
+         LEFT JOIN (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
+                       and length(trim(code))>=3  ) icd9
                  ON t1.code_ = replace(icd9.code, '.', '');
 create index diag5dig_centerid_idx on esp_diagnosis_icd9_5dig (centerid);
 create index diag5dig_age_group_type_idx on esp_diagnosis_icd9_5dig (age_group_type);
@@ -499,7 +499,7 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              diag.dx as item_code,
              icd9.name as item_text
         FROM esp_diagnosis diag
-               INNER JOIN public.static_icd9 icd9 ON diag.dx = icd9.code;
+               INNER JOIN public.static_dx_code icd9 ON diag.dx = icd9.code;
         ALTER TABLE UVT_DX ADD PRIMARY KEY (item_code);
 
 --    UVT_DX_3DIG
@@ -509,8 +509,8 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              diag.dx_code_3dig as item_code,
              icd9.name as item_text
         FROM esp_diagnosis diag
-               LEFT OUTER JOIN  (select * from public.static_icd9
-                    where strpos(trim(code),'.')<>3
+               LEFT OUTER JOIN  (select * from public.static_dx_code
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9 
                ON diag.dx_code_3dig = REPLACE(icd9.code, '.', '')
         WHERE diag.dx_code_3dig is not null;
@@ -524,7 +524,7 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              diag.dx_code_4dig_with_dec as item_code_with_dec,
              icd9.name as item_text
         FROM esp_diagnosis diag
-               LEFT OUTER JOIN  public.static_icd9 icd9
+               LEFT OUTER JOIN  public.static_dx_code icd9
                ON diag.dx_code_4dig_with_dec = icd9.code
         WHERE diag.dx_code_4dig is not null;
         ALTER TABLE UVT_DX_4DIG ADD PRIMARY KEY (item_code_with_dec);
@@ -538,7 +538,7 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              diag.dx_code_5dig_with_dec as item_code_with_dec,
              icd9.name as item_text
         FROM esp_diagnosis diag
-               LEFT OUTER JOIN  public.static_icd9 icd9
+               LEFT OUTER JOIN  public.static_dx_code icd9
                ON diag.dx_code_5dig_with_dec = icd9.code
         WHERE diag.dx_code_5dig is not null;
         ALTER TABLE UVT_DX_5DIG ADD PRIMARY KEY (item_code_with_dec);
