@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 
+
 {% block extrastyle %}
     <style type="text/css">
     table {
@@ -33,11 +34,19 @@
 
 <p>
     Searching lab native names for these strings:
-    <ul>
+    <table>
+    <tr> <td>
         {% for s in search_strings %}
-        <li>{{ s }}</li>
+          {{ s }} <BR>
+	        {% if forloop.counter|divisibleby:"10" %} 
+	        </td>
+	          {% if not forloop.last %}
+	            <td>
+	            {% endif %}
+	        {% endif %}
         {% endfor %}
-    </ul>
+    </tr> 
+    </table>
 </p>
 
 
