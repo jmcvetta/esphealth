@@ -268,7 +268,7 @@ insert into mdphnet_schema_update_history
              dx_code.name item_text
         FROM esp_diagnosis_u diag
                LEFT OUTER JOIN  (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code 
                ON diag.dx_code_3dig = REPLACE(dx_code.code, '.', '')
         WHERE diag.dx_code_3dig is not null
@@ -282,7 +282,7 @@ insert into mdphnet_schema_update_history
              dx_code.name item_text
         FROM esp_diagnosis_u diag
                LEFT OUTER JOIN  (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where    strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                ON diag.dx_code_3dig = REPLACE(dx_code.code, '.', '')
         WHERE diag.dx_code_4dig is not null
@@ -296,7 +296,7 @@ insert into mdphnet_schema_update_history
              dx_code.name item_text
         FROM esp_diagnosis_u diag
                LEFT OUTER JOIN  (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where  strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                ON diag.dx_code_3dig = REPLACE(dx_code.code, '.', '')
         WHERE diag.dx_code_5dig is not null
@@ -386,7 +386,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_3dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code 
                  ON t1.code_ = replace(dx_code.code, '.', '')
 UNION
@@ -403,7 +403,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_3dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where  strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '')
 UNION
@@ -420,7 +420,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_3dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '');
 create index diag3dig_centerid_idx_new on esp_diagnosis_icd9_3dig_new (centerid);
@@ -453,7 +453,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_4dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '')
 UNION
@@ -470,7 +470,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_4dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where stype= 'icd9' and trpos(trim(code),'.')<>3
+                    where   trpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '')
 UNION
@@ -487,7 +487,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_4dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '');
 create index diag4dig_centerid_idx_new on esp_diagnosis_icd9_4dig_new (centerid);
@@ -520,7 +520,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_5dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '')
 UNION
@@ -537,7 +537,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_5dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where  strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '')
 UNION
@@ -554,7 +554,7 @@ SELECT t1.*, dx_code.name dx_name
         GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_5dig,
                  diag.enc_type) t1
          LEFT JOIN (select * from public.static_dx_code
-                    where type= 'icd9' and strpos(trim(code),'.')<>3
+                    where   strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) dx_code
                  ON t1.code_ = replace(dx_code.code, '.', '');
 create index diag5dig_centerid_idx_new on esp_diagnosis_icd9_5dig_new (centerid);
