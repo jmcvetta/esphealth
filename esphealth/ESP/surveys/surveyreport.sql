@@ -1,7 +1,7 @@
 ﻿drop TABLE if exists ContinuousVariables;
 
 CREATE TEMPORARY TABLE ContinuousVariables(
-    Question   VARCHAR(80),
+    Question   VARCHAR(200),
     NoOfRespondents INTEGER,
     NoOfEHRRespondents INTEGER,
     SelfReportMean  DECIMAL(7,2),
@@ -100,7 +100,7 @@ where Question ='What is your last diastolic blood pressure?';
 
 update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and bp_systolic is not null )
-where Question ='What was your blood pressure the last time it was measured by your doctor?';
+where Question ='What was your systolic blood pressure the last time it was measured by your doctor?';
 
 --mean systolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_systolic 
@@ -115,7 +115,7 @@ where emr_encounter.patient_id = emr_patient.id
 order by emr_encounter.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
-where Question ='What was your blood pressure the last time it was measured by your doctor?';
+where Question ='What was your systolic blood pressure the last time it was measured by your doctor?';
 
 update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.id))   from emr_labresult , emr_patient 
 where native_code in (select native_code from conf_labtestmap where test_name ='a1c')
@@ -326,7 +326,7 @@ INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo 
 drop TABLE if exists YesNoUnsureQuestions;
 
 CREATE TEMPORARY TABLE YesNoUnsureQuestions(
-    Question   VARCHAR(80),
+    Question   VARCHAR(200),
     NoOfRespondents INTEGER,
     PtYes INTEGER,
     PTNo  INTEGER,
@@ -1570,7 +1570,7 @@ EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter where Lin
   survey_race = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your race/ethnicity?'),
   survey_age = (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your age?'),
   Survey_diastolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your last diastolic blood pressure?'),
-  Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your blood pressure the last time it was measured by your doctor?'),
+  Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your systolic blood pressure the last time it was measured by your doctor?'),
   Survey_BP_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='systolic-diastolic / unsure'),
   Survey_HBP = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever been diagnosed with high blood pressure?'),
   EHR_HBP = (select 'Y' where  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )<2 

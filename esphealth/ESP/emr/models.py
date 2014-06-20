@@ -2247,7 +2247,7 @@ class Pregnancy(BasePatientRecord):
         
 class SurveyResponse(BasePatientRecord):
     survey_id = models.CharField('SurveyID',max_length=20, null=True, blank=True, db_index=False)
-    question = models.CharField('Question Name',max_length=80, null=True, blank=True, db_index=False)
+    question = models.CharField('Question Name',max_length=200, null=True, blank=True, db_index=False)
     response_float = models.FloatField('response float', null=True, default=0)
     response_string = models.CharField('response string',max_length=30, null=True, blank=True, db_index=False)
     response_choice = models.CharField('response choice', max_length=3,null=True, blank=True,  db_index=False)
