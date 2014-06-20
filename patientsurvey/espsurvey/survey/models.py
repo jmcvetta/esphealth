@@ -72,7 +72,7 @@ class Question(models.Model):
     #which question and what kind of answer... 
     conditional_question = models.IntegerField('conditional question', null=True, default=0)
     #TODO conditional to what? to the group or which question id, should be a q id. and conditional to which response of prior response?
-    text = models.CharField('question text',max_length=80, blank=False, db_index=False)
+    text = models.CharField('question text',max_length=200, blank=False, db_index=False)
 
     def __str__(self):
         return '%s | %s ' % (self.id, self.short_name )

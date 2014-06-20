@@ -99,7 +99,7 @@ class SurveyForm (forms.Form):
     race = forms.ChoiceField(RACE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label = 'What is your race/ethnicity?')
     #race = forms.ChoiceField( RACE, widget=MyCheckboxSelectMultiple(),  required=True, label = '3. What is your race/ethnicity?')
     race.question =6 
-    systolic = forms.IntegerField( required=False, label='What was your blood pressure the last time it was measured by your doctor? ')
+    systolic = forms.IntegerField( required=False, label='What was your systolic blood pressure the last time it was measured by your doctor? ')
     systolic.question =7
     systolic.unsure = 'diastolic_unsure'
     diastolic = forms.IntegerField(required=False, label='/')
