@@ -17,8 +17,8 @@ WEIGHT_TYPE = [('L','Low'),('N', 'Normal'), ('OW','Overweight'), ('OB','Obese') 
 
 DIABETES_TYPE = [  ('PRE','Pre-diabetes'),('T1', 'Type 1 Diabetes'), ('T2','Type 2 Diabetes'),('GDM', 'Gestational Diabetes')]
 
-RACE = [('B','Black'), ('W','White'), ('A','Asian'), ('H','Hispanic'), ('O','Other'),
-   ('I','Indian'),  ('NA','Native American'),  ('AL','Alaskan'), ('NH','Native Hawaiians'), ('M','Multiracial')]
+RACE = [('B','Black'), ('W','White/Caucasian'), ('A','Asian'), ('H','Hispanic'), ('O','Other'), ('I','Indian'), 
+    ('NA','Native American'),  ('AL','Alaskan'), ('NH','Native Hawaii/Pacific Islander'), ('M','Multiracial'),('PD','Patient Declines'),]
 
 GENDER = [('M','Male'),('F','Female')]
 
