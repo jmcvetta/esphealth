@@ -1,7 +1,7 @@
 ﻿drop TABLE if exists ContinuousVariables;
 
 CREATE TEMPORARY TABLE ContinuousVariables(
-    Question   VARCHAR(80),
+    Question   VARCHAR(200),
     NoOfRespondents INTEGER,
     NoOfEHRRespondents INTEGER,
     SelfReportMean  DECIMAL(7,2),
@@ -15,11 +15,12 @@ INSERT INTO ContinuousVariables(
             Question  ,   NoOfRespondents ,SelfReportMean ,SelfReportSD )
      select question, count(mrn) as "No. of Respondents",
 Round( avg(response_float)::numeric,2) as "Self-Report Mean",round( stddev(response_float)::numeric,2) as  "+- SD"
-from emr_surveyresponse 
-where  response_float is not null and (question <> 'inches')
+from emr_surveyresponse where  response_float is not null and (question <> 'inches')
 group by question ;
 
-update ContinuousVariables set NoOfEHRRespondents = 1 where Question ='What is your age?';
+update ContinuousVariables set NoOfEHRRespondents = 
+(select count(*) from emr_patient where date_of_birth is not null and mrn in (select distinct (mrn) from emr_surveyresponse ))
+ where Question ='What is your age?';
 
 update ContinuousVariables set EHRReportMean=
 (select round(avg(date_part('year',age(emr_surveyresponse.date, date_of_birth)) )::numeric,2) 
@@ -39,8 +40,8 @@ from emr_surveyresponse r1 where  r1.response_float is not null and r1.question 
  r1.response_float is not null and r1.mrn= r2.mrn and r2.question ='What is your current height in Feet and Inches?')>0)
  where Question ='What is your current height in Feet and Inches?';
 
-update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and height is not null )
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.patient_id)) from emr_patient , emr_encounter
+where emr_patient.mrn in (select distinct (emr_surveyresponse.mrn) from emr_surveyresponse ) and emr_encounter.patient_id = emr_patient.id and height is not null )
 where Question ='What is your current height in Feet and Inches?';
 
 update ContinuousVariables set SelfReportMean = (select Round( avg(r1.response_float*30.48 + (select  r2.response_float*2.54
@@ -65,8 +66,8 @@ from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
 where Question ='What is your current height in Feet and Inches?';
 
-update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and weight is not null )
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.patient_id)) from emr_patient , emr_encounter
+where emr_patient.mrn in (select distinct (emr_surveyresponse.mrn) from emr_surveyresponse ) and emr_encounter.patient_id = emr_patient.id and weight is not null )
 where Question ='What is your current weight in pounds?';
 
 --mean weight and sd
@@ -79,8 +80,8 @@ from emr_patient , emr_surveyresponse, emr_encounter
 where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
 where Question ='What is your current weight in pounds?';
 
-update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and bp_diastolic is not null )
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.patient_id)) from emr_patient , emr_encounter
+where emr_patient.mrn in (select distinct (emr_surveyresponse.mrn) from emr_surveyresponse ) and emr_encounter.patient_id = emr_patient.id and bp_diastolic is not null )
 where Question ='What is your last diastolic blood pressure?';
 
 --mean diastolic and sd
@@ -98,9 +99,10 @@ from emr_patient
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What is your last diastolic blood pressure?';
 
-update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.id)) from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id and bp_systolic is not null )
-where Question ='What was your blood pressure the last time it was measured by your doctor?';
+update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.patient_id)) from emr_patient , emr_encounter
+where emr_patient.mrn in (select distinct (emr_surveyresponse.mrn) from emr_surveyresponse ) and emr_encounter.patient_id = emr_patient.id and bp_systolic is not null )
+where Question ='What was your systolic blood pressure the last time it was measured by your doctor?';
+
 
 --mean systolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_systolic 
@@ -115,12 +117,12 @@ where emr_encounter.patient_id = emr_patient.id
 order by emr_encounter.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
-where Question ='What was your blood pressure the last time it was measured by your doctor?';
+where Question ='What was your systolic blood pressure the last time it was measured by your doctor?';
 
-update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.id))   from emr_labresult , emr_patient 
+update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.patient_id))   from emr_labresult , emr_patient 
 where native_code in (select native_code from conf_labtestmap where test_name ='a1c')
 and emr_labresult.patient_id = emr_patient.id and result_float is not null 
-and emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
+and emr_patient.mrn in (select distinct (emr_surveyresponse.mrn) from emr_surveyresponse))
 where Question ='what was your most recent hemoglobin A1C value?';
 
 --mean a1c and sd
@@ -140,10 +142,10 @@ from emr_patient
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='what was your most recent hemoglobin A1C value?';
 
-update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.id))   from emr_labresult , emr_patient 
+update ContinuousVariables set NoOfEHRRespondents = (select  count(distinct(emr_labresult.patient_id))   from emr_labresult , emr_patient 
 where native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl')
 and emr_labresult.patient_id = emr_patient.id and result_float is not null 
-and emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
+and emr_patient.mrn in (select distinct(emr_surveyresponse.mrn) from emr_surveyresponse))
 where Question ='What was your last LDL level?';
 
 --mean ldl and sd
@@ -178,30 +180,32 @@ CREATE TEMPORARY TABLE CategoricalVariables(
 );
 
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Black');
-INSERT INTO CategoricalVariables ( RaceEthnicity) values ('White');
+INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Caucasian');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Asian');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Other');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Hispanic');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Indian');
-INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Native American');
+INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Nat American');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Alaskan');
-INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Native Hawaiians');
+INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Native Hawai');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Multiracial');
+INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Patient Decl');
 
 --etnicity selfreport yes
 update CategoricalVariables set SelfReportYes =( select count(*) 
   from emr_surveyresponse b
 where b.question='What is your race/ethnicity?' and (
 (response_choice='B' and raceethnicity=  'Black' ) or
-(response_choice='W' and raceethnicity=   'White') or
+(response_choice='W' and raceethnicity=   'Caucasian') or
 (response_choice='A' and raceethnicity=   'Asian') or
 (response_choice='O' and raceethnicity=   'Other') or
 (response_choice='H' and raceethnicity=   'Hispanic') or
 (response_choice='I' and raceethnicity=   'Indian') or
-(response_choice='NA' and raceethnicity=   'Native American') or
+(response_choice='NA' and raceethnicity=   'Nat American') or
 (response_choice='Al' and raceethnicity=   'Alaskan') or
-(response_choice='NH' and raceethnicity=   'Native Hawaiians') or
-(response_choice='M' and raceethnicity=   'Multiracial') 
+(response_choice='NH' and raceethnicity=   'Native Hawai') or
+(response_choice='M' and raceethnicity=   'Multiracial') or
+(response_choice='PD' and raceethnicity=   'Patient Decl')
 ) group by response_choice, b.question);
 
 --etnicity selfreport no
@@ -210,15 +214,16 @@ where a.question=b.question)- count(*)
   from emr_surveyresponse b
 where b.question='What is your race/ethnicity?' and (
 (response_choice='B' and raceethnicity=  'Black' ) or
-(response_choice='W' and raceethnicity=   'White') or
+(response_choice='W' and raceethnicity=   'Caucasian') or
 (response_choice='A' and raceethnicity=   'Asian') or
 (response_choice='O' and raceethnicity=   'Other') or
 (response_choice='H' and raceethnicity=   'Hispanic') or
 (response_choice='I' and raceethnicity=   'Indian') or
-(response_choice='NA' and raceethnicity=   'Native American') or
+(response_choice='NA' and raceethnicity=   'Nat American') or
 (response_choice='Al' and raceethnicity=   'Alaskan') or
-(response_choice='NH' and raceethnicity=   'Native Hawaiians') or
-(response_choice='M' and raceethnicity=   'Multiracial') 
+(response_choice='NH' and raceethnicity=   'Native Hawai') or
+(response_choice='M' and raceethnicity=   'Multiracial') or
+(response_choice='PD' and raceethnicity=   'Patient Decl')
 ) group by response_choice, b.question);
 
 --ehr yes 
@@ -226,16 +231,17 @@ update CategoricalVariables set ehryes =( select count(*)
   from emr_patient p
 where 
 p.mrn in (select mrn from emr_surveyresponse where question='What is your race/ethnicity?' ) and  (
-(race = raceethnicity and raceethnicity=  'Black' ) or
-(race = raceethnicity and raceethnicity=   'White') or
-(race = raceethnicity and raceethnicity=   'Asian') or
-(race = raceethnicity and raceethnicity=   'Other') or
-(race = raceethnicity and raceethnicity=   'Hispanic') or
-(race = raceethnicity and raceethnicity=   'Indian') or
-(race = raceethnicity and raceethnicity=   'Native American') or
-(race = raceethnicity and raceethnicity=   'Alaskan') or
-(race = raceethnicity and raceethnicity=   'Native Hawaiians') or
-(race = raceethnicity and raceethnicity=   'Multiracial') 
+( (upper(race) = upper(raceethnicity) or upper(race) = upper('African')) and raceethnicity=  'Black' ) or
+( ( upper(race) = upper(raceethnicity) or upper(race) = upper('White')) and raceethnicity=   'Caucasian') or
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Asian') or
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Other') or
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Hispanic') or
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Indian') or
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Nat American') or
+( (upper(race) = upper(raceethnicity) or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) and raceethnicity=   'Alaskan') or
+( (upper(race) = upper(raceethnicity)  or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN')) and raceethnicity=   'Native Hawai') or
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Multiracial') or 
+(upper(race) = upper(raceethnicity) and raceethnicity=   'Patient Decl')
 ) group by race);
 
 --ehr no 
@@ -244,89 +250,92 @@ update CategoricalVariables set ehrno = (select (select count(*) from emr_patien
         - count(*) as "EHR No"
 from emr_patient b 
 where b.mrn in (select mrn from emr_surveyresponse where question='What is your race/ethnicity?') 
-and race= RaceEthnicity
-group by race);
+and ( upper(race) = upper(raceethnicity) or 
+(upper(race) = upper('White') and raceethnicity=   'Caucasian') or
+( upper(race) = upper('African') and raceethnicity=  'Black' ) or
+(upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE') and raceethnicity=   'Alaskan') or
+(upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN') and raceethnicity=   'Native Hawai') 
+) group by race);
 
 --ethnicity: survey vs ehr yes/yes
 update CategoricalVariables set ptyesehryes = (
 select count(*) as "Pt yes / EHR yes" from emr_surveyresponse s, emr_patient p 
        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-         and race = RaceEthnicity 
-         and (((race='Black' or race='African') and response_choice='B') or
-	 ((race=  'White' or race='Caucasian') and  response_choice='W') or 
-	 (race= 'Asian' and response_choice='A') or 
-	 (race= 'Other' and response_choice='O') or 
-	 (race= 'Hispanic' and response_choice='H') or
-(response_choice='I' and race=   'Indian') or
-(response_choice='NA' and race=   'Native American') or
-(response_choice='Al' and race=   'Alaskan') or
-(response_choice='NH' and race=   'Native Hawaiians') or
-(response_choice='M' and race=   'Multiracial') 
-	 ) group by p.race);
+         and upper(race ) = upper(raceethnicity) 
+         and (((upper(race) = upper('Black') or upper(race) = upper('African')) and response_choice='B') or
+	 ((upper(race) = upper('White') or upper(race) = upper('Caucasian')) and  response_choice='W') or 
+	 (upper(race) = upper('Asian') and response_choice='A') or 
+	 (upper(race) = upper('Other') and response_choice='O') or 
+	 (upper(race) = upper('Hispanic') and response_choice='H') or
+(response_choice='I' and upper(race) = upper('Indian')) or
+(response_choice='NA' and upper(race) = upper('Nat American')) or
+(response_choice='Al' and (upper(race) = upper('Alaskan') or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+(response_choice='NH' and (upper(race) = upper( 'Native Hawai')  or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN'))  ) or
+(response_choice='M' and upper(race) = upper('Multiracial')) or 
+(response_choice='PD' and upper(race) = upper('Patient Decl')) 	 ) group by p.race);
 
 --ethnicity survey vs ehr yes/no 
 update CategoricalVariables set ptyesehrno = (
 select count(*) as "Pt yes / EHR no" from emr_surveyresponse s, emr_patient p 
        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-       and race = RaceEthnicity 
-         and (((race<>'Black' and race<>'African') and response_choice='B') or
-	 ((race<>  'White'and  race<>'Caucasian') and  response_choice='W') or 
-	 (race<> 'Asian' and response_choice='A') or 
-	 (race<> 'Other' and response_choice='O') or 
-	 (race<> 'Hispanic' and response_choice='H')or 
-	 (response_choice='I' and race<>'Indian') or
-	(response_choice='NA' and race<>'Native American') or
-	(response_choice='Al' and race<>'Alaskan') or
-	(response_choice='NH' and race<> 'Native Hawaiians') or
-	(response_choice='M' and race<> 'Multiracial') 
-	 ) group by race);
+       and upper(race ) = upper(raceethnicity) 
+         and (((upper(race) <> upper('Black') and upper(race) <> upper('African')) and response_choice='B') or
+	 ((upper(race) <> upper('White') and  upper(race) <> upper('Caucasian')) and  response_choice='W') or 
+	 (upper(race) <> upper('Asian') and response_choice='A') or 
+	 (upper(race) <> upper('Other') and response_choice='O') or 
+	 (upper(race) <> upper( 'Hispanic') and response_choice='H')or 
+	 (response_choice='I' and upper(race) <> upper('Indian')) or
+	(response_choice='NA' and upper(race) <> upper('Nat American')) or
+	(response_choice='Al' and (upper(race) <> upper('Alaskan') and upper(race) <> upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+	(response_choice='NH' and (upper(race) <> upper( 'Native Hawai') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
+	(response_choice='M' and upper(race) <> upper( 'Multiracial')) or 
+	(response_choice='PD' and upper(race) <> upper('Patient Decl'))  ) group by race);
 	 
 --ethnicity survey vs ehr no/yes
 update CategoricalVariables set ptnoehryes = (
 select  count(*) as "Pt no/ EHR yes" from emr_surveyresponse s, emr_patient p 
        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-        and race = RaceEthnicity 
-         and (((race='Black' or race='African') and response_choice<>'B') or
-	 ((race=  'White' or race='Caucasian') and  response_choice<>'W') or 
-	 (race= 'Asian' and response_choice<>'A') or 
-	 (race= 'Other' and response_choice<>'O') or 
-	 (race= 'Hispanic' and response_choice<>'H') or 
-	(response_choice<>'I' and race=   'Indian') or
-	(response_choice<>'NA' and race=   'Native American') or
-	(response_choice<>'Al' and race=   'Alaskan') or
-	(response_choice<>'NH' and race=   'Native Hawaiians') or
-	(response_choice<>'M' and race=   'Multiracial') )
-	 group by race);
+        and upper(race ) = upper(raceethnicity)
+         and (((upper(race ) = upper('Black') or upper(race ) = upper('African')) and response_choice<>'B') or
+	 ((upper(race ) = upper('White') or upper(race ) = upper('Caucasian')) and  response_choice<>'W') or 
+	 (upper(race ) = upper('Asian') and response_choice<>'A') or 
+	 (upper(race ) = upper('Other') and response_choice<>'O') or 
+	 (upper(race ) = upper('Hispanic') and response_choice<>'H') or 
+	(response_choice<>'I' and upper(race ) = upper('Indian')) or
+	(response_choice<>'NA' and upper(race ) = upper('Nat American')) or
+	(response_choice<>'Al' and (upper(race ) = upper('Alaskan') or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+	(response_choice<>'NH' and (upper(race ) = upper('Native Hawai') or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
+	(response_choice<>'M' and upper(race ) = upper('Multiracial')) or 
+	(response_choice<>'PD' and upper(race) = upper('Patient Decl')) )   group by race);
 
 --ethnicity survey vs ehr no/no  
 update CategoricalVariables set ptnoehrno = (
 select count(*) as "Pt no / EHR no" from emr_surveyresponse s, emr_patient p 
        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-       and race = RaceEthnicity 
-         and (((race<>'Black' and race<>'African') and response_choice<>'B') or
-	 ((race<>  'White'and  race<>'Caucasian') and  response_choice<>'W') or 
-	 (race<> 'Asian' and response_choice<>'A') or 
-	 (race<> 'Other' and response_choice<>'O') or 
-	 (race<> 'Hispanic' and response_choice<>'H')or 
-	 (response_choice<>'I' and race<>'Indian') or
-	(response_choice<>'NA' and race<>'Native American') or
-	(response_choice<>'Al' and race<>'Alaskan') or
-	(response_choice<>'NH' and race<> 'Native Hawaiians') or
-	(response_choice<>'M' and race<> 'Multiracial')
-	) group by race);
+       and upper(race ) = upper(raceethnicity) 
+         and (((upper(race) <> upper('Black') and upper(race) <> upper('African')) and response_choice<>'B') or
+	 ((upper(race) <> upper( 'White') and  upper(race) <> upper('Caucasian')) and  response_choice<>'W') or 
+	 (upper(race) <> upper('Asian') and response_choice<>'A') or 
+	 (upper(race) <> upper( 'Other') and response_choice<>'O') or 
+	 (upper(race) <> upper( 'Hispanic') and response_choice<>'H')or 
+	 (response_choice<>'I' and upper(race) <> upper('Indian')) or
+	(response_choice<>'NA' and upper(race) <> upper('Nat American')) or
+	(response_choice<>'Al' and (upper(race) <> upper('Alaskan') and upper(race) <> upper('AMERICAN INDIAN/ALASKAN NATIVE'))) or
+	(response_choice<>'NH' and (upper(race) <> upper( 'Native Hawai') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
+	(response_choice<>'M' and upper(race) <> upper('Multiracial')) or 
+	(response_choice<>'PD' and upper(race) <> upper('Patient Decl')) 	) group by race);
 
 --TOTALS
-delete from CategoricalVariables where RaceEthnicity='TOTAL';
 INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo  ,
     EHRYes ,  EHRNo ,PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo )
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
   sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno) from CategoricalVariables;
-  
+
 --yes/no/unsure questions
 drop TABLE if exists YesNoUnsureQuestions;
 
 CREATE TEMPORARY TABLE YesNoUnsureQuestions(
-    Question   VARCHAR(80),
+    Question   VARCHAR(200),
     NoOfRespondents INTEGER,
     PtYes INTEGER,
     PTNo  INTEGER,
@@ -574,24 +583,24 @@ where question = 'Have you ever had your hemoglobin A1C level checked?';
 
 --a1c ehr yes 
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p, emr_labresult
-where p.mrn in (select mrn from emr_surveyresponse b where 
+where p.mrn in (select distinct(b.mrn) from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='a1c'))
 where question = 'Have you ever had your hemoglobin A1C level checked?';
 
 --a1c ehr no
 update YesNoUnsureQuestions set ehrno =(select count(distinct(pp.mrn)) from emr_patient pp
-where pp.mrn in (select mrn from emr_surveyresponse b where 
+where pp.mrn in (select distinct(b.mrn) from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
-(select count(distinct(p.mrn)) from emr_patient p, emr_labresult
+(select count(*) from emr_patient p, emr_labresult
 where p.mrn = pp.mrn and emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='a1c') )=0)
 where question = 'Have you ever had your hemoglobin A1C level checked?';
 
 --hypertension ehr yes
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p
-where p.mrn in (select mrn from emr_surveyresponse b where 
-b.question=YesNoUnsureQuestions.question ) and 
+where p.mrn in (select distinct(b.mrn) from emr_surveyresponse b where 
+b.question=YesNoUnsureQuestions.question ) and (
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
 eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
@@ -599,23 +608,23 @@ losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprol
 nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
 diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%' )>0 or 
 (select count(emr_encounter.date) from emr_encounter where emr_encounter.patient_id = p.id  
-and (bp_systolic >140 or bp_diastolic > 90) )>=2)
+and (bp_systolic >140 or bp_diastolic > 90) )>=2))
 where question = 'Have you ever been diagnosed with high blood pressure?';
 
 --hyperlipedimia ehr yes  
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p
-where p.mrn in (select mrn from emr_surveyresponse b where 
-b.question=YesNoUnsureQuestions.question ) and 
+where p.mrn in (select distinct(b.mrn) from emr_surveyresponse b where 
+b.question=YesNoUnsureQuestions.question ) and (
 (select count(*) from emr_labresult where emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') and 
-result_float >160 )>0 or (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
+result_float > 160 )> 0 or (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
-bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
 where question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --meds for hypertension ehr yes
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p
-where p.mrn in (select mrn from emr_surveyresponse b where 
+where p.mrn in (select distinct(b.mrn) from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and 
 (select count(*) from emr_prescription where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
@@ -645,7 +654,7 @@ where question = 'Have you ever had your LDL level checked?';
 
 --ldl ehr yes 
 update YesNoUnsureQuestions set ehryes =( select count(distinct(p.mrn)) from emr_patient p, emr_labresult
-where p.mrn in (select mrn from emr_surveyresponse b where 
+where p.mrn in (select distinct(b.mrn) from emr_surveyresponse b where 
 b.question=YesNoUnsureQuestions.question ) and emr_labresult.patient_id = p.id and 
 native_code in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl'))
 where question = 'Have you ever had your LDL level checked?';
@@ -864,7 +873,6 @@ where emr_prescription.patient_id = p.id and
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
-
 
 --hyperlipedimia ynu survey vs ehr no/yes
 update YesNoUnsureQuestions set ptnoehryes =  (select count(distinct(p.mrn)) as "Pt no / EHR yes" 
@@ -1214,7 +1222,6 @@ INSERT INTO DiabetesType ( Type) values ('Pre-diabetes');
 INSERT INTO DiabetesType ( Type) values ('Type 1');
 INSERT INTO DiabetesType ( Type) values ('Type 2');
 INSERT INTO DiabetesType ( Type) values ('Gestational');
-INSERT INTO DiabetesType ( Type) values ('TOTAL');
 
 --diabetes type selfreport yes
 update DiabetesType set SelfReportYes =( select count(*) 
@@ -1238,9 +1245,9 @@ where b.question='What kind of diabetes do you have?' and (
 ) group by response_choice, b.question);
  
 --diabetes type ehr yes 
-update DiabetesType set ehryes =( select count(*)  from emr_patient p, nodis_case c
+update DiabetesType set ehryes =( select count(distinct p.mrn)  from emr_patient p, nodis_case c
 where c.patient_id = p.id and 
-p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
+p.mrn in (select distinct(mrn) from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
 (Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
 (Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
 (Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
@@ -1248,9 +1255,9 @@ p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabet
 ) group by c.condition);
 
 --diabetes type ehr no 
-update DiabetesType set ehrno =( select count(*)  from emr_patient p, nodis_case c
+update DiabetesType set ehrno =( select count(distinct p.mrn)  from emr_patient p, nodis_case c
 where c.patient_id = p.id and 
-p.mrn in (select mrn from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
+p.mrn in (select distinct(mrn) from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
 (Type=   'Type 1' and c.condition <> 'diabetes:type-1'  ) or
 (Type=   'Type 2' and c.condition <> 'diabetes:type-2'  ) or
 (Type=   'Pre-diabetes' and c.condition <> 'diabetes:prediabetes'  ) or
@@ -1303,7 +1310,7 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
 	 ) group by c.condition);
 
 --diabetes survey vs ehr no/no 
-update DiabetesType set ptnoehrno = (select count(*) as "Pt no / EHR no" 
+update DiabetesType set ptnoehrno = (select count(distinct p.mrn) as "Pt no / EHR no" 
 from emr_surveyresponse s, emr_patient p , nodis_case c 
  where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
        c.patient_id = p.id and 
@@ -1318,7 +1325,6 @@ from emr_surveyresponse s, emr_patient p , nodis_case c
 	 ) group by Type);
 	 	 
 --diabetes type TOTALS
-delete from DiabetesType where Type='TOTAL';
 INSERT INTO DiabetesType  (Type  , SelfReportYes ,SelfReportNo  ,
     EHRYes ,  EHRNo ,PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo )
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
@@ -1346,12 +1352,11 @@ INSERT INTO WeightType ( Type) values ('Low');
 INSERT INTO WeightType ( Type) values ('Normal');
 INSERT INTO WeightType ( Type) values ('Overweight');
 INSERT INTO WeightType ( Type) values ('Obese');
-INSERT INTO WeightType ( Type) values ('TOTAL');
 
 --weight type selfreport yes
 update WeightType set SelfReportYes =( select count(*) 
   from emr_surveyresponse b
-where b.question='Would you classify your weight as low, normal, overweight, or obese?' and (
+where b.question='How would you classify your weight?' and (
 (response_choice='L' and Type=  'Low' ) or
 (response_choice='N' and Type=   'Normal') or
 (response_choice='OV' and Type=   'Overweight') or
@@ -1362,57 +1367,57 @@ where b.question='Would you classify your weight as low, normal, overweight, or 
 update WeightType set SelfReportNo =( select (select count(*) from emr_surveyresponse a
 where a.question=b.question)- count(*) 
   from emr_surveyresponse b
-where b.question='Would you classify your weight as low, normal, overweight, or obese?' and (
+where b.question='How would you classify your weight?' and (
 (response_choice='L' and Type=  'Low' ) or
 (response_choice='N' and Type=   'Normal') or
 (response_choice='OV' and Type=   'Overweight') or
 (response_choice='OB' and Type=  'Obese')  ) group by response_choice, b.question);
 
 --weight type ehr yes 
-update WeightType set ehryes =( select count(*) 
+update WeightType set ehryes =( select count(distinct p.mrn) 
   from emr_patient p,  emr_encounter c
 where 
  c.patient_id = p.id and
-p.mrn in (select mrn from emr_surveyresponse where 
-question='Would you classify your weight as low, normal, overweight, or obese?' ) and  (
+p.mrn in (select distinct(mrn) from emr_surveyresponse where 
+question='How would you classify your weight?' ) and  (
 (Type=  'Low' and bmi is not null and bmi <18  ) or
 (Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
 (Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
 (Type=  'Obese' and bmi is not null and bmi >130 ) 
-) group by Type);
+)  group by Type, c.date order by c.date desc limit 1);
 
 --weight type ehr no 
-update WeightType set ehrno = (select (select count(*) from emr_patient p ,   emr_encounter c 
+update WeightType set ehrno = (select (select count(distinct p.mrn) from emr_patient p ,   emr_encounter c 
 where c.patient_id = p.id and  
-   c.mrn in (select mrn from emr_surveyresponse 
-   where question='Would you classify your weight as low, normal, overweight, or obese?' ))
+   c.mrn in (select distinct mrn from emr_surveyresponse 
+   where question='How would you classify your weight?' ))
         - count(*) as "EHR No"
 from emr_patient b , emr_encounter c 
 where c.patient_id = b.id and  
-b.mrn in (select mrn from emr_surveyresponse where question='Would you classify your weight as low, normal, overweight, or obese?') 
+b.mrn in (select mrn from emr_surveyresponse where question='How would you classify your weight?') 
 and  ((Type=  'Low' and bmi is not null and bmi <18  ) or
 (Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
 (Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
 (Type=  'Obese' and bmi is not null and bmi >130 ) 
-) group by Type);
+) group by Type, c.date order by c.date desc limit 1);
 
 --weight type ehr missing 
-update WeightType set ehrmissing =( select count(*) 
+update WeightType set ehrmissing =( select count(distinct p.mrn) 
   from emr_patient p,  emr_encounter c
 where 
  c.patient_id = p.id and
-p.mrn in (select mrn from emr_surveyresponse where 
-question='Would you classify your weight as low, normal, overweight, or obese?' ) and  (
+p.mrn in (select distinct mrn from emr_surveyresponse where 
+question='How would you classify your weight?' ) and  (
 (Type=  'Low' and bmi is  null  ) or
 (Type=  'Normal' and bmi is  null   ) or
 (Type=  'Overweight' and bmi is  null   ) or
 (Type=  'Obese' and bmi is  null  ) 
-) group by bmi);
+) group by bmi, c.date order by c.date desc limit 1);
 
 --weight survey vs ehr yes/yes
-update WeightType set ptyesehryes = (select count(*) as "Pt yes / EHR yes" 
+update WeightType set ptyesehryes = (select count(distinct p.mrn) as "Pt yes / EHR yes" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
+ where p.mrn=s.mrn and question='How would you classify your weight?' and
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice='L'  ) or
 	(Type=  'Normal' and response_choice='N'  ) or
@@ -1422,12 +1427,12 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
 	 (bmi is not null and bmi >18 and bmi <25 and response_choice='N') or 
 	 (bmi is not null and bmi >25.01 and bmi <30 and response_choice='OV') or
 	 (bmi is not null and bmi >130 and response_choice='OB')
-	 ) group by response_choice);
+	 ) group by response_choice, c.date order by c.date desc limit 1);
 
 --weight survey vs ehr yes/no 
-update WeightType set ptyesehrno = (select count(*) as "Pt yes / EHR no" 
+update WeightType set ptyesehrno = (select count(distinct p.mrn) as "Pt yes / EHR no" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
+ where p.mrn=s.mrn and question='How would you classify your weight?' and
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice='L'  ) or
 	(Type=  'Normal' and response_choice='N'  ) or
@@ -1437,12 +1442,12 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
 	 (bmi is not null and (bmi <18 or bmi >25) and response_choice='N') or 
 	 (bmi is not null and (bmi <25.01 or bmi >30) and response_choice='OV') or
 	 (bmi is not null and bmi < 130 and response_choice='OB')
-	 ) group by Type);
+	 ) group by Type, c.date order by c.date desc limit 1);
 	 
 --weight survey vs ehr no/yes 
-update WeightType set ptnoehryes = (select count(*) as "Pt no / EHR yes" 
+update WeightType set ptnoehryes = (select count(distinct p.mrn) as "Pt no / EHR yes" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
+ where p.mrn=s.mrn and question='How would you classify your weight?' and
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice<>'L'  ) or
 	(Type=  'Normal' and response_choice<>'N'  ) or
@@ -1452,12 +1457,12 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
 	 (bmi is not null and bmi >18 and bmi <25 and response_choice<>'N') or 
 	 (bmi is not null and bmi >25.01 and bmi <30 and response_choice<>'OV') or
 	 (bmi is not null and bmi > 130 and response_choice<>'OB')
-	 ) group by Type);
+	 ) group by Type, c.date order by c.date desc limit 1);
 
 --weight survey vs ehr no/no   
-update WeightType set ptnoehrno = (select count(*) as "Pt no / EHR no" 
+update WeightType set ptnoehrno = (select count(distinct p.mrn) as "Pt no / EHR no" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
+ where p.mrn=s.mrn and question='How would you classify your weight?' and
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice<>'L'  ) or
 	(Type=  'Normal' and response_choice<>'N' ) or
@@ -1467,12 +1472,12 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
 	 (bmi is not null and (bmi <18 or bmi >25) and response_choice<>'N') or 
 	 (bmi is not null and (bmi <25.01 or bmi >30) and response_choice<>'OV') or
 	 (bmi is not null and bmi < 130 and response_choice<>'OB')
-	 ) group by Type);	
+	 ) group by Type, c.date order by c.date desc limit 1);	
 
 --weight survey vs ehr yes/missing
-update WeightType set ptyesehrmissing = (select count(*) as "Pt yes / EHR missing" 
+update WeightType set ptyesehrmissing = (select count(distinct p.mrn) as "Pt yes / EHR missing" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
+ where p.mrn=s.mrn and question='How would you classify your weight?' and
        c.patient_id = p.id and 
        ((Type=  'Low' and bmi is  null and response_choice='L' ) or
 	(Type=  'Normal' and bmi is  null and response_choice='N'  ) or
@@ -1482,12 +1487,12 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
 	 (bmi is  null  and response_choice='N') or 
 	 (bmi is  null   and response_choice='OV') or
 	 (bmi is  null  and response_choice='OB')
-	 ) group by response_choice);	
+	 ) group by response_choice, c.date order by c.date desc limit 1);	
 
 --weight survey vs ehr no/missing  
-update WeightType set ptnoehrmissing = (select count(*) as "Pt no / EHR missing" 
+update WeightType set ptnoehrmissing = (select count(distinct p.mrn) as "Pt no / EHR missing" 
 from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='Would you classify your weight as low, normal, overweight, or obese?' and
+ where p.mrn=s.mrn and question='How would you classify your weight?' and
        c.patient_id = p.id and 
        ((Type=  'Low' and bmi is  null and response_choice<>'L' ) or
 	(Type=  'Normal' and bmi is  null and response_choice<>'N'  ) or
@@ -1497,10 +1502,9 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
 	 (bmi is  null  and response_choice<>'N') or 
 	 (bmi is  null   and response_choice<>'OV') or
 	 (bmi is  null  and response_choice<>'OB')
-	 ) group by Type);	 	 
+	 ) group by Type, c.date order by c.date desc limit 1);	
 
 --weight type TOTALS
-delete from WeightType where Type='TOTAL';
 INSERT INTO WeightType  (Type  , SelfReportYes ,SelfReportNo  ,
     EHRYes ,  EHRNo ,EHRMissing, PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo, ptyesehrmissing,ptnoehrmissing )
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ehrmissing), sum(ptyesehryes),
@@ -1564,23 +1568,27 @@ INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gend
      from emr_patient p where p.mrn in (select b.mrn from  emr_surveyresponse b) ;  
 
 update LineList set     
-EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
-  EHR_systolic = (select emr_encounter.bp_systolic  from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id order by emr_encounter.date desc limit 1),
+  EHR_systolic = (select emr_encounter.bp_systolic  from  emr_encounter , emr_patient where emr_patient.id = emr_encounter.patient_id order by emr_encounter.date desc limit 1),
   survey_gender = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your gender?'),
-  survey_race = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your race/ethnicity?'),
+  survey_race = (select case WHEN response_choice = 'B' THEN 'BLACK' WHEN response_choice = 'W' THEN 'CAUCASIAN' WHEN response_choice = 'A' THEN 'ASIAN' WHEN response_choice = 'H' THEN 'HISPANIC'
+  WHEN response_choice = 'O' THEN 'OTHER' WHEN response_choice = 'I' THEN 'INDIAN' WHEN response_choice = 'NA' THEN 'NAT AMERICAN' WHEN response_choice = 'AL' THEN 'ALASKAN' WHEN response_choice = 'NH' THEN 'NATIVE HAWAI/PACIFIC ISLANDER' 
+  WHEN response_choice = 'M' THEN 'MULTIRACIAL' WHEN response_choice = 'PD' THEN 'PATIENT DECL' 
+    END 
+    from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your race/ethnicity?'),
   survey_age = (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your age?'),
   Survey_diastolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your last diastolic blood pressure?'),
-  Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your blood pressure the last time it was measured by your doctor?'),
+  Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your systolic blood pressure the last time it was measured by your doctor?'),
   Survey_BP_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='systolic-diastolic / unsure'),
   Survey_HBP = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever been diagnosed with high blood pressure?'),
-  EHR_HBP = (select 'Y' where  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )<2 
+  EHR_HBP = (select case when  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )<2 
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient where 
  emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and 
 lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
 eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
 losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
 nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
-diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0),
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0 THEN 'Y' ELSE 'N' END),
  Survey_HBP_med =(select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high blood pressure?'),    
  Survey_Diabetes = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Do you have diabetes?'),
  Survey_DiabetesType  = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What kind of diabetes do you have?'),
@@ -1589,7 +1597,9 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  Survey_a1c_value_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='a1c unsure'),
  Survey_height =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your current height in Feet and Inches?'),
  Survey_weight =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your current weight in pounds?'),
- Survey_bmi = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='How would you classify your weight?'),
+ Survey_bmi = (select CASE WHEN response_choice='L' THEN 'Low' when response_choice = 'N' then 'Normal' when response_choice = 'OW' then 'Overweight'
+ when response_choice = 'OB' then 'Obese' END 
+    from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='How would you classify your weight?'),
  Survey_hyperlipidemia = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Do you have a history of hyperlipidemia or elevated cholesterol?'),
  Survey_ldl = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your LDL level checked?'),
  Survey_ldl_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your last LDL level?'),
@@ -1599,26 +1609,26 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  Survey_height_unsure =  (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='height/unsure'),
  Survey_weight_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='weight/ unsure'),
  EHR_bmi = (select emr_encounter.bmi from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
- EHR_HBP_med = (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient  
+ EHR_HBP_med = (select case when (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient  
  where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and 
 lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
 eplerenone|spironolactone|clonidine|doxazosin|guanfacine|methyldopa|prazosin|terazosin|candesartan|eprosartan|irbesartan|
 losartan|olmesartan|telmisartan|valsartan|acebutolol|atenolol|betaxolol|bisoprolol|carvedilol|labetolol|metoprolol|nadolol|
 nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isradipine|nicardipine|nifedipine|nisoldipine|
-diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0),
-EHR_hyperlipidemia = (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient 
+diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0 THEN 'Y' ELSE 'N' END),
+EHR_hyperlipidemia = (select case when (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient 
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
-bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0),
-EHR_ldl = (select 'Y' where (select count(distinct(p.mrn)) from  emr_patient p ,  emr_labresult c
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0 THEN 'Y' ELSE 'N' END),
+EHR_ldl = (select case when (select count(distinct(p.mrn)) from  emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and LineList.mrn =p.mrn and 
-native_code  in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl')  )>0),
-EHR_a1c = (select 'Y' where (select count(distinct(p.mrn)) from  emr_patient p ,  emr_labresult c
+native_code  in (select native_code from conf_labtestmap where test_name ='cholesterol-ldl')  )>0 THEN 'Y' ELSE 'N' END),
+EHR_a1c = (select case when (select count(distinct(p.mrn)) from  emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and LineList.mrn =p.mrn and 
-native_code  in (select native_code from conf_labtestmap where test_name ='a1c') )>0),
-EHR_Diabetes =  (select 'Y' where (select count(distinct(p.mrn)) from  emr_patient p , nodis_case c 
+native_code  in (select native_code from conf_labtestmap where test_name ='a1c') )>0 THEN 'Y' ELSE 'N' END),
+EHR_Diabetes =  (select case when (select count(distinct(p.mrn)) from  emr_patient p , nodis_case c 
  where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
-       (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )))>0),
+       (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )))>0 THEN 'Y' ELSE 'N' END),
 EHR_DiabetesType =  (select c.condition from  emr_patient p , nodis_case c 
  where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
        (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )) order by c.date desc limit 1),
@@ -1629,7 +1639,8 @@ EHR_a1c_value  =  (select c.result_float from  emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and LineList.mrn =p.mrn and native_code  in
  (select native_code from conf_labtestmap where test_name ='a1c') order by c.date desc limit 1 ),
 Survey_ldl_value_unsure =  (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='ldl unsure'), 
-EHR_ldl_med =  (select 'Y' where (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient 
+EHR_ldl_med =  (select  case when (select count(distinct(emr_prescription.patient_id)) from emr_prescription , emr_patient
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
-bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0);
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0 THEN  'Y' ELSE 'N' END);
+
