@@ -43,8 +43,9 @@ class ProviderAdmin(admin.ModelAdmin):
     search_fields = ['natural_key','last_name']
 
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ['natural_key', 'name', 'pcp', 'zip']
-    search_fields = ['natural_key', 'last_name']
+    ordering = ['natural_key','mrn','last_name']
+    list_display = ['natural_key','mrn', 'name', 'pcp', 'zip']
+    search_fields = ['natural_key', 'mrn','last_name']
 
 class Patient_AddrAdmin(admin.ModelAdmin):
     ordering = ['mrn']
