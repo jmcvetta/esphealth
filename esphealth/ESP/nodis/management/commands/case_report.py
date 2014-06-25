@@ -514,6 +514,7 @@ class hl7Batch:
                 obr31 = self.casesDoc.createElement('OBR.31') 
                 self.addSimple(obr31,i,'CE.1')   
                 self.addSimple(obr31,condition,'CE.2')
+                #TODO add support for Icd10
                 self.addSimple(obr31,'I9','CE.3')
                 obr.appendChild(obr31)
                 orcs.appendChild(obr)
@@ -678,7 +679,7 @@ class hl7Batch:
             else:
                 log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
             self.addSimple(sps, snomed_spec_source_code, 'CE.4')
-            self.addSimple(sps,'L','CE.6') # loinc code --- why??
+            self.addSimple(sps,'L','CE.6') # TODO loinc code --- why??
             obr15.appendChild(sps)
             obr.appendChild(obr15)
             #
@@ -721,8 +722,7 @@ class hl7Batch:
             if not clia:
                 clia = INSTITUTION.clia # it was hard coded to '22D0076229'    
             
-            if not snomed: ##like ALT/AST
-                #ALT/AST must be number
+            if not snomed: ##like ALT/AST and must be number
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
                     obx2  = [('', obx2_type)],
@@ -908,7 +908,7 @@ class hl7Batch:
                 #
                 rxDur = rxRec.end_date - rxRec.start_date
                 rxDur = rxDur.days+1
-            rxTS = rxRec.date
+            rxTS = rxRec.date #TODO time stamp is not sent should it?
             #<OBX.5>NDC_Number; Drug Name; Dose; Frequency; Duration</OBX.5>
             drugstr = '%s;%s;%s;%s;%s day(s)' % (rxRec.code, rxRec.name, rxRec.dose, rxRec.frequency, rxDur)
             obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'ST')],obx3=[('CE.4','NA-56')],
@@ -985,7 +985,7 @@ class hl7Batch:
         if contact <> None:
             orc.appendChild(contact)
         outerElement='ORC.24'
-        
+        #TODO why is this done twice? was it meant to be address2?
         if pcp.dept_address_1:
             address = self.makeAddress(pcp.dept_address_1, pcp.dept_address_2, pcp.dept_city, pcp.dept_state,
                 pcp.dept_zip, country ,outerElement, addressType)
@@ -1165,9 +1165,6 @@ P     Native Hawaiian or Other Pacific Islander
 O     Other             
 U     Unknown             
 W     White"""
-
-
-
 
 class Command(BaseCommand):
     
