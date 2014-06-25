@@ -88,7 +88,7 @@ from ESP.utils.utils import log_query
 
 from ESP.settings import CASE_REPORT_SITE_NAME , SITE_CLIA ,SITE_LAST_NAME ,SITE_FIRST_NAME ,SITE_ADDRESS1 ,SITE_ADDRESS2 
 from ESP.settings import  SITE_CITY ,SITE_STATE ,SITE_ZIP ,SITE_COUNTRY ,SITE_EMAIL ,SITE_AREA_CODE ,SITE_TEL_NUMERIC 
-from ESP.settings import SITE_TEL_EXT ,SITE_APP_NAME ,SITE_SENDING_FACILITY ,SITE_COMMENTS  
+from ESP.settings import SITE_TEL_EXT ,SITE_APP_NAME ,SITE_SENDING_FACILITY ,SITE_COMMENTS  , SITE_HEADER
 
 #===============================================================================
 #
@@ -1008,14 +1008,15 @@ class hl7Batch:
         #hd_name= INSTITUTION.name
         #if hd_name.find('%')>-1:
             #hd_name = center_id 
-        #for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3'), (center_id,'HD.4')]:
+        #TODO for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3'), (center_id,'HD.4')]:
+        # or add CASE_REPORT_SITE_NAME?
         for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3')]:   
             if element <> '':
                 self.addSimple(e,element,ename)
                 
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.5')         
-        self.addSimple(e,'MDPH-ELR','HD.1')
+        self.addSimple(e,SITE_HEADER,'HD.1')
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.6')         
         self.addSimple(e,'MDPH','HD.1')

@@ -716,6 +716,7 @@ HEF_THREAD_COUNT = config['HEF']['thread_count']
 #
 #--- Site
 #
+SITE_HEADER = config['Site']['site_header']
 CASE_REPORT_SITE_NAME = config['Site']['case_report_site_name']
 SITE_CLIA = config['Site']['site_clia']
 SITE_LAST_NAME = config['Site']['site_last_name']
