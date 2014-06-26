@@ -1002,6 +1002,9 @@ class hl7Batch:
         section = self.casesDoc.createElement("MSH")
         self.addSimple(section,'|','MSH.1')
         self.addSimple(section,u'^~\&','MSH.2')
+        e = self.casesDoc.createElement('MSH.3')
+        self.addSimple(e,SITE_HEADER,'HD.1')
+        section.appendChild(e)
         e = self.casesDoc.createElement('MSH.4')
         #TODO redmine 492 waiting to see where to put the center id.
         #TODO mayb find out a clia for mass leage to add here.. 
@@ -1009,14 +1012,13 @@ class hl7Batch:
         #if hd_name.find('%')>-1:
             #hd_name = center_id 
         #TODO for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3'), (center_id,'HD.4')]:
-        # or add CASE_REPORT_SITE_NAME?
+        # 
         for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3')]:   
             if element <> '':
-                self.addSimple(e,element,ename)
-                
+                self.addSimple(e,element,ename)    
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.5')         
-        self.addSimple(e,SITE_HEADER,'HD.1')
+        self.addSimple(e,'MDPH-ELR','HD.1')
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.6')         
         self.addSimple(e,'MDPH','HD.1')
