@@ -88,7 +88,7 @@ from ESP.utils.utils import log_query
 
 from ESP.settings import CASE_REPORT_SITE_NAME , SITE_CLIA ,SITE_LAST_NAME ,SITE_FIRST_NAME ,SITE_ADDRESS1 ,SITE_ADDRESS2 
 from ESP.settings import  SITE_CITY ,SITE_STATE ,SITE_ZIP ,SITE_COUNTRY ,SITE_EMAIL ,SITE_AREA_CODE ,SITE_TEL_NUMERIC 
-from ESP.settings import SITE_TEL_EXT ,SITE_APP_NAME ,SITE_SENDING_FACILITY ,SITE_COMMENTS  
+from ESP.settings import SITE_TEL_EXT ,SITE_APP_NAME ,SITE_SENDING_FACILITY ,SITE_COMMENTS  , SITE_HEADER
 
 #===============================================================================
 #
@@ -989,6 +989,9 @@ class hl7Batch:
         section = self.casesDoc.createElement("MSH")
         self.addSimple(section,'|','MSH.1')
         self.addSimple(section,u'^~\&','MSH.2')
+        e = self.casesDoc.createElement('MSH.3')
+        self.addSimple(e,SITE_HEADER,'HD.1')
+        section.appendChild(e)
         e = self.casesDoc.createElement('MSH.4')
         #TODO redmine 492 waiting to see where to put the center id.
         #TODO mayb find out a clia for mass leage to add here.. 
