@@ -1245,85 +1245,157 @@ where b.question='What kind of diabetes do you have?' and (
 ) group by response_choice, b.question);
  
 --diabetes type ehr yes 
-update DiabetesType set ehryes =( select count(distinct p.mrn)  from emr_patient p, nodis_case c
-where c.patient_id = p.id and 
-p.mrn in (select distinct(mrn) from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
-(Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
-(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
-(Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
-(Type=   'Gestational' and c.condition = 'diabetes:gestational') 
-) group by c.condition);
+update DiabetesType set ehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition   ='diabetes:type-1' and c.patient_id = p.id )>0  ) 
+  where Type='Type 1' ;
 
---diabetes type ehr no 
-update DiabetesType set ehrno =( select count(distinct p.mrn)  from emr_patient p, nodis_case c
-where c.patient_id = p.id and 
-p.mrn in (select distinct(mrn) from emr_surveyresponse where question='What kind of diabetes do you have?' ) and  (
-(Type=   'Type 1' and c.condition <> 'diabetes:type-1'  ) or
-(Type=   'Type 2' and c.condition <> 'diabetes:type-2'  ) or
-(Type=   'Pre-diabetes' and c.condition <> 'diabetes:prediabetes'  ) or
-(Type=   'Gestational' and c.condition <> 'diabetes:gestational') 
-) group by Type);
+update DiabetesType set ehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition  = 'diabetes:type-2' and c.patient_id = p.id )>0  ) 
+  where Type='Type 2' ;
 
---diabetes survey vs ehr yes/yes
-update DiabetesType set ptyesehryes = (select count(*) as "Pt yes / EHR yes" 
-from emr_surveyresponse s, emr_patient p , nodis_case c 
- where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
-       c.patient_id = p.id and 
-       ((Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
-	(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
-	(Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
-	(Type=   'Gestational' and c.condition = 'diabetes:gestational') )
-     and ((c.condition = 'diabetes:type-1' and response_choice='T1') or 
-	 (c.condition = 'diabetes:type-2' and response_choice='T2') or 
-	 (c.condition = 'diabetes:prediabetes' and response_choice='PRE') or
-	 (c.condition = 'diabetes:gestational' and response_choice='GDM')
-	 ) group by c.condition);
+update DiabetesType set ehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition  = 'diabetes:prediabetes' and c.patient_id = p.id )>0  ) 
+  where Type='Pre-diabetes' ;
+
+update DiabetesType set ehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:gestational' and c.patient_id = p.id )>0  ) 
+  where Type='Gestational' ;
+
+
+--diabetes type ehr no, for each type
+update DiabetesType set ehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition   = 'diabetes:type-1' and c.patient_id = p.id )=0  ) 
+  where Type='Type 1' ;
+
+update DiabetesType set ehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition   = 'diabetes:type-2' and c.patient_id = p.id )=0  ) 
+  where Type='Type 2' ;
+
+update DiabetesType set ehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition   = 'diabetes:prediabetes' and c.patient_id = p.id )=0  ) 
+  where Type='Pre-diabetes' ;
+
+update DiabetesType set ehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and
+  (select count(*) from nodis_case c  where 
+            c.condition   = 'diabetes:gestational' and c.patient_id = p.id )=0  ) 
+  where Type='Gestational' ;
+  
+
+--diabetes survey vs ehr yes/yes for each type
+update DiabetesType set ptyesehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='T1' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-1' and c.patient_id = p.id )>0  ) 
+  where Type='Type 1' ;
+
+update DiabetesType set ptyesehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='T2' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-2' and c.patient_id = p.id )>0  ) 
+  where Type='Type 2' ;
+
+update DiabetesType set ptyesehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='PRE' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:prediabetes' and c.patient_id = p.id )>0  ) 
+  where Type='Pre-diabetes' ;
+
+update DiabetesType set ptyesehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='GDM' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:gestational' and c.patient_id = p.id )>0  ) 
+  where Type='Gestational' ;
 
 --diabetes survey vs ehr yes/no 
-update DiabetesType set ptyesehrno = (select count(*) as "Pt yes / EHR no" 
-from emr_surveyresponse s, emr_patient p , nodis_case c 
- where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
-       c.patient_id = p.id and 
-       ((Type=   'Type 1' and response_choice='T1'  ) or
-	(Type=   'Type 2' and response_choice='T2'  ) or
-	(Type=   'Pre-diabetes' and response_choice='PRE'  ) or
-	(Type=   'Gestational' and response_choice='GDM') )
-     and ((c.condition <> 'diabetes:type-1' and response_choice='T1') or 
-	 (c.condition <> 'diabetes:type-2' and response_choice='T2') or 
-	 (c.condition <> 'diabetes:prediabetes' and response_choice='PRE') or
-	 (c.condition <> 'diabetes:gestational' and response_choice='GDM')
-	 ) group by Type);
+update DiabetesType set ptyesehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='T1' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-1' and c.patient_id = p.id )=0  ) 
+  where Type='Type 1' ;
+
+update DiabetesType set ptyesehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='T2' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-2' and c.patient_id = p.id )=0  ) 
+  where Type='Type 2' ;
+
+update DiabetesType set ptyesehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='PRE' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:prediabetes' and c.patient_id = p.id )=0  ) 
+  where Type='Pre-diabetes' ;
+
+update DiabetesType set ptyesehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice='GDM' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:gestational' and c.patient_id = p.id )=0  ) 
+  where Type='Gestational' ;
 
 --diabetes survey vs ehr no/yes
-update DiabetesType set ptnoehryes = (select count(*) as "Pt no/ EHR yes" 
-from emr_surveyresponse s, emr_patient p , nodis_case c 
- where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
-       c.patient_id = p.id and 
-       ((Type=   'Type 1' and c.condition = 'diabetes:type-1'  ) or
-	(Type=   'Type 2' and c.condition = 'diabetes:type-2'  ) or
-	(Type=   'Pre-diabetes' and c.condition = 'diabetes:prediabetes'  ) or
-	(Type=   'Gestational' and c.condition = 'diabetes:gestational') )
-     and ((c.condition = 'diabetes:type-1' and response_choice<>'T1') or 
-	 (c.condition = 'diabetes:type-2' and response_choice<>'T2') or 
-	 (c.condition = 'diabetes:prediabetes' and response_choice<>'PRE') or
-	 (c.condition = 'diabetes:gestational' and response_choice<>'GDM')
-	 ) group by c.condition);
+update DiabetesType set ptnoehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'T1' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-1' and c.patient_id = p.id )>0  ) 
+  where Type='Type 1' ;
+
+update DiabetesType set ptnoehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'T2' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-2' and c.patient_id = p.id )>0  ) 
+  where Type='Type 2' ;
+
+update DiabetesType set ptnoehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'PRE' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:prediabetes' and c.patient_id = p.id )>0  ) 
+  where Type='Pre-diabetes' ;
+
+update DiabetesType set ptnoehryes =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'GDM' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:gestational' and c.patient_id = p.id )>0  ) 
+  where Type='Gestational' ;
 
 --diabetes survey vs ehr no/no 
-update DiabetesType set ptnoehrno = (select count(distinct p.mrn) as "Pt no / EHR no" 
-from emr_surveyresponse s, emr_patient p , nodis_case c 
- where p.mrn=s.mrn and question='What kind of diabetes do you have?' and
-       c.patient_id = p.id and 
-       ((Type=   'Type 1' and response_choice<>'T1'  ) or
-	(Type=   'Type 2' and response_choice<>'T2' ) or
-	(Type=   'Pre-diabetes' and response_choice<>'PRE') or
-	(Type=   'Gestational' and response_choice<>'GDM') )
-     and ((c.condition <> 'diabetes:type-1' and response_choice<>'T1') or 
-	 (c.condition <> 'diabetes:type-2' and response_choice<>'T2') or 
-	 (c.condition <> 'diabetes:prediabetes' and response_choice<>'PRE') or
-	 (c.condition <> 'diabetes:gestational' and response_choice<>'GDM')
-	 ) group by Type);
-	 	 
+update DiabetesType set ptnoehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'T1' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-1' and c.patient_id = p.id )=0  ) 
+  where Type='Type 1' ;
+
+update DiabetesType set ptnoehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'T2' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:type-2' and c.patient_id = p.id )=0  ) 
+  where Type='Type 2' ;
+
+update DiabetesType set ptnoehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'PRE' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:prediabetes' and c.patient_id = p.id )=0  ) 
+  where Type='Pre-diabetes' ;
+
+update DiabetesType set ptnoehrno =( select count(distinct p.mrn)  from emr_patient p, emr_surveyresponse b
+where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and response_choice<>'GDM' and 
+  (select count(*) from nodis_case c  where 
+            c.condition  ='diabetes:gestational' and c.patient_id = p.id )=0  ) 
+  where Type='Gestational' ;
+ 	 
 --diabetes type TOTALS
 INSERT INTO DiabetesType  (Type  , SelfReportYes ,SelfReportNo  ,
     EHRYes ,  EHRNo ,PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo )
@@ -1537,7 +1609,10 @@ CREATE TEMPORARY TABLE LineList(
     Survey_Diabetes VARCHAR(20),
     EHR_Diabetes VARCHAR(20),
     Survey_DiabetesType VARCHAR(80),
-    EHR_DiabetesType VARCHAR(80),
+    EHR_DiabetesType1 VARCHAR(80),
+    EHR_DiabetesType2 VARCHAR(80),
+    EHR_DiabetesTypePRE VARCHAR(80),
+    EHR_DiabetesTypeGES VARCHAR(80),
     Survey_a1c VARCHAR(20),
     EHR_a1c VARCHAR(20),
     Survey_a1c_value DECIMAL(7,2),
@@ -1629,9 +1704,18 @@ native_code  in (select native_code from conf_labtestmap where test_name ='a1c')
 EHR_Diabetes =  (select case when (select count(distinct(p.mrn)) from  emr_patient p , nodis_case c 
  where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
        (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )))>0 THEN 'Y' ELSE 'N' END),
-EHR_DiabetesType =  (select c.condition from  emr_patient p , nodis_case c 
+EHR_DiabetesType1 =  (select case when (select count(*) from  emr_patient p , nodis_case c 
  where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
-       (c.condition in ( 'diabetes:type-1','diabetes:type-2','diabetes:prediabetes','diabetes:gestational' )) order by c.date desc limit 1),
+       (c.condition = 'diabetes:type-1' ) )>0 THEN  'Y' ELSE 'N' END),
+EHR_DiabetesType2 =  (select case when (select count(*) from  emr_patient p , nodis_case c 
+ where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
+       (c.condition ='diabetes:type-2' ) )>0 THEN  'Y' ELSE 'N' END),
+EHR_DiabetesTypePRE =  (select case when (select count(*) from  emr_patient p , nodis_case c 
+ where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
+       (c.condition ='diabetes:prediabetes') )>0 THEN  'Y' ELSE 'N' END),
+EHR_DiabetesTypeGES =  (select case when (select count(*) from  emr_patient p , nodis_case c 
+ where LineList.mrn =p.mrn  and  c.patient_id = p.id and 
+       (c.condition ='diabetes:gestational' ) )>0 THEN  'Y' ELSE 'N' END),
 EHR_ldl_value = (select c.result_float from  emr_patient p ,  emr_labresult c
 where  c.patient_id = p.id and LineList.mrn =p.mrn and native_code  in 
 (select native_code from conf_labtestmap where test_name ='cholesterol-ldl') order by c.date desc limit 1 ),
@@ -1643,4 +1727,3 @@ EHR_ldl_med =  (select  case when (select count(distinct(emr_prescription.patien
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0 THEN  'Y' ELSE 'N' END);
-
