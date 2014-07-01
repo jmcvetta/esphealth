@@ -207,13 +207,38 @@ class Diabetes(DiseaseDefinition):
                 Dx_CodeQuery(starts_with = '250.', type='icd9'),
                 Dx_CodeQuery(starts_with = 'E10', type='icd10'),
                 Dx_CodeQuery(starts_with = 'E11', type='icd10'),
+                Dx_CodeQuery(starts_with = 'E12', type='icd10'),
+                Dx_CodeQuery(starts_with = 'E13', type='icd10'),
                 Dx_CodeQuery(starts_with = 'E14', type='icd10'),
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
-            name = 'diabetes:type-1-not-stated',
+            name = 'diabetes:unspecified',
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = 'E14', type='icd10'),
+                ]
+            ) )
+        heuristics.append (DiagnosisHeuristic(
+            name = 'diabetes:malnutrition-related',
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = 'E12', type='icd10'),
+                ]
+            ) )
+        heuristics.append (DiagnosisHeuristic(
+            name = 'diabetes:other',
+            dx_code_queries = [
+                Dx_CodeQuery(starts_with = 'E13', type='icd10'),
+                ]
+            ) )
+        heuristics.append (DiagnosisHeuristic(
+            name = 'diabetes:type-1-not-stated-icd9',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with = '250.', ends_with='1', type='icd9'),
+                ]
+            ) )
+        heuristics.append (DiagnosisHeuristic(
+            name = 'diabetes:type-1-not-stated-icd10',
+            dx_code_queries = [
                 Dx_CodeQuery(starts_with = 'E10', type='icd10'),
                 ]
             ) )
@@ -224,9 +249,14 @@ class Diabetes(DiseaseDefinition):
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
-            name = 'diabetes:type-2-not-stated',
+            name = 'diabetes:type-2-not-stated-icd9',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with = '250.', ends_with='0', type='icd9'),
+                ]
+            ) )
+        heuristics.append (DiagnosisHeuristic(
+            name = 'diabetes:type-2-not-stated-icd10',
+            dx_code_queries = [
                 Dx_CodeQuery(starts_with = 'E11', type='icd10'),
                 ]
             ) )
@@ -236,6 +266,7 @@ class Diabetes(DiseaseDefinition):
                 Dx_CodeQuery(starts_with = '250.', ends_with='2', type='icd9'),
                 ]
             ) )
+        
         #
         # Cholesterol
         #
@@ -2034,11 +2065,16 @@ class BaseDiabetesReport(Report):
                 
     def _total_occurrences(self):
         event_type_list = [
-            'dx--diabetes_all_types',
-            'dx--diabetes:type-1_not_stated',
-            'dx--diabetes:type-1_uncontrolled',
-            'dx--diabetes:type-2_not_stated',
-            'dx--diabetes:type-2_uncontrolled',
+            'dx:diabetes-all-types',
+            'dx:diabetes:type-1-not-stated-icd9',
+            'dx:diabetes:type-1-not-stated-icd10',
+            'dx:diabetes:type-1-uncontrolled',
+            'dx:diabetes:type-2-not-stated-icd9',
+            'dx:diabetes:type-2-not-stated-icd10',
+            'dx:diabetes:type-2-uncontrolled',
+            'dx:diabetes:unspecified',
+            'dx:diabetes:malnutrition-related',
+            'dx:diabetes:other',
             ]
         for event_type in event_type_list:
             field = '%s--total_count' % event_type
