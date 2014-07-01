@@ -52,7 +52,7 @@ class LabTestMapAdmin(admin.ModelAdmin):
             'fields': ('test_name',)
             }),
         ('Mapping', {
-            'fields': ('native_code', 'code_match_type', 'record_type'),
+            'fields': ('native_code', 'code_match_type', 'record_type', 'threshold'),
             }),
         ('Reporting', {
             'fields': ('reportable', 'output_code', 'output_name', 'snomed_pos', 'snomed_neg',  'snomed_ind'),
