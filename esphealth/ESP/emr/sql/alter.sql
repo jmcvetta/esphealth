@@ -404,6 +404,8 @@ ADD CONSTRAINT  "emr_labresult_CLIA_ID_id_fkey" FOREIGN KEY ("CLIA_ID_id")
       REFERENCES emr_labinfo ("CLIA_ID"),
 ALTER COLUMN result_date SET DATA TYPE timestamp with time zone,
 ALTER COLUMN collection_date SET DATA TYPE timestamp with time zone,
+ALTER COLUMN patient_class TYPE character varying(20),
+ALTER COLUMN patient_status TYPE character varying(20),
 ALTER COLUMN status TYPE character varying(200);
          
 ALTER TABLE emr_laborder
@@ -414,7 +416,9 @@ ADD COLUMN    reason_code_type character varying(25),
 ADD COLUMN    order_info character varying(100),
 ADD COLUMN    remark text,
 ADD COLUMN    obs_start_date character varying(100),
-ADD COLUMN    obs_end_date character varying(100);
+ADD COLUMN    obs_end_date character varying(100),
+ALTER COLUMN patient_class TYPE character varying(20),
+ALTER COLUMN patient_status TYPE character varying(20);
 
 --rename tables for many to many for emr_encounter
 ALTER TABLE  emr_encounter_icd9_codes 
@@ -463,3 +467,10 @@ ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes
 ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes
   ALTER COLUMN dx_code_id TYPE character varying(20);
     
+ALTER TABLE emr_prescription
+ ALTER COLUMN patient_class TYPE character varying(20),
+ ALTER COLUMN patient_status TYPE character varying(20);
+
+ALTER TABLE emr_immunization
+ ALTER COLUMN patient_class TYPE character varying(20),
+ ALTER COLUMN patient_status TYPE character varying(20);
