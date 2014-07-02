@@ -714,11 +714,11 @@ class Patient_Guardian(BasePatRecord):
     '''
     organization = models.CharField('Relationship', max_length=200, blank=True, null=True)
     relationship = models.CharField('Relationship', max_length=200, blank=True, null=True)
-    title = models.CharField('honorific', max_length=20, blank=True, null=True)
+    title = models.CharField('honorific', max_length=50, blank=True, null=True)
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
     middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
-    suffix = models.CharField('Suffix', max_length=20, blank=True, null=True)
+    suffix = models.CharField('Suffix', max_length=50, blank=True, null=True)
     address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
     address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
     city = models.CharField('City', max_length=100, blank=True, null=True)
@@ -741,7 +741,7 @@ class Patient_Guardian(BasePatRecord):
     auth_uid = models.CharField('Auth Universal ID', max_length=50, blank=True, null=True)
     auth_uidtype = models.CharField('Auth UID Type', max_length=10, blank=True, null=True)
     idtype_code = models.CharField('ID Type Code', max_length=10, blank=True, null=True)
-    org_id = models.CharField('Organization ID', max_length=20, blank=True, null=True)
+    org_id = models.CharField('Organization ID', max_length=50, blank=True, null=True)
 
 class Patient_ExtraData(BasePatRecord):
     '''
@@ -866,8 +866,8 @@ class LabOrder(BasePatientRecord):
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
     test_status = models.CharField('Test status', max_length=5, null=True)
-    patient_class = models.CharField('Patient class',max_length=5, null=True)
-    patient_status = models.CharField('Patient status',max_length=5, null=True)
+    patient_class = models.CharField('Patient class',max_length=20, null=True)
+    patient_status = models.CharField('Patient status',max_length=20, null=True)
     group_id = models.CharField('Placer Order Group',max_length=15, null=True)
     reason_code = models.CharField('Reason for Order',max_length=15, null=True)
     reason_code_type = models.CharField('Reason code type',max_length=25, null=True)
@@ -993,8 +993,8 @@ class LabResult(BasePatientRecord):
     ccollection_date = models.CharField('Collection date String', max_length=100, blank=True, null=True)
     status = models.CharField('Result Status', max_length=200, blank=True, null=True)
     order_type = models.CharField('Order type', max_length=20, null=True)
-    patient_class = models.CharField('Patient class',max_length=5, null=True)
-    patient_status = models.CharField('Patient status',max_length=5, null=True)
+    patient_class = models.CharField('Patient class',max_length=20, null=True)
+    patient_status = models.CharField('Patient status',max_length=20, null=True)
 
     # 
     # In some EMR data sets, reference pos & high, and neg & low, may come from
@@ -1080,8 +1080,8 @@ class LabResult(BasePatientRecord):
             lx.pk = 0
             lx.result_date = datetime.datetime.today()
             lx.date = order_date
-            lx.native_code = 'MDPH-250' #this is the loinc
-        
+            lx.native_code = 'MDPH-250' #this is the loinc, this is a tb lab.. 
+            lx.result_string = 'ind'
             lx.order_natural_key = lx.natural_key # same order and key
             lx.native_name = 'TB NO TEST'
             lx.collection_date = lx.result_date
@@ -1443,8 +1443,8 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    patient_class = models.CharField('Patient Class', max_length=5, null=True)
-    patient_status = models.CharField('Patient status', max_length=5, null=True)
+    patient_class = models.CharField('Patient Class', max_length=20, null=True)
+    patient_status = models.CharField('Patient status', max_length=20, null=True)
     
     @staticmethod
     def fakes(**kw):
