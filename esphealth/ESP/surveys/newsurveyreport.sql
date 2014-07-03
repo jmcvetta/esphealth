@@ -188,7 +188,7 @@ INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Indian');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Nat American');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Alaskan');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Native Hawai');
-INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Multiracial');
+INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Unknown');
 INSERT INTO CategoricalVariables ( RaceEthnicity) values ('Patient Decl');
 
 --etnicity selfreport yes
@@ -204,7 +204,6 @@ where b.question='What is your race/ethnicity?' and (
 (response_choice='NA' and raceethnicity=   'Nat American') or
 (response_choice='Al' and raceethnicity=   'Alaskan') or
 (response_choice='NH' and raceethnicity=   'Native Hawai') or
-(response_choice='M' and raceethnicity=   'Multiracial') or
 (response_choice='PD' and raceethnicity=   'Patient Decl')
 ) group by response_choice, b.question);
 
@@ -222,7 +221,6 @@ where b.question='What is your race/ethnicity?' and (
 (response_choice='NA' and raceethnicity=   'Nat American') or
 (response_choice='Al' and raceethnicity=   'Alaskan') or
 (response_choice='NH' and raceethnicity=   'Native Hawai') or
-(response_choice='M' and raceethnicity=   'Multiracial') or
 (response_choice='PD' and raceethnicity=   'Patient Decl')
 ) group by response_choice, b.question);
 
@@ -231,18 +229,14 @@ update CategoricalVariables set ehryes =( select count(*)
   from emr_patient p
 where 
 p.mrn in (select mrn from emr_surveyresponse where question='What is your race/ethnicity?' ) and  (
-( (upper(race) = upper(raceethnicity) or upper(race) = upper('African')) and raceethnicity=  'Black' ) or
-( ( upper(race) = upper(raceethnicity) or upper(race) = upper('White')) and raceethnicity=   'Caucasian') or
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Asian') or
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Other') or
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Hispanic') or
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Indian') or
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Nat American') or
-( (upper(race) = upper(raceethnicity) or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) and raceethnicity=   'Alaskan') or
-( (upper(race) = upper(raceethnicity)  or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN')) and raceethnicity=   'Native Hawai') or
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Multiracial') or 
-(upper(race) = upper(raceethnicity) and raceethnicity=   'Patient Decl')
-) group by race);
+( ( upper(race) = upper('African')or upper(race) = upper('African-American')) and raceethnicity=  'Black' ) or
+(  upper(race) = upper('White') and raceethnicity=   'Caucasian') or
+( ( upper(race) = upper('Multiracial')) and raceethnicity=   'Other') or
+( (upper(race) = upper('Native American')) and raceethnicity=   'Nat American') or
+( ( upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) and raceethnicity=   'Alaskan') or
+( ( upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN') or upper(race) = upper('NATIVE HAWAIIAN')) and raceethnicity=   'Native Hawai') or
+(upper(race) = upper(raceethnicity) ))
+ group by raceethnicity);
 
 --ehr no 
 update CategoricalVariables set ehrno = (select (select count(*) from emr_patient where mrn in 
@@ -251,79 +245,73 @@ update CategoricalVariables set ehrno = (select (select count(*) from emr_patien
 from emr_patient b 
 where b.mrn in (select mrn from emr_surveyresponse where question='What is your race/ethnicity?') 
 and ( upper(race) = upper(raceethnicity) or 
-(upper(race) = upper('White') and raceethnicity=   'Caucasian') or
-( upper(race) = upper('African') and raceethnicity=  'Black' ) or
-(upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE') and raceethnicity=   'Alaskan') or
-(upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN') and raceethnicity=   'Native Hawai') 
-) group by race);
+( (  upper(race) = upper('African')or upper(race) = upper('African-American')) and raceethnicity=  'Black' ) or
+( (  upper(race) = upper('White')) and raceethnicity=   'Caucasian') or
+( (  upper(race) = upper('Multiracial')) and raceethnicity=   'Other') or
+( ( upper(race) = upper('Native American')) and raceethnicity=   'Nat American') or
+( (  upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) and raceethnicity=   'Alaskan') or
+( (  upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN') or upper(race) = upper('NATIVE HAWAIIAN')) and raceethnicity=   'Native Hawai') 
+) group by raceethnicity);
 
 --ethnicity: survey vs ehr yes/yes
 update CategoricalVariables set ptyesehryes = (
 select count(*) as "Pt yes / EHR yes" from emr_surveyresponse s, emr_patient p 
-       where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-         and upper(race ) = upper(raceethnicity) 
-         and (((upper(race) = upper('Black') or upper(race) = upper('African')) and response_choice='B') or
-	 ((upper(race) = upper('White') or upper(race) = upper('Caucasian')) and  response_choice='W') or 
-	 (upper(race) = upper('Asian') and response_choice='A') or 
-	 (upper(race) = upper('Other') and response_choice='O') or 
-	 (upper(race) = upper('Hispanic') and response_choice='H') or
-(response_choice='I' and upper(race) = upper('Indian')) or
-(response_choice='NA' and upper(race) = upper('Nat American')) or
-(response_choice='Al' and (upper(race) = upper('Alaskan') or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
-(response_choice='NH' and (upper(race) = upper( 'Native Hawai')  or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN'))  ) or
-(response_choice='M' and upper(race) = upper('Multiracial')) or 
-(response_choice='PD' and upper(race) = upper('Patient Decl')) 	 ) group by p.race);
+       where p.mrn=s.mrn and question='What is your race/ethnicity?'  and ( 
+         ((upper(race) = upper(raceethnicity) or upper(race) = upper('African')or upper(race) = upper('African-American')) and response_choice='B' and raceethnicity=   'Black') or
+	 ((upper(race) = upper(raceethnicity) or upper(race) = upper('White') ) and  response_choice='W' and raceethnicity=   'Caucasian') or 
+	 ((upper(race) = upper(raceethnicity) or upper(race) = upper('Multiracial')) and response_choice='O' and raceethnicity=   'Other') or 
+	 (response_choice='Al' and raceethnicity=   'Alaskan' and (upper(race) = upper(raceethnicity) or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+	(response_choice='NH' and raceethnicity=   'Native Hawai' and (upper(race) = upper(raceethnicity) or upper(race) = upper('NATIVE HAWAIIAN') or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN'))  ) or
+	(response_choice='NA' and raceethnicity=   'Nat American' and (upper(race) = upper(raceethnicity) or upper(race) = upper('Native American'))) or
+	(response_choice='I' and upper(race) = upper(raceethnicity) and raceethnicity=   'Indian') or
+	(response_choice='PD' and upper(race) = upper(raceethnicity) and raceethnicity=   'Patient Decl') or
+	(upper(race) = upper(raceethnicity) and response_choice='H' and raceethnicity=   'Hispanic') or
+	(upper(race) = upper(raceethnicity) and response_choice='A' and raceethnicity=   'Asian')  ) group by raceethnicity);
 
 --ethnicity survey vs ehr yes/no 
 update CategoricalVariables set ptyesehrno = (
 select count(*) as "Pt yes / EHR no" from emr_surveyresponse s, emr_patient p 
        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-       and upper(race ) = upper(raceethnicity) 
-         and (((upper(race) <> upper('Black') and upper(race) <> upper('African')) and response_choice='B') or
-	 ((upper(race) <> upper('White') and  upper(race) <> upper('Caucasian')) and  response_choice='W') or 
-	 (upper(race) <> upper('Asian') and response_choice='A') or 
-	 (upper(race) <> upper('Other') and response_choice='O') or 
-	 (upper(race) <> upper( 'Hispanic') and response_choice='H')or 
-	 (response_choice='I' and upper(race) <> upper('Indian')) or
-	(response_choice='NA' and upper(race) <> upper('Nat American')) or
-	(response_choice='Al' and (upper(race) <> upper('Alaskan') and upper(race) <> upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
-	(response_choice='NH' and (upper(race) <> upper( 'Native Hawai') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
-	(response_choice='M' and upper(race) <> upper( 'Multiracial')) or 
-	(response_choice='PD' and upper(race) <> upper('Patient Decl'))  ) group by race);
+       and  (((upper(race) <> upper(raceethnicity) and upper(race) <> upper('African') and upper(race)<> upper('African-American') ) and response_choice='B' and raceethnicity=   'Black') or
+	 ((upper(race) <> upper('White') and  upper(race) <> upper(raceethnicity)) and  response_choice='W' and raceethnicity=   'Caucasian') or 
+	 (upper(race) <> upper(raceethnicity) and response_choice='A' and raceethnicity=   'Asian') or 
+	 ( (upper(race) <> upper(raceethnicity) and upper(race) <> upper('Multiracial')) and response_choice='O' and raceethnicity=   'Other') or 
+	 (upper(race) <> upper(raceethnicity) and response_choice='H' and raceethnicity=   'Hispanic')or 
+	 (response_choice='I' and upper(race) <> upper(raceethnicity) and raceethnicity=   'Indian') or
+	(response_choice='NA' and raceethnicity=   'Nat American' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('Native American'))) or
+	(response_choice='Al'and raceethnicity=   'Alaskan' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+	(response_choice='NH' and raceethnicity=   'Native Hawai' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('NATIVE HAWAIIAN') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
+	(response_choice='PD' and raceethnicity=   'Patient Decl' and upper(race) <> upper(raceethnicity))  ) group by raceethnicity);
 	 
 --ethnicity survey vs ehr no/yes
 update CategoricalVariables set ptnoehryes = (
 select  count(*) as "Pt no/ EHR yes" from emr_surveyresponse s, emr_patient p 
        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-        and upper(race ) = upper(raceethnicity)
-         and (((upper(race ) = upper('Black') or upper(race ) = upper('African')) and response_choice<>'B') or
-	 ((upper(race ) = upper('White') or upper(race ) = upper('Caucasian')) and  response_choice<>'W') or 
-	 (upper(race ) = upper('Asian') and response_choice<>'A') or 
-	 (upper(race ) = upper('Other') and response_choice<>'O') or 
-	 (upper(race ) = upper('Hispanic') and response_choice<>'H') or 
-	(response_choice<>'I' and upper(race ) = upper('Indian')) or
-	(response_choice<>'NA' and upper(race ) = upper('Nat American')) or
-	(response_choice<>'Al' and (upper(race ) = upper('Alaskan') or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
-	(response_choice<>'NH' and (upper(race ) = upper('Native Hawai') or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
-	(response_choice<>'M' and upper(race ) = upper('Multiracial')) or 
-	(response_choice<>'PD' and upper(race) = upper('Patient Decl')) )   group by race);
+       and  (((upper(race) = upper(raceethnicity) or  upper(race) = upper('African') or upper(race)= upper('African-American') ) and response_choice<>'B' and raceethnicity=   'Black') or
+	 ((upper(race) = upper('White') or  upper(race) = upper(raceethnicity)) and  response_choice<>'W' and raceethnicity=   'Caucasian') or 
+	 (upper(race) = upper(raceethnicity) and response_choice<>'A' and raceethnicity=   'Asian') or 
+	 ( (upper(race) = upper(raceethnicity) or upper(race) = upper('Multiracial')) and response_choice<>'O' and raceethnicity=   'Other') or 
+	 (upper(race) = upper(raceethnicity) and response_choice<>'H' and raceethnicity=   'Hispanic')or 
+	 (response_choice<>'I' and upper(race) = upper(raceethnicity) and raceethnicity=   'Indian') or
+	(response_choice<>'NA' and raceethnicity=   'Nat American' and (upper(race) = upper(raceethnicity) or upper(race) = upper('Native American'))) or
+	(response_choice<>'Al'and raceethnicity=   'Alaskan' and (upper(race) = upper(raceethnicity) or upper(race) = upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+	(response_choice<>'NH' and raceethnicity=   'Native Hawai' and (upper(race) = upper(raceethnicity) or upper(race) = upper('NATIVE HAWAIIAN') or upper(race) = upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
+	(response_choice<>'PD' and raceethnicity=   'Patient Decl' and upper(race) = upper(raceethnicity))  ) group by raceethnicity);
 
 --ethnicity survey vs ehr no/no  
 update CategoricalVariables set ptnoehrno = (
 select count(*) as "Pt no / EHR no" from emr_surveyresponse s, emr_patient p 
-       where p.mrn=s.mrn and question='What is your race/ethnicity?' 
-       and upper(race ) = upper(raceethnicity) 
-         and (((upper(race) <> upper('Black') and upper(race) <> upper('African')) and response_choice<>'B') or
-	 ((upper(race) <> upper( 'White') and  upper(race) <> upper('Caucasian')) and  response_choice<>'W') or 
-	 (upper(race) <> upper('Asian') and response_choice<>'A') or 
-	 (upper(race) <> upper( 'Other') and response_choice<>'O') or 
-	 (upper(race) <> upper( 'Hispanic') and response_choice<>'H')or 
-	 (response_choice<>'I' and upper(race) <> upper('Indian')) or
-	(response_choice<>'NA' and upper(race) <> upper('Nat American')) or
-	(response_choice<>'Al' and (upper(race) <> upper('Alaskan') and upper(race) <> upper('AMERICAN INDIAN/ALASKAN NATIVE'))) or
-	(response_choice<>'NH' and (upper(race) <> upper( 'Native Hawai') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
-	(response_choice<>'M' and upper(race) <> upper('Multiracial')) or 
-	(response_choice<>'PD' and upper(race) <> upper('Patient Decl')) 	) group by race);
+        where p.mrn=s.mrn and question='What is your race/ethnicity?' 
+       and  (((upper(race) <> upper(raceethnicity) and upper(race) <> upper('African') and upper(race)<> upper('African-American') ) and response_choice<>'B' and raceethnicity=   'Black') or
+	 ((upper(race) <> upper('White') and  upper(race) <> upper(raceethnicity)) and  response_choice<>'W' and raceethnicity=   'Caucasian') or 
+	 (upper(race) <> upper(raceethnicity) and response_choice<>'A' and raceethnicity=   'Asian') or 
+	 ( (upper(race) <> upper(raceethnicity) and upper(race) <> upper('Multiracial')) and response_choice<>'O' and raceethnicity=   'Other') or 
+	 (upper(race) <> upper(raceethnicity) and response_choice<>'H' and raceethnicity=   'Hispanic')or 
+	 (response_choice<>'I' and upper(race) <> upper(raceethnicity) and raceethnicity=   'Indian') or
+	(response_choice<>'NA' and raceethnicity=   'Nat American' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('Native American'))) or
+	(response_choice<>'Al'and raceethnicity=   'Alaskan' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('AMERICAN INDIAN/ALASKAN NATIVE')) ) or
+	(response_choice<>'NH' and raceethnicity=   'Native Hawai' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('NATIVE HAWAIIAN') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
+	(response_choice<>'PD' and raceethnicity=   'Patient Decl' and upper(race) <> upper(raceethnicity))  ) group by raceethnicity);
 
 --TOTALS
 INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo  ,
