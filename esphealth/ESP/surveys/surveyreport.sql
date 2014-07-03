@@ -103,7 +103,6 @@ update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_e
 where emr_patient.mrn in (select distinct (emr_surveyresponse.mrn) from emr_surveyresponse ) and emr_encounter.patient_id = emr_patient.id and bp_systolic is not null )
 where Question ='What was your systolic blood pressure the last time it was measured by your doctor?';
 
-
 --mean systolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_systolic 
 from  emr_encounter
@@ -1630,9 +1629,10 @@ INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gend
      p.gender, p.race, date_part('year',age(p.date_of_birth))
      from emr_patient p where p.mrn in (select b.mrn from  emr_surveyresponse b) ;  
 
+  
 update LineList set     
-EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id order by emr_encounter.date desc limit 1),
-  EHR_systolic = (select emr_encounter.bp_systolic  from  emr_encounter , emr_patient where emr_patient.id = emr_encounter.patient_id order by emr_encounter.date desc limit 1),
+EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn =emr_patient.mrn order by emr_encounter.date desc limit 1),
+  EHR_systolic = (select emr_encounter.bp_systolic  from  emr_encounter , emr_patient where emr_patient.id = emr_encounter.patient_id and LineList.mrn =emr_patient.mrn order by emr_encounter.date desc limit 1),
   survey_gender = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your gender?'),
   survey_race = (select case WHEN response_choice = 'B' THEN 'BLACK' WHEN response_choice = 'W' THEN 'CAUCASIAN' WHEN response_choice = 'A' THEN 'ASIAN' WHEN response_choice = 'H' THEN 'HISPANIC'
   WHEN response_choice = 'O' THEN 'OTHER' WHEN response_choice = 'I' THEN 'INDIAN' WHEN response_choice = 'NA' THEN 'NAT AMERICAN' WHEN response_choice = 'AL' THEN 'ALASKAN' WHEN response_choice = 'NH' THEN 'NATIVE HAWAI/PACIFIC ISLANDER' 
@@ -1667,8 +1667,8 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  Survey_ldl = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your LDL level checked?'),
  Survey_ldl_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your last LDL level?'),
  Survey_ldl_med = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high cholesterol?'),
- EHR_height = (select emr_encounter.height from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
- EHR_weight = (select emr_encounter.weight from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ EHR_height = (select emr_encounter.height from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ EHR_weight = (select emr_encounter.weight from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
  Survey_height_unsure =  (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='height/unsure'),
  Survey_weight_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='weight/ unsure'),
  EHR_bmi = (select emr_encounter.bmi from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
