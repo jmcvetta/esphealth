@@ -58,12 +58,15 @@ where Question ='What is your current height in Feet and Inches?';
 
 --ehr mean height and sd
 update ContinuousVariables set EHRReportMean=
-(select round(avg(height )::numeric,2) as "EHR height Mean"
-from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id ),
-EHRReportSD=(select round(stddev(height )::numeric,2) as "+- SD"
-from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
+(select round(avg((select emr_encounter.height from emr_encounter where 
+  emr_encounter.patient_id = emr_patient.id and emr_encounter.height is not null
+order by emr_encounter.date desc limit 1))::numeric,2) as "EHR height mean"
+from emr_patient 
+where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse)  ),
+EHRReportSD=(select round(stddev((select emr_encounter.height from emr_encounter
+where emr_encounter.patient_id = emr_patient.id and emr_encounter.height is not null
+order by emr_encounter.date desc limit 1))::numeric, 2) as "+- SD"
+from emr_patient where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What is your current height in Feet and Inches?';
 
 update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.patient_id)) from emr_patient , emr_encounter
@@ -72,12 +75,15 @@ where Question ='What is your current weight in pounds?';
 
 --mean weight and sd
 update ContinuousVariables set EHRReportMean=
-(select round(avg(weight )::numeric,2) as "EHR weight Mean"
-from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id ),
-EHRReportSD=(select round(stddev(weight )::numeric,2) as "+- SD"
-from emr_patient , emr_surveyresponse, emr_encounter
-where emr_patient.mrn = emr_surveyresponse.mrn and emr_encounter.patient_id = emr_patient.id )
+(select round(avg((select emr_encounter.weight from emr_encounter where 
+  emr_encounter.patient_id = emr_patient.id and emr_encounter.weight is not null
+order by emr_encounter.date desc limit 1))::numeric,2) as "EHR weight mean"
+from emr_patient 
+where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse)  ),
+EHRReportSD=(select round(stddev((select emr_encounter.weight from emr_encounter
+where emr_encounter.patient_id = emr_patient.id and emr_encounter.weight is not null
+order by emr_encounter.date desc limit 1))::numeric, 2) as "+- SD"
+from emr_patient where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What is your current weight in pounds?';
 
 update ContinuousVariables set NoOfEHRRespondents = (select count(distinct(emr_encounter.patient_id)) from emr_patient , emr_encounter
@@ -87,13 +93,13 @@ where Question ='What is your last diastolic blood pressure?';
 --mean diastolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_diastolic 
 from  emr_encounter
-where emr_encounter.patient_id = emr_patient.id
+where emr_encounter.patient_id = emr_patient.id and emr_encounter.bp_diastolic is not null 
 order by emr_encounter.date desc limit 1))::numeric,2) as "EHR diastolic Mean"
 from emr_patient 
-where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse) ),
+where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse)  ),
 EHRReportSD=(select round(stddev((select  emr_encounter.bp_diastolic 
 from  emr_encounter
-where emr_encounter.patient_id = emr_patient.id
+where emr_encounter.patient_id = emr_patient.id and emr_encounter.bp_diastolic is not null 
 order by emr_encounter.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
@@ -106,13 +112,13 @@ where Question ='What was your systolic blood pressure the last time it was meas
 --mean systolic and sd
 update ContinuousVariables set EHRReportMean= (select round(avg((select  emr_encounter.bp_systolic 
 from  emr_encounter
-where emr_encounter.patient_id = emr_patient.id
+where emr_encounter.patient_id = emr_patient.id and emr_encounter.bp_systolic is not null 
 order by emr_encounter.date desc limit 1))::numeric,2) as "EHR systolic Mean"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse) ),
 EHRReportSD=(select round(stddev((select  emr_encounter.bp_systolic 
 from  emr_encounter
-where emr_encounter.patient_id = emr_patient.id
+where emr_encounter.patient_id = emr_patient.id and emr_encounter.bp_systolic is not null 
 order by emr_encounter.date desc limit 1))::numeric,2) as "+- SD"
 from emr_patient 
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
@@ -1418,7 +1424,7 @@ update WeightType set SelfReportYes =( select count(*)
 where b.question='How would you classify your weight?' and (
 (response_choice='L' and Type=  'Low' ) or
 (response_choice='N' and Type=   'Normal') or
-(response_choice='OV' and Type=   'Overweight') or
+(response_choice='OW' and Type=   'Overweight') or
 (response_choice='OB' and Type=  'Obese')  
 ) group by response_choice, b.question);
 
@@ -1429,7 +1435,7 @@ where a.question=b.question)- count(*)
 where b.question='How would you classify your weight?' and (
 (response_choice='L' and Type=  'Low' ) or
 (response_choice='N' and Type=   'Normal') or
-(response_choice='OV' and Type=   'Overweight') or
+(response_choice='OW' and Type=   'Overweight') or
 (response_choice='OB' and Type=  'Obese')  ) group by response_choice, b.question);
 
 --weight type ehr yes 
@@ -1480,7 +1486,7 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice='L'  ) or
 	(Type=  'Normal' and response_choice='N'  ) or
-	(Type=  'Overweight' and response_choice='OV' ) or
+	(Type=  'Overweight' and response_choice='OW' ) or
 	(Type=  'Obese' and response_choice='OB' )  )
      and ((bmi is not null and bmi <18 and response_choice='L') or 
 	 (bmi is not null and bmi >18 and bmi <25 and response_choice='N') or 
@@ -1495,7 +1501,7 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice='L'  ) or
 	(Type=  'Normal' and response_choice='N'  ) or
-	(Type=  'Overweight' and response_choice='OV' ) or
+	(Type=  'Overweight' and response_choice='OW' ) or
 	(Type=  'Obese' and response_choice='OB' )   )
      and ((bmi is not null and bmi >18 and response_choice='L') or 
 	 (bmi is not null and (bmi <18 or bmi >25) and response_choice='N') or 
@@ -1510,7 +1516,7 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice<>'L'  ) or
 	(Type=  'Normal' and response_choice<>'N'  ) or
-	(Type=  'Overweight' and response_choice<>'OV' ) or
+	(Type=  'Overweight' and response_choice<>'OW' ) or
 	(Type=  'Obese' and response_choice<>'OB' )   )
      and ((bmi is not null and bmi <18 and response_choice<>'L') or 
 	 (bmi is not null and bmi >18 and bmi <25 and response_choice<>'N') or 
@@ -1525,7 +1531,7 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
        c.patient_id = p.id and 
        ((Type=  'Low' and response_choice<>'L'  ) or
 	(Type=  'Normal' and response_choice<>'N' ) or
-	(Type=  'Overweight' and response_choice<>'OV'  ) or
+	(Type=  'Overweight' and response_choice<>'OW'  ) or
 	(Type=  'Obese' and response_choice<>'OB' )  )
      and ((bmi is not null and bmi >18 and response_choice<>'L') or 
 	 (bmi is not null and (bmi <18 or bmi >25) and response_choice<>'N') or 
@@ -1540,11 +1546,11 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
        c.patient_id = p.id and 
        ((Type=  'Low' and bmi is  null and response_choice='L' ) or
 	(Type=  'Normal' and bmi is  null and response_choice='N'  ) or
-	(Type=  'Overweight' and bmi is  null and response_choice='OV' ) or
+	(Type=  'Overweight' and bmi is  null and response_choice='OW' ) or
 	(Type=  'Obese' and bmi is  null and response_choice='OB' )  )
      and ((bmi is  null  and response_choice='L') or 
 	 (bmi is  null  and response_choice='N') or 
-	 (bmi is  null   and response_choice='OV') or
+	 (bmi is  null   and response_choice='OW') or
 	 (bmi is  null  and response_choice='OB')
 	 ) group by response_choice, c.date order by c.date desc limit 1);	
 
@@ -1555,11 +1561,11 @@ from emr_surveyresponse s, emr_patient p , emr_encounter c
        c.patient_id = p.id and 
        ((Type=  'Low' and bmi is  null and response_choice<>'L' ) or
 	(Type=  'Normal' and bmi is  null and response_choice<>'N'  ) or
-	(Type=  'Overweight' and bmi is  null and response_choice<>'OV' ) or
+	(Type=  'Overweight' and bmi is  null and response_choice<>'OW' ) or
 	(Type=  'Obese' and bmi is null and response_choice<>'OB' )  )
      and ((bmi is  null  and response_choice<>'L') or 
 	 (bmi is  null  and response_choice<>'N') or 
-	 (bmi is  null   and response_choice<>'OV') or
+	 (bmi is  null   and response_choice<>'OW') or
 	 (bmi is  null  and response_choice<>'OB')
 	 ) group by Type, c.date order by c.date desc limit 1);	
 
@@ -1629,10 +1635,14 @@ INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gend
      p.gender, p.race, date_part('year',age(p.date_of_birth))
      from emr_patient p where p.mrn in (select b.mrn from  emr_surveyresponse b) ;  
 
-  
+update LineList set 
+ EHR_diastolic = (select e.bp_diastolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
+and e.bp_diastolic is not null order by e.date desc limit 1);
+update LineList set 
+ EHR_systolic = (select e.bp_systolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
+and e.bp_systolic is not null order by e.date desc limit 1);
+
 update LineList set     
-EHR_diastolic = (select emr_encounter.bp_diastolic from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn =emr_patient.mrn order by emr_encounter.date desc limit 1),
-  EHR_systolic = (select emr_encounter.bp_systolic  from  emr_encounter , emr_patient where emr_patient.id = emr_encounter.patient_id and LineList.mrn =emr_patient.mrn order by emr_encounter.date desc limit 1),
   survey_gender = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your gender?'),
   survey_race = (select case WHEN response_choice = 'B' THEN 'BLACK' WHEN response_choice = 'W' THEN 'CAUCASIAN' WHEN response_choice = 'A' THEN 'ASIAN' WHEN response_choice = 'H' THEN 'HISPANIC'
   WHEN response_choice = 'O' THEN 'OTHER' WHEN response_choice = 'I' THEN 'INDIAN' WHEN response_choice = 'NA' THEN 'NAT AMERICAN' WHEN response_choice = 'AL' THEN 'ALASKAN' WHEN response_choice = 'NH' THEN 'NATIVE HAWAI/PACIFIC ISLANDER' 
@@ -1667,8 +1677,8 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  Survey_ldl = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your LDL level checked?'),
  Survey_ldl_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your last LDL level?'),
  Survey_ldl_med = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high cholesterol?'),
- EHR_height = (select emr_encounter.height from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
- EHR_weight = (select emr_encounter.weight from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
+ EHR_height = (select emr_encounter.height from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn and emr_encounter.height is not null order by emr_encounter.date desc limit 1),
+ EHR_weight = (select emr_encounter.weight from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn and emr_encounter.weight is not null  order by emr_encounter.date desc limit 1),
  Survey_height_unsure =  (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='height/unsure'),
  Survey_weight_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='weight/ unsure'),
  EHR_bmi = (select emr_encounter.bmi from  emr_encounter where LineList.mrn = emr_encounter.mrn order by emr_encounter.date desc limit 1),
