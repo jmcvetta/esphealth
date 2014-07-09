@@ -718,6 +718,9 @@ modules/disease-tuberculosis/tuberculosis.py -text
 modules/elr-NIST-test/NISTtest.py -text
 modules/elr-NIST-test/__init__.py -text
 modules/elr-NIST-test/setup.py -text
+modules/elr-odh/__init__.py -text
+modules/elr-odh/elr-odh.py -text
+modules/elr-odh/setup.py -text
 modules/elr-positive-test/__init__.py -text
 modules/elr-positive-test/positivetest.py -text
 modules/elr-positive-test/setup.py -text
