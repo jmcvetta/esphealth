@@ -27,7 +27,7 @@ setup(
         ],
     entry_points = '''
         [esphealth]
-        disease_definitions = elr-odh:disease_definitions
-        event_heuristics = elr-odh:event_heuristics
+        disease_definitions = odh:disease_definitions
+        event_heuristics = odh:event_heuristics
     '''
     )

@@ -361,8 +361,8 @@ for i in ODH_CONFIG:
         '''
         A pseudo-disease for ODH Lab Reporting Test 
         '''        
-        condition = "elr-odh:" + i['condition']
-        short_name = "elr-odh:" + i['short_name']
+        condition = "odh:" + i['condition']
+        short_name = "odh:" + i['short_name']
         uri = 'urn:x-esphealth:disease:commonwealth:%s:v1' % condition 
         test_names = i['test_names']
         test_name_search_strings = i['test_name_search_strings']
