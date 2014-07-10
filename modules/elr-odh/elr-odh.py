@@ -21,28 +21,35 @@ from ESP.utils import log
 from ESP.utils.utils import queryset_iterator
 
 
-
 class ODHPositiveHeuristic(BaseLabResultHeuristic): 
     '''
     A heuristic for detecting positive (& negative) lab result events
     '''
     
-    def __init__(self, test_name, date_field='order'):
+    def __init__(self, test_name, date_field='order', titer_dilution=None):
         '''
-        test names
+        @param titer_dilution: The demoninator showing titer dilution
+        @type  titer_dilution: Integer
         '''
         assert test_name
         self.test_name = test_name
         self.date_field = date_field
+        if titer_dilution:
+            assert isinstance(titer_dilution, int)
+            self.titer_dilution = titer_dilution
+        else:
+            self.titer_dilution = None
     
     @property
     def short_name(self):
         name = 'labresult:%s:positive' % self.test_name
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
+        if self.titer_dilution:
+            name += ':titer:%s' % self.titer_dilution
         return name
     
-    uri = 'urn:x-esphealth:heuristic:commonwealth:labresult:positive:v1'
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:positive:v1'
     
     @property
     def positive_event_name(self):
@@ -74,24 +81,129 @@ class ODHPositiveHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         #
+        # TODO: issue 334 The negative and indeterminate query sets should be generated 
+        # *after* creating of preceding queries' events, so that labs bound to 
+        # those events are ignored.  This will allow negative lab query to much
+        # simpler.
+        #
         log.debug('Generating events for "%s"' % self)
         #
+        # Build numeric query
+        #
+        #--------------------------------------------------------------------------------
+        # Not doing abnormal flag yet, because many values are not null but a blank string
+        #
+        #if result_type == 'positive':
+            #pos_q = Q(abnormal_flag__isnull=False)
+        #else:
+            #pos_q = None
+        #--------------------------------------------------------------------------------
         map_qs = LabTestMap.objects.filter(test_name=self.test_name)
         if not map_qs:
             log.warning('No tests mapped for "%s", cannot generate events.' % self.test_name)
             return 0
         #
-        # this is a stub heuristic -- all labs in test data are "positive"
+        # All labs can be classified pos/neg if they have reference high and 
+        # numeric result
         #
-        lab_q = None
+        ref_high_float_q = Q(ref_high_float__isnull=False)
+        result_float_q = Q(result_float__isnull=False)
+        numeric_q = ref_high_float_q & result_float_q
+        positive_q = ( numeric_q & Q(result_float__gte = F('ref_high_float')) )
+        negative_q = ( numeric_q & Q(result_float__lt = F('ref_high_float')) )
+        indeterminate_q = None
+        xpositive_q = None
+        xnegative_q = None
+        xindeterminate_q = None
+        all_labs_q = None
+        #
+        # Build queries with custom result strings or fallback thresholds
+        #
+        simple_strings_lab_q = None
         for map in map_qs:
-            if not lab_q:
-                lab_q = map.lab_results_q_obj
+            lab_q = map.lab_results_q_obj
+            #
+            # Labs mapped with extra result strings need to be handled specially
+            #
+            if map.extra_positive_strings.all() \
+                or map.extra_negative_strings.all() \
+                or map.extra_indeterminate_strings.all() \
+                or map.excluded_positive_strings.all() \
+                or map.excluded_negative_strings.all() \
+                or map.excluded_indeterminate_strings.all():
+                if xpositive_q:
+                    xpositive_q |= (map.positive_string_q_obj & lab_q)
+                else:
+                    xpositive_q = (map.positive_string_q_obj & lab_q)
+                if xnegative_q:
+                    xnegative_q |= (map.negative_string_q_obj & lab_q)
+                else:
+                    xnegative_q = (map.negative_string_q_obj & lab_q)
+                if xindeterminate_q:
+                    xindeterminate_q |= (map.indeterminate_string_q_obj & lab_q)
+                else:
+                    xindeterminate_q = (map.indeterminate_string_q_obj & lab_q)
+                continue
+            if all_labs_q:
+                all_labs_q |= lab_q
             else:
-                lab_q |= map.lab_results_q_obj
+                all_labs_q = lab_q
+            # Threshold criteria is *in addition* to reference high
+            if map.threshold:
+                num_lab_q = (lab_q & result_float_q)
+                positive_q |= ( num_lab_q & Q(result_float__gte=map.threshold) )
+                negative_q |= ( num_lab_q & Q(result_float__lt=map.threshold) )
+            if simple_strings_lab_q:
+                simple_strings_lab_q |= lab_q
+            else:
+                simple_strings_lab_q = lab_q
+        #
+        # All labs in the simple_strings_lab_q can be queried using the standard
+        # set of result strings
+        #
+        if simple_strings_lab_q:
+            pos_rs_q = ResultString.get_q_by_indication('pos')
+            neg_rs_q = ResultString.get_q_by_indication('neg')
+            ind_rs_q = ResultString.get_q_by_indication('ind')
+            positive_q |= (simple_strings_lab_q & pos_rs_q)
+            negative_q |= (simple_strings_lab_q & neg_rs_q)
+            if indeterminate_q:
+                indeterminate_q |= (simple_strings_lab_q & ind_rs_q)
+            else:
+                indeterminate_q = (simple_strings_lab_q & ind_rs_q)
+        #
+        # Add titer string queries
+        #
+        if self.titer_dilution:
+            positive_q=None
+            negative_q=None
+            positive_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)), int(math.log(4096,2)))]
+            negative_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)))]
+            log.debug('positive_titer_strings: %s' % positive_titer_strings)
+            log.debug('negative_titer_strings: %s' % negative_titer_strings)
+            for s in positive_titer_strings:
+                if positive_q:
+                    positive_q |= Q(result_string__icontains=s)
+                else: 
+                    positive_q = Q(result_string__icontains=s)
+            for s in negative_titer_strings:
+                if negative_q:
+                    negative_q |= Q(result_string__icontains=s)
+                else:
+                    negative_q = Q(result_string__icontains=s)
+        positive_q = all_labs_q & positive_q
+        negative_q = all_labs_q & negative_q
+        indeterminate_q = all_labs_q & indeterminate_q
+        if xpositive_q:
+            positive_q = (positive_q) | (xpositive_q)
+        if xnegative_q:
+            negative_q = (negative_q) | (xnegative_q)
+        if xindeterminate_q:
+            indeterminate_q = (indeterminate_q) | (xindeterminate_q)
+        #
         # Generate Events
         #
-        positive_labs = self.unbound_labs.filter(lab_q)
+        positive_labs = self.unbound_labs.filter(positive_q)
         #log_query('Positive labs for %s' % self.uri, positive_labs)
         log.info('Generating positive events for %s' % self)
         #for lab in positive_labs.iterator():
@@ -111,7 +223,46 @@ class ODHPositiveHeuristic(BaseLabResultHeuristic):
                 )
             pos_counter += 1
         log.info('Generated %s new positive events for %s' % (pos_counter, self))
-        return pos_counter
+        negative_labs = self.unbound_labs.filter(negative_q)
+        #log_query('Negative labs for %s' % self, negative_labs)
+        log.info('Generating negative events for %s' % self)
+        neg_counter = 0
+        for lab in queryset_iterator(negative_labs):
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
+            Event.create(
+                name = self.negative_event_name,
+                source = self.uri,
+                patient = lab.patient,
+                date = lab_date,
+                provider = lab.provider,
+                emr_record = lab,
+                )
+            neg_counter += 1
+        log.info('Generated %s new negative events for %s' % (neg_counter, self))
+        indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
+        #log_query('Indeterminate labs for %s' % self, indeterminate_labs)
+        log.info('Generating indeterminate events for %s' % self)
+        ind_counter = 0
+        for lab in queryset_iterator(indeterminate_labs):
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
+            Event.create(
+                name = self.indeterminate_event_name,
+                source = self.uri,
+                patient = lab.patient,
+                date = lab_date,
+                provider = lab.provider,
+                emr_record = lab,
+                )
+            ind_counter += 1
+        log.info('Generated %s new indeterminate events for %s' % (ind_counter, self))
+        return pos_counter + neg_counter + ind_counter
+    
 
 class ODHPositiveTestDiseaseDefinition(DiseaseDefinition):
     '''
@@ -193,173 +344,12 @@ class ODHPositiveTestDiseaseDefinition(DiseaseDefinition):
         return new_case_count
 
 ODH_CONFIG = [
-    {
-        'condition': 'lead',
-        'short_name': 'lead',
-        'test_names' : ['lead'],
-        'test_name_search_strings': ['lead'],
-        'nat_keys': ['001.01','002.03'],
-        'recurrence_interval': 0
-    },
-    {
-        'condition': 'alt',
-        'short_name': 'alt',
-        'test_names' : ['alt'],
-        'test_name_search_strings': ['alanine aminotransferase'],
-        'nat_keys': ['001.02'],
-        'recurrence_interval': 0
-    },
-    {
-        'condition': 'cd4',
-        'short_name': 'cd4',
-        'test_names' : ['cd4'],
-        'test_name_search_strings': ['cd4'],
-        'nat_keys': ['001.03'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'cadmium',
-        'short_name': 'cadmium',
-        'test_names' : ['cadmium'],
-        'test_name_search_strings': ['cadmium'],
-        'nat_keys': ['002.01','002.02'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'Bacteria',
-        'short_name': 'Bacteria',
-        'test_names' : ['Bacteria'],
-        'test_name_search_strings': ['Bacteria'],
-        'nat_keys': ['003.01','003.02','003.03','009.01'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'CST-4_1',
-        'short_name': 'CST-4_1',
-        'test_names' : ['Bacteria', 'amoxicillin+clavulanate', 'trimethoprim+sulfamethoxazole', 'ciprofloxacin'],
-        'test_name_search_strings': ['Bacteria', 'amoxicillin', 'trimethoprim','ciprofloxacin'],
-        'nat_keys': ['004.01'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'CST-4_2',
-        'short_name': 'CST-4_2',
-        'test_names' : ['microorganism','streptomycin', 'isoniazid', 'rifampin','ethambutol'],
-        'test_name_search_strings': ['microorganism','streptomycin', 'isoniazid', 'rifampin','ethambutol'],
-        'nat_keys': ['004.02'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'CST-4_3',
-        'short_name': 'CST-4_3',
-        'test_names' : ['Bacteria', 'amoxicillin+clavulanate', 'ceftriaxone', 'clindamycin','cefotaxime','cefuroxime parenteral', 'erythromycin', 'cefepime', 'levofloxacin', 'meropenem', 'penicillin', 'vancomycin'],
-        'test_name_search_strings': ['Bacteria', 'amoxicillin+clavulanate', 'ceftriaxone', 'clindamycin','cefotaxime','cefuroxime parenteral', 'erythromycin', 'cefepime', 'levofloxacin', 'meropenem', 'penicillin', 'vancomycin'],
-        'nat_keys': ['004.03'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'FQR-5A1-B1',
-        'short_name': 'FQR-5A1-B1',
-        'test_names' : ['hepatitis a','hepatitis b','hepatitis c' ],
-        'test_name_search_strings': ['hepatitis a','hepatitis b','hepatitis c'],
-        'nat_keys': ['005A.01','005B.01'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'hep-c',
-        'short_name': 'hep-c',
-        'test_names' : ['hepatitis c'],
-        'test_name_search_strings': ['hepatitis c'],
-        'nat_keys': ['005A.03','005B.03'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'dengue',
-        'short_name': 'dengue',
-        'test_names' : ['dengue'],
-        'test_name_search_strings': ['dengue'],
-        'nat_keys': ['006.01'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'reagin-ab',
-        'short_name': 'reagin-ab',
-        'test_names' : ['reagin ab'],
-        'test_name_search_strings': ['reagin ab'],
-        'nat_keys': ['006.02'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'west-nile',
-        'short_name': 'west-nile',
-        'test_names' : ['west nile'],
-        'test_name_search_strings': ['west nile'],
-        'nat_keys': ['006.03'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'BP-7_1',
-        'short_name': 'BP-7_1',
-        'test_names' : ['bordetella pertussis'],
-        'test_name_search_strings': ['bordetella pertussis'],
-        'nat_keys': ['007.01'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'influenza',
-        'short_name': 'influenza',
-        'test_names' : ['influenza'],
-        'test_name_search_strings': ['influenza'],
-        'nat_keys': ['007.02'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'tb',
-        'short_name': 'tb',
-        'test_names' : ['mycobacterium tuberculosis'],
-        'test_name_search_strings': ['mycobacterium tuberculosis'],
-        'nat_keys': ['007.03'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'G-C-8_1',
-        'short_name': 'G-C-8_1',
-        'test_names' : ['neisseria gonorrhoeae','chlamydia trachomatis'],
-        'test_name_search_strings': ['neisseria gonorrhoeae','chlamydia trachomatis'],
-        'nat_keys': ['008.01'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'MQ-8_2',
-        'short_name': 'MQ-8_2',
-        'test_names' : ['adenovirus','influenza','parainfluenza','respiratory syncytial virus','rhinovirus','human metapneumovirus'],
-        'test_name_search_strings': ['adenovirus','influenza','parainfluenza','respiratory syncytial virus','rhinovirus','human metapneumovirus'],
-        'nat_keys': ['008.02'],
-        'recurrence_interval': 0
-    },    
-    {         
-        'condition': 'measles',
-        'short_name': 'measles',
-        'test_names' : ['measles'],
-        'test_name_search_strings': ['measles'],
-        'nat_keys': ['008.03'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'Myco-sp',
-        'short_name': 'Myco-sp',
-        'test_names' : ['mycobacterium sp'],
-        'test_name_search_strings': ['mycobacterium sp'],
-        'nat_keys': ['009.02'],
-        'recurrence_interval': 0
-    },             
-    {         
-        'condition': 'microorg',
-        'short_name': 'microorg',
-        'test_names' : ['microorganism'],
-        'test_name_search_strings': ['microorganism'],
-        'nat_keys': ['009.03','009.03alt'],
-        'recurrence_interval': 0
+    {    
+        'condition': 'chlamydia',    
+        'short_name': 'chlamydia',    
+        'test_names' : ['chlamydia'],    
+        'test_name_search_strings': ['chlam','trac'],    
+        'recurrence_interval': 0    
     },             
             
     ]
@@ -371,8 +361,8 @@ for i in ODH_CONFIG:
         '''
         A pseudo-disease for ODH Lab Reporting Test 
         '''        
-        condition = "odh:" + i['condition']
-        short_name = "odh:" + i['short_name']
+        condition = "elr-odh:" + i['condition']
+        short_name = "elr-odh:" + i['short_name']
         uri = 'urn:x-esphealth:disease:commonwealth:%s:v1' % condition 
         test_names = i['test_names']
         test_name_search_strings = i['test_name_search_strings']
