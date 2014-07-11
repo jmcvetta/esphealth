@@ -410,6 +410,7 @@ esphealth/doc/unit-test/tb/epicpro.esp.11032011 -text
 esphealth/doc/unit-test/tb/epicres.esp.11112011 -text
 esphealth/doc/unit-test/tb/epicvis.esp.11112011 -text
 esphealth/etc/templates/case_report/odh_hl7.txt -text
+esphealth/etc/templates/lab_report/elr_hl7_251.txt -text svneol=unset#text/plain
 esphealth/install-system-dependencies.sh -text
 esphealth/loadtests.sh -text
 esphealth/media/css/base.css -text
