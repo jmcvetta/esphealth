@@ -155,6 +155,7 @@ esphealth/ESP/nodis/base.py -text
 esphealth/ESP/nodis/management/__init__.py -text
 esphealth/ESP/nodis/management/commands/__init__.py -text
 esphealth/ESP/nodis/management/commands/case_report.py -text
+esphealth/ESP/nodis/management/commands/lab_report.py -text svneol=unset#text/plain
 esphealth/ESP/nodis/management/commands/nodis.py -text
 esphealth/ESP/nodis/management/commands/patient_report.py -text
 esphealth/ESP/nodis/management/commands/report.py -text
