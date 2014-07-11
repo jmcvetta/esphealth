@@ -151,6 +151,7 @@ esphealth/ESP/media/js/syndrome_map.js -text
 esphealth/ESP/media/js/vaers.js -text
 esphealth/ESP/nodis/__init__.py -text
 esphealth/ESP/nodis/admin.py -text
+esphealth/ESP/nodis/alt_mappings.py -text svneol=unset#text/plain
 esphealth/ESP/nodis/base.py -text
 esphealth/ESP/nodis/management/__init__.py -text
 esphealth/ESP/nodis/management/commands/__init__.py -text
