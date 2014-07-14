@@ -75,20 +75,20 @@ ALTER TABLE emr_problem
 -- determining if the problem was recorded in a hospital setting.
 -- Values should be limited to  "Y" or null.
 ALTER TABLE emr_prescription 
-  ADD COLUMN patient_class character varying(5),
-  ADD COLUMN patient_status character varying(5);
+  ADD COLUMN patient_class character varying(50),
+  ADD COLUMN patient_status character varying(50);
 -- These two columns are added to determine if the prescription
 -- is from a hospital setting.
 ALTER TABLE emr_laborder 
   ADD COLUMN test_status character varying(5),
-  ADD COLUMN patient_class character varying(5),
-  ADD COLUMN patient_status character varying(5);
+  ADD COLUMN patient_class character varying(50),
+  ADD COLUMN patient_status character varying(50);
 -- Test status indicates if the order has been processed or cancelled.
 -- Patient status and class are added to determin if the order
 -- is from a hospital setting.
 ALTER TABLE emr_labresult
-  ADD COLUMN patient_class character varying(5),
-  ADD COLUMN patient_status character varying(5);
+  ADD COLUMN patient_class character varying(50),
+  ADD COLUMN patient_status character varying(50);
 -- These two columns are added to determine if the lab
 -- is from a hospital setting.
 ALTER TABLE emr_patient ALTER COLUMN country TYPE character varying(60);
@@ -404,8 +404,8 @@ ADD CONSTRAINT  "emr_labresult_CLIA_ID_id_fkey" FOREIGN KEY ("CLIA_ID_id")
       REFERENCES emr_labinfo ("CLIA_ID"),
 ALTER COLUMN result_date SET DATA TYPE timestamp with time zone,
 ALTER COLUMN collection_date SET DATA TYPE timestamp with time zone,
-ALTER COLUMN patient_class TYPE character varying(20),
-ALTER COLUMN patient_status TYPE character varying(20),
+ALTER COLUMN patient_class TYPE character varying(50),
+ALTER COLUMN patient_status TYPE character varying(50),
 ALTER COLUMN status TYPE character varying(200);
          
 ALTER TABLE emr_laborder
@@ -417,8 +417,8 @@ ADD COLUMN    order_info character varying(100),
 ADD COLUMN    remark text,
 ADD COLUMN    obs_start_date character varying(100),
 ADD COLUMN    obs_end_date character varying(100),
-ALTER COLUMN patient_class TYPE character varying(20),
-ALTER COLUMN patient_status TYPE character varying(20);
+ALTER COLUMN patient_class TYPE character varying(50),
+ALTER COLUMN patient_status TYPE character varying(50);
 
 --rename tables for many to many for emr_encounter
 ALTER TABLE  emr_encounter_icd9_codes 
@@ -468,9 +468,9 @@ ALTER TABLE  vaers_diagnosticseventrule_heuristic_discarding_codes
   ALTER COLUMN dx_code_id TYPE character varying(20);
     
 ALTER TABLE emr_prescription
- ALTER COLUMN patient_class TYPE character varying(20),
- ALTER COLUMN patient_status TYPE character varying(20);
+ ALTER COLUMN patient_class TYPE character varying(50),
+ ALTER COLUMN patient_status TYPE character varying(50);
 
 ALTER TABLE emr_immunization
- ALTER COLUMN patient_class TYPE character varying(20),
- ALTER COLUMN patient_status TYPE character varying(20);
+ ALTER COLUMN patient_class TYPE character varying(50),
+ ALTER COLUMN patient_status TYPE character varying(50);
