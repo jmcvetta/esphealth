@@ -20,6 +20,7 @@ esphealth/ESP/conf/fixtures/immunization_manufacturers.json.bz2 -text svneol=uns
 esphealth/ESP/conf/fixtures/initial_data.json -text
 esphealth/ESP/conf/fixtures/native_manufacturers.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/native_vaccines.sql.bz2 -text svneol=unset#unset
+esphealth/ESP/conf/fixtures/sitehl7.json -text
 esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/forms.py -text
