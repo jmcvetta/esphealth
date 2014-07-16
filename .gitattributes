@@ -15,6 +15,7 @@ esphealth/ESP/conf/common.py -text
 esphealth/ESP/conf/context_processors.py -text
 esphealth/ESP/conf/dev_maps.py -text
 esphealth/ESP/conf/fixtures/conf-test-native-codes.json.bz2 -text svneol=unset#unset
+esphealth/ESP/conf/fixtures/hl7map.json -text
 esphealth/ESP/conf/fixtures/icd9.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/immunization_manufacturers.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/initial_data.json -text
