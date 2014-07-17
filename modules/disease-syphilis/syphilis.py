@@ -120,6 +120,7 @@ class Syphilis(DiseaseDefinition):
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'vdrl-csf',
+            titer_dilution = 1,
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'tppa-csf',
@@ -127,7 +128,6 @@ class Syphilis(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'fta-abs-csf',
             ))
-        
 
         return heuristic_list
     
@@ -182,7 +182,7 @@ class Syphilis(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 30 ),
             )
         if test_event_qs:
-            self.criteria += ' Criteria #2: rpr_pos or vdrl_pos and ( tppa_pos or fta-abs_pos or tp-igg_pos) ever in the past up to 1 month following positive rpr or vdrl'
+            self.criteria += ' Criteria #2: rpr_pos or vdrl_pos and (tppa_pos or fta-abs_pos or tp-igg_pos) ever in the past up to 1 month following positive (titer dilution 8) rpr or vdrl'
         #
         # Criteria Set #3
         #
@@ -193,7 +193,7 @@ class Syphilis(DiseaseDefinition):
         vdrl_csf_qs = Event.objects.filter(name__in=vdrl_csf_ev_names)
         
         if vdrl_csf_qs:
-            self.criteria += ' Criteria #3: vdrl-csf:pos or  fta-abs-csf:pos or tppa-csf:pos'
+            self.criteria += ' Criteria #3: vdrl-csf:pos (titer dilution 1:1) or  fta-abs-csf:pos or tppa-csf:pos'
         #
         # Combined Criteria
         #
