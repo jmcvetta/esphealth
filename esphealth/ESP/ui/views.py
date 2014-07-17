@@ -905,7 +905,7 @@ def _get_ae_case_counts(interval,totals):
             for row in cursor1.fetchall()]
     return table
 
-def _get_unmapped_labs():
+def _get_unmapped_labs():        
     '''
     Utililty method to generate a LabTestCondordance QuerySet of unmapped, 
     suspicious tests.  This is *not* a view.  It is called from ui.views.status 
