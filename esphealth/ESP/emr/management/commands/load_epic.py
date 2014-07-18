@@ -835,6 +835,7 @@ class PatientLoader(BaseLoader):
         'last_update',
         'last_update_site',
         'suffix',
+        'title',
         'remark',
         ]
     
@@ -879,6 +880,7 @@ class PatientLoader(BaseLoader):
         'clast_update' : row['last_update'],
         'last_update_site' : string_or_none(row['last_update_site']),
         'suffix' : string_or_none(row['suffix']),
+        'title' : string_or_none(row['title']),
         'remark' : string_or_none(row['remark']),
         }
 
@@ -1328,6 +1330,8 @@ class LabDetailLoader(BaseLoader):
         'char_finding',
         'orig_text',
         'sub_id',
+        'comment_type',
+        'comment_source',
         ]
     model = Labresult_Details
     
@@ -1345,6 +1349,8 @@ class LabDetailLoader(BaseLoader):
             'char_finding' : string_or_none(row['char_finding']),
             'orig_text' : string_or_none(row['orig_text']),
             'sub_id' : string_or_none(row['sub_id']),
+            'comment_type' : string_or_none(row['comment_type']),
+            'comment_source' : string_or_none(row['comment_source']),
             }
        
         if DEBUG:
@@ -1475,6 +1481,7 @@ class LabOrderLoader(BaseLoader):
         'obs_start_date',
         'obs_end_date',
         'remark',
+        'parent_res',
         ]
     
     model = LabOrder
@@ -1524,6 +1531,7 @@ class LabOrderLoader(BaseLoader):
             'obs_start_date' : string_or_none(row['obs_start_date']),
             'obs_end_date' : string_or_none(row['obs_end_date']),
             'remark' : string_or_none(row['remark']),
+            'parent_res' : string_or_none(row['parent_res']),
             }
         try:
             lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
