@@ -630,8 +630,11 @@ class hl7Batch:
             #needsend =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSend
             #if needsend==0: ##no need send
                 #continue
-            snomed, snomed2, titer_dilution, finding=self.getSNOMED(lxRec,condition) 
-            if (finding):
+            # redmine to not create an object if the result is null
+            if not lxRec.result_float and not lxRec.result_string:
+                continue
+            snomed, snomed2, titer_dilution, finding =self.getSNOMED(lxRec,condition) 
+            if finding:
                 if LabTestMap.objects.filter(native_code__exact=lxRec.codemap.native_code, donotsend_results__indicates__iexact=finding).exists():
                     continue
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
@@ -752,8 +755,10 @@ class hl7Batch:
         snomed2=None
         titer_dilution=None
         finding=None
+        #dummy lab
         if condition.upper() == 'TUBERCULOSIS' and lxRec.output_or_native_code == 'MDPH-250' :
             snomed='MDPH-R348'
+            finding='ind'
             return snomed, snomed2, titer_dilution, finding
         snomedposi = lxRec.snomed_pos
         snomednega = lxRec.snomed_neg
