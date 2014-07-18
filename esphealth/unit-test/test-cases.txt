@@ -1,6 +1,10 @@
 unit test case documentation for esp
 author: carolina chacin
-updated: jul 18 2012
+
+Concordance should return 88 
+load 74 lab maps 
+hef events 1368
+nodis cases screen shows 164 and table 162
 
 # TODO create some test data with no natural key, with some non ascii char, etc. 
 
@@ -89,8 +93,8 @@ same patient with 1 encounter with with icd9 respiratory code defined in influen
   with 3 months later date NEG
 
 
-LYME
-5 patients (should generate 4 cases)
+LYME (13 events, 4 cases)
+5 patients  
 3 patients with an encounter with icd9 code in the lyme_diagnosis 088.81
   1st/3  patient with meds doxycycline within 14 days of diagnosis (lyme2) -platU yes
   2nd/3 patient with meds lyme_other_antibiotics in lyme.py within 14 days of diagnosis (lyme2) -patriciaA yes
@@ -101,7 +105,7 @@ LYME
  same patient with med doxycycline within 30 days of diagnosis
 another patient with lime elisa pos (check data)
 
-pid
+pid (2 events, 
 2 patients (should generate 2 cases)
 1  patient with chlamydia  positive test -deenaF
   same patient with 1 encounters with pid icd9 code 614.2 within 28 days before test
@@ -109,15 +113,16 @@ pid
 1  patient with  gonorrhea positive test -deenaH
   same patient with 2 encounters with pid icd9 code 099.56 within 28 days after test 
   
-
-chlamydia
+chlamydia (5 events , 2 cases , 2 elr)
 2 patients (should generate 1 cases)
 1 patient with chla test positive -deenaF
  same patient with chla test positive after 28 recurrence days 
  same patient with chla test positive within recurrence days (28). NEG
 1 patient with chla test negative NEG  -deenaH
+using positive as a value > result high and added threshold in conf
 
 syphillis from version 3
+events: 5pos rpr 1 neg, 1 pos vdrl, 1 fta, 1neg tppa, 3pos tppa, 1neg tppa
 5 patients (should generate 5 cases)
 1 patient with an encounter with icd9 code for syphilis -kruskal
   same patient with a prescription in syphilis.py within 14 days of encounter
@@ -127,6 +132,7 @@ syphillis from version 3
 1/2 patient a lab positive for ttpa, fta-abs  or tp-igg NEG -donnaP
 2/2 patient a lab negative for ttpa, fta-abs  or tp-igg -plattV
 1 patient with a lab positive for vrdl -anneI
+with values for titer and postive and with the word "reactive x:y" as result 
 
 pertussis
 5 patients (should generate 4 cases)

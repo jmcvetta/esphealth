@@ -564,6 +564,7 @@ esphealth/unit-test/asthma/epicmem.esp.02282012 -text
 esphealth/unit-test/asthma/epicpro.esp.02292012 -text
 esphealth/unit-test/asthma/epicvis.esp.02282012 -text
 esphealth/unit-test/chlamydia/epicmem.esp.02202012 -text
+esphealth/unit-test/chlamydia/epicmem.esp.02262012 -text
 esphealth/unit-test/chlamydia/epicpro.esp.02292012 -text
 esphealth/unit-test/chlamydia/epicres.esp.02262012 -text
 esphealth/unit-test/conflabtestmap.json -text
@@ -641,10 +642,13 @@ esphealth/unit-test/other/epicres.esp.05312012 -text
 esphealth/unit-test/other/epicsoc.esp.05312012 -text
 esphealth/unit-test/other/epicvis.esp.04252012 -text
 esphealth/unit-test/pertussis/epicmed.esp.02252012 -text
+esphealth/unit-test/pertussis/epicmem.esp.02252012 -text
 esphealth/unit-test/pertussis/epicmem.esp.02282012 -text
+esphealth/unit-test/pertussis/epicord.esp.02252012 -text
 esphealth/unit-test/pertussis/epicord.esp.02282012 -text
 esphealth/unit-test/pertussis/epicpro.esp.02292012 -text
 esphealth/unit-test/pertussis/epicres.esp.02252012 -text
+esphealth/unit-test/pertussis/epicvis.esp.02252012 -text
 esphealth/unit-test/pertussis/epicvis.esp.02282012 -text
 esphealth/unit-test/pid/epicmem.esp.03132012 -text
 esphealth/unit-test/pid/epicpro.esp.02292012 -text
