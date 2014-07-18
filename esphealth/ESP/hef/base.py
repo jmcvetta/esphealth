@@ -749,130 +749,10 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     def event_names(self):
         return [self.positive_event_name, self.negative_event_name, self.indeterminate_event_name]
     
-    def generate(self):
-        #
-        # TODO: issue 334 The negative and indeterminate query sets should be generated 
-        # *after* creating of preceding queries' events, so that labs bound to 
-        # those events are ignored.  This will allow negative lab query to much
-        # simpler.
-        #
-        log.debug('Generating events for "%s"' % self)
-        #
-        # Build numeric query
-        #
-        #--------------------------------------------------------------------------------
-        # Not doing abnormal flag yet, because many values are not null but a blank string
-        #
-        #if result_type == 'positive':
-            #pos_q = Q(abnormal_flag__isnull=False)
-        #else:
-            #pos_q = None
-        #--------------------------------------------------------------------------------
-        map_qs = LabTestMap.objects.filter(test_name=self.test_name)
-        if not map_qs:
-            log.warning('No tests mapped for "%s", cannot generate events.' % self.test_name)
-            return 0
-        #
-        # All labs can be classified pos/neg if they have reference high and 
-        # numeric result
-        #
-        ref_high_float_q = Q(ref_high_float__isnull=False)
-        result_float_q = Q(result_float__isnull=False)
-        numeric_q = ref_high_float_q & result_float_q
-        positive_q = ( numeric_q & Q(result_float__gte = F('ref_high_float')) )
-        negative_q = ( numeric_q & Q(result_float__lt = F('ref_high_float')) )
-        indeterminate_q = None
-        xpositive_q = None
-        xnegative_q = None
-        xindeterminate_q = None
-        all_labs_q = None
-        #
-        # Build queries with custom result strings or fallback thresholds
-        #
-        simple_strings_lab_q = None
-        for map in map_qs:
-            lab_q = map.lab_results_q_obj
-            #
-            # Labs mapped with extra result strings need to be handled specially
-            #
-            if map.extra_positive_strings.all() \
-                or map.extra_negative_strings.all() \
-                or map.extra_indeterminate_strings.all() \
-                or map.excluded_positive_strings.all() \
-                or map.excluded_negative_strings.all() \
-                or map.excluded_indeterminate_strings.all():
-                if xpositive_q:
-                    xpositive_q |= (map.positive_string_q_obj & lab_q)
-                else:
-                    xpositive_q = (map.positive_string_q_obj & lab_q)
-                if xnegative_q:
-                    xnegative_q |= (map.negative_string_q_obj & lab_q)
-                else:
-                    xnegative_q = (map.negative_string_q_obj & lab_q)
-                if xindeterminate_q:
-                    xindeterminate_q |= (map.indeterminate_string_q_obj & lab_q)
-                else:
-                    xindeterminate_q = (map.indeterminate_string_q_obj & lab_q)
-                continue
-            if all_labs_q:
-                all_labs_q |= lab_q
-            else:
-                all_labs_q = lab_q
-            # Threshold criteria is *in addition* to reference high
-            if map.threshold:
-                num_lab_q = (lab_q & result_float_q)
-                positive_q |= ( num_lab_q & Q(result_float__gte=map.threshold) )
-                negative_q |= ( num_lab_q & Q(result_float__lt=map.threshold) )
-            if simple_strings_lab_q:
-                simple_strings_lab_q |= lab_q
-            else:
-                simple_strings_lab_q = lab_q
-        #
-        # All labs in the simple_strings_lab_q can be queried using the standard
-        # set of result strings
-        #
-        if simple_strings_lab_q:
-            pos_rs_q = ResultString.get_q_by_indication('pos')
-            neg_rs_q = ResultString.get_q_by_indication('neg')
-            ind_rs_q = ResultString.get_q_by_indication('ind')
-            positive_q |= (simple_strings_lab_q & pos_rs_q)
-            negative_q |= (simple_strings_lab_q & neg_rs_q)
-            if indeterminate_q:
-                indeterminate_q |= (simple_strings_lab_q & ind_rs_q)
-            else:
-                indeterminate_q = (simple_strings_lab_q & ind_rs_q)
-        #
-        # Add titer string queries
-        #
-        if self.titer_dilution:
-            positive_q=None
-            negative_q=None
-            positive_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)), int(math.log(4096,2)))]
-            negative_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)))]
-            log.debug('positive_titer_strings: %s' % positive_titer_strings)
-            log.debug('negative_titer_strings: %s' % negative_titer_strings)
-            for s in positive_titer_strings:
-                if positive_q:
-                    positive_q |= Q(result_string__icontains=s)
-                else: 
-                    positive_q = Q(result_string__icontains=s)
-            for s in negative_titer_strings:
-                if negative_q:
-                    negative_q |= Q(result_string__icontains=s)
-                else:
-                    negative_q = Q(result_string__icontains=s)
-        positive_q = all_labs_q & positive_q
-        negative_q = all_labs_q & negative_q
-        indeterminate_q = all_labs_q & indeterminate_q
-        if xpositive_q:
-            positive_q = (positive_q) | (xpositive_q)
-        if xnegative_q:
-            negative_q = (negative_q) | (xnegative_q)
-        if xindeterminate_q:
-            indeterminate_q = (indeterminate_q) | (xindeterminate_q)
+    def createEvents(self, positive_q, negative_q, indeterminate_q):
         #
         # Generate Events
-        #
+        ## 
         positive_labs = self.unbound_labs.filter(positive_q)
         #log_query('Positive labs for %s' % self.uri, positive_labs)
         log.info('Generating positive events for %s' % self)
@@ -912,26 +792,171 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                 )
             neg_counter += 1
         log.info('Generated %s new negative events for %s' % (neg_counter, self))
-        indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
         #log_query('Indeterminate labs for %s' % self, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self)
         ind_counter = 0
-        for lab in queryset_iterator(indeterminate_labs):
-            if self.date_field == 'order':
-                lab_date = lab.date
-            elif self.date_field == 'result':
-                lab_date = lab.result_date
-            Event.create(
-                name = self.indeterminate_event_name,
-                source = self.uri,
-                patient = lab.patient,
-                date = lab_date,
-                provider = lab.provider,
-                emr_record = lab,
-                )
-            ind_counter += 1
+        if indeterminate_q:
+            indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
+        
+            for lab in queryset_iterator(indeterminate_labs):
+                if self.date_field == 'order':
+                    lab_date = lab.date
+                elif self.date_field == 'result':
+                    lab_date = lab.result_date
+                Event.create(
+                    name = self.indeterminate_event_name,
+                    source = self.uri,
+                    patient = lab.patient,
+                    date = lab_date,
+                    provider = lab.provider,
+                    emr_record = lab,
+                    )
+                ind_counter += 1
         log.info('Generated %s new indeterminate events for %s' % (ind_counter, self))
-        return pos_counter + neg_counter + ind_counter
+        return pos_counter, neg_counter, ind_counter
+    
+    def generate(self):
+        #
+        # TODO: issue 334 The negative and indeterminate query sets should be generated 
+        # *after* creating of preceding queries' events, so that labs bound to 
+        # those events are ignored.  This will allow negative lab query to much
+        # simpler.
+        #
+        log.debug('Generating events for "%s"' % self)
+        #
+        # Build numeric query
+        #
+        #--------------------------------------------------------------------------------
+        # Not doing abnormal flag yet, because many values are not null but a blank string
+        #
+        #if result_type == 'positive':
+            #pos_q = Q(abnormal_flag__isnull=False)
+        #else:
+            #pos_q = None
+        #--------------------------------------------------------------------------------
+        map_qs = LabTestMap.objects.filter(test_name=self.test_name)
+        if not map_qs:
+            log.warning('No tests mapped for "%s", cannot generate events.' % self.test_name)
+            return 0
+        
+        xpositive_q = None
+        xnegative_q = None
+        xindeterminate_q = None
+        all_labs_q = None
+        positive_q=None
+        negative_q=None
+        indeterminate_q = None
+        
+        #
+        # Build queries with custom result strings or fallback thresholds
+        #
+        simple_strings_lab_q = None
+        #
+        # Add titer string queries 
+        #
+        titer_counter=0
+        if self.titer_dilution:
+            
+            positive_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)), int(math.log(4096,2)))]
+            negative_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)))]
+            log.debug('positive_titer_strings: %s' % positive_titer_strings)
+            log.debug('negative_titer_strings: %s' % negative_titer_strings)
+            for s in positive_titer_strings:
+                if positive_q:
+                    positive_q |= Q(result_string__icontains=s)
+                else: 
+                    positive_q = Q(result_string__icontains=s)
+            for s in negative_titer_strings:
+                if negative_q:
+                    negative_q |= Q(result_string__icontains=s)
+                else:
+                    negative_q = Q(result_string__icontains=s)
+            
+            pos_counter, neg_counter, ind_counter = self.createEvents( positive_q, negative_q, indeterminate_q)
+            titer_counter = pos_counter + neg_counter + ind_counter 
+            
+        # there are still unbound labs that do not meet the titer positive or negative criteria            
+        if ( (not positive_q and not negative_q ) or   self.unbound_labs.count() >0 ):
+            
+            positive_q=None
+            negative_q=None
+            #
+            # All labs can be classified pos/neg if they have reference high and 
+            # numeric result
+            #
+            ref_high_float_q = Q(ref_high_float__isnull=False)
+            result_float_q = Q(result_float__isnull=False)
+            numeric_q = ref_high_float_q & result_float_q
+            positive_q = ( numeric_q & Q(result_float__gte = F('ref_high_float')) )
+            negative_q = ( numeric_q & Q(result_float__lt = F('ref_high_float')) )
+            
+            # if it didnt get any titer result continue checking
+            for map in map_qs:
+                lab_q = map.lab_results_q_obj  
+                if all_labs_q:
+                    all_labs_q |= lab_q
+                else:
+                    all_labs_q = lab_q
+                #
+                # Labs mapped with extra result strings need to be handled specially
+                #
+                if map.extra_positive_strings.all() \
+                    or map.extra_negative_strings.all() \
+                    or map.extra_indeterminate_strings.all() \
+                    or map.excluded_positive_strings.all() \
+                    or map.excluded_negative_strings.all() \
+                    or map.excluded_indeterminate_strings.all():
+                    if xpositive_q:
+                        xpositive_q |= (map.positive_string_q_obj & lab_q)
+                    else:
+                        xpositive_q = (map.positive_string_q_obj & lab_q)
+                    if xnegative_q:
+                        xnegative_q |= (map.negative_string_q_obj & lab_q)
+                    else:
+                        xnegative_q = (map.negative_string_q_obj & lab_q)
+                    if xindeterminate_q:
+                        xindeterminate_q |= (map.indeterminate_string_q_obj & lab_q)
+                    else:
+                        xindeterminate_q = (map.indeterminate_string_q_obj & lab_q)
+                    continue
+                
+                # Threshold criteria is *in addition* to reference high
+                if map.threshold:
+                    num_lab_q = (lab_q & result_float_q)
+                    positive_q |= ( num_lab_q & Q(result_float__gte=map.threshold) )
+                    negative_q |= ( num_lab_q & Q(result_float__lt=map.threshold) )
+                if simple_strings_lab_q:
+                    simple_strings_lab_q |= lab_q
+                else:
+                    simple_strings_lab_q = lab_q
+            #
+            # All labs in the simple_strings_lab_q can be queried using the standard
+            # set of result strings
+            #
+            if simple_strings_lab_q:
+                pos_rs_q = ResultString.get_q_by_indication('pos')
+                neg_rs_q = ResultString.get_q_by_indication('neg')
+                ind_rs_q = ResultString.get_q_by_indication('ind')
+                positive_q |= (simple_strings_lab_q & pos_rs_q)
+                negative_q |= (simple_strings_lab_q & neg_rs_q)
+                if indeterminate_q:
+                    indeterminate_q |= (simple_strings_lab_q & ind_rs_q)
+                else:
+                    indeterminate_q = (simple_strings_lab_q & ind_rs_q)
+            if all_labs_q:            
+                positive_q = all_labs_q & positive_q
+                negative_q = all_labs_q & negative_q
+                indeterminate_q = all_labs_q & indeterminate_q
+                
+            if xpositive_q:
+                positive_q = (positive_q) | (xpositive_q)
+            if xnegative_q:
+                negative_q = (negative_q) | (xnegative_q)
+            if xindeterminate_q:
+                indeterminate_q = (indeterminate_q) | (xindeterminate_q)
+            
+            pos_counter, neg_counter, ind_counter = self.createEvents(positive_q, negative_q, indeterminate_q)
+        return pos_counter + neg_counter + ind_counter + titer_counter
 
 
 class LabResultRatioHeuristic(BaseLabResultHeuristic):
