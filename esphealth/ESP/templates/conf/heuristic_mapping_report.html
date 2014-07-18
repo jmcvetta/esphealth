@@ -14,18 +14,25 @@
 {% endblock %}
 
 
-
 {% block content %}
 
 <p align="center">{{ date }} &mdash; {{ site_name }}</p>
 
 <h2>Unmapped</h2>
 
-<ul>
-{% for heuristic in unmapped %}
-    <li>{{ heuristic }}
-{% endfor %}
-</ul>
+<table>
+    <tr> <td>
+        {% for heuristic in unmapped %}
+          {{ heuristic }} <BR>
+	        {% if forloop.counter|divisibleby:"10" %} 
+	        </td>
+	          {% if not forloop.last %}
+	            <td>
+	            {% endif %}
+	        {% endif %}
+        {% endfor %}
+    </tr> 
+    </table>
 
 
 <h2>Mapped</h2>
