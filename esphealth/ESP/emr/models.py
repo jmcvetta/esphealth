@@ -21,6 +21,7 @@ import os
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
@@ -146,18 +147,22 @@ class BaseMedicalRecord(models.Model):
         
     def get_hl7(self, mod, var, val, typ):
         '''
-        Returns hl7 type associated with variable val a, or throws an exception
+        Returns hl7 type associated with variable val, or throws an exception
         '''
         if val:
-            mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
-            if typ=='value':
-                ret = mapObj.hl7.value
-            elif typ=='description':
-                ret = mapObj.hl7.description
-            elif typ=='codesys':
-                ret = mapObj.hl7.codesys
-            elif typ=='version':
-                ret = mapObj.hl7.version
+            try:
+                mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
+                if typ=='value':
+                    ret = mapObj.hl7.value
+                elif typ=='description':
+                    ret = mapObj.hl7.description
+                elif typ=='codesys':
+                    ret = mapObj.hl7.codesys
+                elif typ=='version':
+                    ret = mapObj.hl7.version
+            except ObjectDoesNotExist:
+                log.error('No mapped values for model: %s, variable: %s, value: %s' % (mod, var, val))
+                sys.exit(1)
         else:
             #if the value being passed is empty, return empty
             ret = ''
@@ -875,6 +880,7 @@ class LabOrder(BasePatientRecord):
     obs_start_date = models.CharField(max_length=100, null=True)
     obs_end_date = models.CharField(max_length=100, null=True)
     remark  = models.TextField('Remark', blank=True, null=True)
+    parent_res = models.CharField('Parent lab result natural key', max_length=128, null=True)
 
     
     
@@ -966,15 +972,21 @@ class Specimen(models.Model):
         '''
         ret = ''
         if val:
-            mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
-            if typ=='value':
-                ret = mapObj.hl7.value
-            elif typ=='description':
-                ret = mapObj.hl7.description
-            elif typ=='codesys':
-                ret = mapObj.hl7.codesys
-            elif typ=='version':
-                ret = mapObj.hl7.version
+            try:
+                mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
+                if typ=='value':
+                    ret = mapObj.hl7.value
+                elif typ=='description':
+                    ret = mapObj.hl7.description
+                elif typ=='codesys':
+                    ret = mapObj.hl7.codesys
+                elif typ=='version':
+                    ret = mapObj.hl7.version
+            except ObjectDoesNotExist:
+                log.error('No mapped values for model: %s, variable: %s, value: %s' % (mod, var, val))
+                sys.exit(1)
+        else:
+            ret = ''
         return ret
 
     
@@ -1377,10 +1389,12 @@ class Labresult_Details(models.Model):
     num1 = models.CharField(max_length=20, blank=True, null=True)
     sep_suff = models.CharField(max_length=20, blank=True, null=True)
     num2 = models.CharField(max_length=20, blank=True, null=True)
-    ref_range = models.CharField(max_length=20, blank=True, null=True)
+    ref_range = models.CharField(max_length=30, blank=True, null=True)
     char_finding = models.CharField(max_length=50, blank=True, null=True)
     orig_text = models.CharField(max_length=50, blank=True, null=True)
     sub_id = models.CharField(max_length=20, blank=True, null=True)
+    comment_type = models.CharField(max_length=5, blank=True, null=True)
+    comment_source = models.CharField(max_length=5, blank=True, null=True)
 
     class Meta:
         verbose_name = 'Lab result details'
@@ -1409,15 +1423,21 @@ class SpecObs(models.Model):
         '''
         ret = ''
         if val:
-            mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
-            if typ=='value':
-                ret = mapObj.hl7.value
-            elif typ=='description':
-                ret = mapObj.hl7.description
-            elif typ=='codesys':
-                ret = mapObj.hl7.codesys
-            elif typ=='version':
-                ret = mapObj.hl7.version
+            try:
+                mapObj = HL7Map.objects.get(model=mod, variable=var, value=val)
+                if typ=='value':
+                    ret = mapObj.hl7.value
+                elif typ=='description':
+                    ret = mapObj.hl7.description
+                elif typ=='codesys':
+                    ret = mapObj.hl7.codesys
+                elif typ=='version':
+                    ret = mapObj.hl7.version
+            except ObjectDoesNotExist:
+                log.error('No mapped values for model: %s, variable: %s, value: %s' % (mod, var, val))
+                sys.exit(1)
+        else:
+            val = ''
         return ret
 
     
