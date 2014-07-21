@@ -193,7 +193,7 @@ class Syphilis(DiseaseDefinition):
         vdrl_csf_qs = Event.objects.filter(name__in=vdrl_csf_ev_names)
         
         if vdrl_csf_qs:
-            self.criteria += ' Criteria #3: vdrl-csf:pos (titer dilution 1:1) or  fta-abs-csf:pos or tppa-csf:pos'
+            self.criteria += ' Criteria #3: vdrl-csf:pos (titer dilution 1) or  fta-abs-csf:pos or tppa-csf:pos'
         #
         # Combined Criteria
         #
