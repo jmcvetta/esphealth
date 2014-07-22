@@ -474,10 +474,11 @@ ALTER TABLE emr_prescription
 ALTER TABLE emr_immunization
  ALTER COLUMN patient_class TYPE character varying(50),
  ALTER COLUMN patient_status TYPE character varying(50);
- 
+
 --straggling changes from MU updates
 ALTER TABLE emr_laborder
  ADD COLUMN parent_res character varying(128);
 ALTER TABLE emr_labresult_details
+ ALTER COLUMN ref_range TYPE character varying(30),
  ADD COLUMN comment_type character varying(5),
  ADD COLUMN comment_source character varying(5);
