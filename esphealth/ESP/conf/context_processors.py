@@ -3,6 +3,7 @@ from ESP.settings import MEDIA_URL
 from ESP.settings import VERSION
 from ESP.settings import SITE_NAME
 from ESP.settings import PY_DATE_FORMAT
+from ESP.settings import SHOW_SURVEYS
 
 def path_definitions(request):
     return {
@@ -14,4 +15,5 @@ def path_definitions(request):
         'version': VERSION,
         'site_name': SITE_NAME,
         'date': datetime.datetime.now().strftime(PY_DATE_FORMAT),
+        'show_surveys': SHOW_SURVEYS,
         }
