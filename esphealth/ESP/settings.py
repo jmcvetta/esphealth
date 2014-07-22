@@ -207,6 +207,7 @@ CASE_REPORT_BATCH_SIZE = config['Reporting']['cases_per_message']
 CASE_REPORT_TRANSMIT = config['Reporting']['transport']
 CASE_REPORT_TRANSPORT_SCRIPT = config['Reporting']['transport_script']
 FILTER_CENTERS = config['Reporting']['filter_centers']
+SHOW_SURVEYS = config['Reporting']['show_surveys']
 #
 # Mapping table to express lab specimen source in SNOMED codes, derived
 # from MDPH ELR Portal specimen source vocabulary page.
