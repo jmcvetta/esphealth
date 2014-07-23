@@ -44,5 +44,7 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
 # Asthma
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma#egg=disease-asthma
+# Hepatitis C New
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new#egg=disease-hepatitis-new
 
 
