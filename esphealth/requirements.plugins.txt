@@ -11,38 +11,37 @@
 # ESP Modules
 #
 #-------------------------------------------------------------------------------
-
 # Diabetes
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-diabetes#egg=disease-diabetes
 # Pregnancy
--e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=heuristic-pregnancy
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/heuristic-pregnancy#egg=heuristic-pregnancy
 # Combined random/fasting glucose lab test
--e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf
 # Chlamydia
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia#egg=disease-chlamydia
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-chlamydia#egg=disease-chlamydia
 # Gonorrhea
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea#egg=disease-gonorrhea
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-gonorrhea#egg=disease-gonorrhea
 # Syphilis
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis#egg=disease-syphilis
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-syphilis#egg=disease-syphilis
 # Pelvic Inflammatory Disease
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease#egg=disease-pelvic-inflammatory-disease
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-pelvic-inflammatory-disease#egg=disease-pelvic-inflammatory-disease
 # Lyme Disease
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme#egg=disease-lyme
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-lyme#egg=disease-lyme
 # Hepatitis A/B/C
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined#egg=disease-hepatitis-combined
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-hepatitis-combined#egg=disease-hepatitis-combined
 # Pertussis 
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis#egg=disease-pertussis
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-pertussis#egg=disease-pertussis
 # Giardiasis 
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis#egg=disease-giardiasis
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-giardiasis#egg=disease-giardiasis
 # Tuberculosis 
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis#egg=disease-tuberculosis
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-tuberculosis#egg=disease-tuberculosis
 # Metrohealth encountertypemap
--e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth#egg=esphealth_encountertypemap_metrohealth
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/esphealth-encountertypemap-metrohealth#egg=esphealth_encountertypemap_metrohealth
 # Influenza like illness 
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili#egg=disease-ili
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-ili#egg=disease-ili
 # Electronic lab reporting 
--e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/elr-positive-test#egg=elr-positive-test
 # Asthma
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma#egg=disease-asthma
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-asthma#egg=disease-asthma
 
 
