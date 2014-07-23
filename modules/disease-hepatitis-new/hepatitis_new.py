@@ -208,15 +208,11 @@ class Hepatitis_C(HepatitisNew):
         Detects cases based on definition (a) and (b) in spec
             for Hep C.
             a) (icd9 782.4 or alt >400) and c-elisa positive and c-signal cutoff positive (>3.8 if done) and c-riba positive (if done) 
-              and c-rna positive (if done) and (hep a igm negative or hep a total negative) 
-              and [hep b core igm negative or hep b core antigen non-reactive 
-              or (hep b core igm not done and hep b surface antigen non-reactive)] within a 28 day period; 
+              and c-rna positive (if done)  within a 28 day period; 
               AND  no prior positive c-elisa or c-riba or c-rna ever;  AND no ICD9 (070.54 or 070.70) ever prior to this encounter
               
             b) (icd9 782.4 or alt >400) and c-rna positive and c-signal cutoff positive (if done) and c-riba positive (if done) 
-             and (hep a igm negative or hep a total negative) 
-             and [hep b core igm negative or hep b core antigen non-reactive 
-             or (hep b core igm not done and hep b surface antigen non-reactive)]  within a 28 day period; 
+              within a 28 day period; 
              AND no prior positive c-elisa or c-riba or c-rna ever;  AND no ICD9 (070.54 or 070.70) ever prior to this encounter
 
         @return: Count of new cases created
@@ -305,20 +301,7 @@ class Hepatitis_C(HepatitisNew):
             if not jaundice_or_alt_qs:
                 continue # Patient does not have Acute Hep C
             criteria_list.append(jaundice_or_alt_qs)
-            #--------------------
-            # 
-            # Exclude Hep A
-            #
-            #--------------------
-            # Patient must have a negative result on a Hep A test.
-            hep_a_neg_names = [
-                'lx:hepatitis_a_total_antibodies:negative',
-                'lx:hepatitis_a_igm_antibody:negative',
-                ]
-            hep_a_neg_qs = event_qs.filter(name__in=hep_a_neg_names)
-            if not hep_a_neg_qs:
-                continue # Patient does not have Acute Hep C
-            criteria_list.append(hep_a_neg_qs)
+            
             #--------------------
             # 
             # Exclude negative Hep C results
@@ -351,31 +334,7 @@ class Hepatitis_C(HepatitisNew):
             if hep_c_neg_qs:
                 continue # Patient does not have Acute Hep C
             criteria_list.append(hep_c_nonneg_qs) # QuerySet may be empty
-            #--------------------
-            # 
-            # Exclude Hep B
-            #
-            #--------------------
-            # Patient must either have a negative result on a Hep B antibody
-            # test; or a negative Hep B surface antigen test result plus no 
-            # positive results on a Hep B antibody test.
-            hep_b_ab_pos_names = [
-                'lx:hepatitis_b_core_antigen_general_antibody:positive',
-                'lx:hepatitis_b_core_antigen_igm_antibody:positive',
-                ]
-            hep_b_ab_neg_names = [
-                'lx:hepatitis_b_core_antigen_general_antibody:negative',
-                'lx:hepatitis_b_core_antigen_igm_antibody:negative',
-                ]
-            hep_b_ab_neg_qs = event_qs.filter(name__in=hep_b_ab_neg_names)
-            hep_b_ab_pos_qs = event_qs.filter(name__in=hep_b_ab_pos_names)
-            hep_b_surface_neg_qs = event_qs.filter(name='lx:hepatitis_b_surface_antigen:negative')
-            if hep_b_ab_pos_qs:
-                continue # Patient does not have Acute Hep C
-            if not (hep_b_ab_neg_qs | hep_b_surface_neg_qs):
-                continue # Patient does not have Acute Hep C
-            criteria_list.append(hep_b_ab_neg_qs) # QuerySet may be empty
-            criteria_list.append(hep_b_surface_neg_qs) # QuerySet may be empty
+     
             #--------------------
             # 
             # Suspected Hep C case
@@ -397,10 +356,8 @@ class Hepatitis_C(HepatitisNew):
             else:
                 criteria += 'Criteria #2: {(6) positive c-rna '
                 
-            criteria += ' AND (1 OR 2)(jaundice (not of newborn) OR alt>400) AND ((7)positive hep a igm' 
-            criteria += ' or (11)positive hep a total antibodies)  AND [(8)negative hep b igm OR (9)negative hep b antibody OR ((8) hep b igm not done '
-            criteria += ' AND (10)positive hep b surface) AND NOT (4) negative hep c signal cutoff AND NOT (5)negative c-riba)} within 28 days; exclude if:'
-            criteria += '  prior/current dx=chronic hep c OR prior/current dx=unspecified hep c OR (3)prior positive c-elisa ever OR (5)prior positive c-riba ever OR (6)prior positive c-rna ever'
+            criteria += ' AND (1 OR 2)(jaundice (not of newborn) OR alt>400) AND (4)not negative(pos/ind) hep c signal cutoff AND (5)not negative(pos/ind) c-riba)} within 28 days; exclude if:'
+            criteria += ' prior/current dx=chronic hep c OR prior/current dx=unspecified hep c OR (3)prior positive c-elisa ever OR (5)prior positive c-riba ever OR (6)prior positive c-rna ever'
             created, this_case = self._create_case_from_event_obj(
                 condition = 'hepatitis_c_new:acute', 
                 criteria = criteria, 
