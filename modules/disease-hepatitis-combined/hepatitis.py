@@ -711,9 +711,9 @@ class Hepatitis_C(HepatitisCombined):
             else:
                 criteria += 'Criteria #2: {(6) positive c-rna '
                 
-            criteria += ' AND (1 OR 2)(jaundice (not of newborn) OR alt>400) AND ((7)positive hep a igm' 
-            criteria += ' or (11)positive hep a total antibodies)  AND [(8)negative hep b igm OR (9)negative hep b antibody OR ((8) hep b igm not done '
-            criteria += ' AND (10)positive hep b surface) AND NOT (4) negative hep c signal cutoff AND NOT (5)negative c-riba)} within 28 days; exclude if:'
+            criteria += ' AND (1 OR 2)(jaundice (not of newborn) OR alt>400) AND ((7)negative hep a igm' 
+            criteria += ' or (11)negative hep a total antibodies)  AND [(8)negative hep b igm OR (9)negative hep b antibody OR ((8) hep b igm not done '
+            criteria += ' AND (10)positive hep b surface) AND NOT (4) negative (pos/ind) hep c signal cutoff AND NOT (5)negative (pos/ind) c-riba)} within 28 days; exclude if:'
             criteria += '  prior/current dx=chronic hep c OR prior/current dx=unspecified hep c OR (3)prior positive c-elisa ever OR (5)prior positive c-riba ever OR (6)prior positive c-rna ever'
             created, this_case = self._create_case_from_event_obj(
                 condition = 'hepatitis_c:acute', 
