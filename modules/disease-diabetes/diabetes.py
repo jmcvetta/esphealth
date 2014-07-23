@@ -48,7 +48,7 @@ class Diabetes(DiseaseDefinition):
     '''
     
     conditions = [
-        'diabetes:prediabetes'
+        'diabetes:prediabetes',
         'diabetes:type-1',
         'diabetes:type-2',
         'diabetes:gestational'

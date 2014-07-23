@@ -86,8 +86,8 @@ class Asthma(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Arformoterol',]),
             ))    
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'formoterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Formoterol',]),
+            name = 'formeterol',
+            drugs =  DrugSynonym.generics_plus_synonyms(['Formeterol',]),
             exclude = ['Arformoterol','Mometasone','Budesonide'],
             ))   
         heuristic_list.append( PrescriptionHeuristic(
@@ -108,7 +108,7 @@ class Asthma(DiseaseDefinition):
             name = 'budesonide-inh',
             drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide',]),
             qualifiers = ['INH',' NEB', 'AER'],
-            exclude = ['Formoterol','Pulmicort'],
+            exclude = ['Formeterol','Pulmicort'],
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'pulmicort',
@@ -148,7 +148,7 @@ class Asthma(DiseaseDefinition):
             name = 'mometasone-inh',
             drugs =  DrugSynonym.generics_plus_synonyms(['Mometasone',]),
             qualifiers = ['INH',' NEB', 'AER'],
-            exclude = ['Formoterol','Asmanex'],
+            exclude = ['Formeterol','Asmanex'],
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'asmanex',
@@ -212,23 +212,23 @@ class Asthma(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Combivent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'mometasone-formoterol:generic', 
+            name = 'mometasone-formeterol:generic', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Mometasone',]),
-            require = ['Mometasone','Formoterol'],
+            require = ['Mometasone','Formeterol'],
             exclude = ['Dulera', 'Zenhale']
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'mometasone-formoterol:trade', 
+            name = 'mometasone-formeterol:trade', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Dulera',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'budesonide-formoterol:generic', 
+            name = 'budesonide-formeterol:generic', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide',]),
-            require = ['Budesonide','Formoterol'],
+            require = ['Budesonide','Formeterol'],
             exclude = ['Symbicort']
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'budesonide-formoterol:trade', 
+            name = 'budesonide-formeterol:trade', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Symbicort',]),
             ))        
                
@@ -247,7 +247,7 @@ class Asthma(DiseaseDefinition):
             'rx:levalbuterol',
             'rx:pirbuterol',
             'rx:arformoterol',
-            'rx:formoterol',
+            'rx:formeterol',
             'rx:indacaterol',
             'rx:salmeterol',
             'rx:beclomethasone',
@@ -274,12 +274,12 @@ class Asthma(DiseaseDefinition):
         rx_comb_ev_names = [
              'rx:fluticasone-salmeterol:generic',
              'rx:albuterol-ipratropium:generic', 
-             'rx:mometasone-formoterol:generic',
-             'rx:budesonide-formoterol:generic',
+             'rx:mometasone-formeterol:generic',
+             'rx:budesonide-formeterol:generic',
              'rx:fluticasone-salmeterol:trade',
              'rx:albuterol-ipratropium:trade', 
-             'rx:mometasone-formoterol:trade',
-             'rx:budesonide-formoterol:trade',
+             'rx:mometasone-formeterol:trade',
+             'rx:budesonide-formeterol:trade',
             ]
         log.info('Generating cases for Asthma Definition (a)')
         counter_a = 0

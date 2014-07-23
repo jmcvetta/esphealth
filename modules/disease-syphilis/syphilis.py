@@ -120,6 +120,7 @@ class Syphilis(DiseaseDefinition):
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'vdrl-csf',
+            titer_dilution = 1,
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'tppa-csf',
