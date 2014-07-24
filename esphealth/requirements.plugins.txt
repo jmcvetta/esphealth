@@ -43,5 +43,7 @@
 -e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/elr-positive-test#egg=elr-positive-test
 # Asthma
 -e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-asthma#egg=disease-asthma
+# Hepatitis C Revised
+-e svn+http://esphealth.org/svn/ESP/branches/3.0.1/modules/disease-hepatitis-new#egg=disease-hepatitis-new
 
 
