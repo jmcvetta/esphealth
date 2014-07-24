@@ -186,7 +186,7 @@ class Hepatitis_C(HepatitisNew):
     # A future version of this disease definition may also detect chronic hep c
     conditions = ['sandbox:hepatitis_c:acute']
 
-    uri = URI_ROOT + 'sandbox:hepatitis_c:acute' + URI_VERSION
+    uri = URI_ROOT + 'sandbox:hepatitis_c' + URI_VERSION
 
     short_name = 'sandbox:hepatitis_c:acute'
 
