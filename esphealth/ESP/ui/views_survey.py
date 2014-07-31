@@ -153,7 +153,7 @@ def generate_survey_report(request):
         
     cursor.execute("select Question, NoOfRespondents as \"No. of Respondents\", PtYes as \"Pt Yes\",PTNo  as \"Pt No\", PtUnsure as \"Pt Unsure\",  EHRYes as \"EHR Yes\",  EHRNo as \"EHR No\" ,"+
             "PtYesEHRYes as \"Pt Yes / EHR Yes\", PtYesEHRNo as \"Pt Yes / EHR No\", PtNoEHRYes as \"Pt No / EHR Yes\", PtNoEHRNo as \"Pt No / EHR No\","+
-            "PtUnsureEHRYes as \"Pt Unsure / EHR Yes\", PtUnsureEHRNo as \"Pt Unsure / EHR Yes\" from YesNoUnsureQuestions order by question;")
+            "PtUnsureEHRYes as \"Pt Unsure / EHR Yes\", PtUnsureEHRNo as \"Pt Unsure / EHR No\" from YesNoUnsureQuestions order by question;")
     write_survey_report('Yes / No / Unsure Questions',cursor.description, cursor.fetchall() , writer)
             
     cursor.execute("select  RaceEthnicity as \"Race-Ethnicity\" , SelfReportYes as \"Self-Report Yes\",SelfReportNo  as \"Self-Report No\","+  
