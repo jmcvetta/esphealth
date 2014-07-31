@@ -170,6 +170,13 @@ from emr_patient
 where emr_patient.mrn in (select emr_surveyresponse.mrn from emr_surveyresponse))
 where Question ='What was your last LDL level?'; 
 
+update ContinuousVariables set NoOfRespondents =0 where NoOfRespondents is null;
+update ContinuousVariables set NoOfEHRRespondents=0  where NoOfEHRRespondents is null;
+update ContinuousVariables set SelfReportMean=0   where SelfReportMean is null;
+update ContinuousVariables set SelfReportSD =0  where SelfReportSD is null;
+update ContinuousVariables set EHRReportMean=0   where EHRReportMean is null;
+update ContinuousVariables set EHRReportSD=0  where EHRReportSD is null;
+
 drop TABLE if exists CategoricalVariables;
 
 CREATE TEMPORARY TABLE CategoricalVariables(
@@ -210,7 +217,7 @@ where b.question='What is your race/ethnicity?' and (
 (response_choice='Al' and raceethnicity=   'Alaskan') or
 (response_choice='NH' and raceethnicity=   'Native Hawai') or
 (response_choice='PD' and raceethnicity=   'Patient Decl')
-) group by response_choice, b.question);
+) group by response_choice);
 
 --etnicity selfreport no
 update CategoricalVariables set SelfReportNo =( select (select count(*) from emr_surveyresponse a
@@ -324,6 +331,15 @@ INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo 
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
   sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno) from CategoricalVariables;
 
+update CategoricalVariables set SelfReportYes=0  where SelfReportYes is null;
+update CategoricalVariables set SelfReportNo=0  where SelfReportNo is null;
+update CategoricalVariables set EHRYes=0  where EHRYes is null;
+update CategoricalVariables set EHRNo=0  where EHRNo is null;
+update CategoricalVariables set PtYesEHRYes=0  where PtYesEHRYes is null;
+update CategoricalVariables set PtYesEHRNo=0  where PtYesEHRNo is null;
+update CategoricalVariables set PtNoEHRYes=0  where PtNoEHRYes is null;
+update CategoricalVariables set PtNoEHRNo=0  where PtNoEHRNo is null;
+ 
 --yes/no/unsure questions
 drop TABLE if exists YesNoUnsureQuestions;
 
@@ -916,7 +932,7 @@ native_code in (select native_code from conf_labtestmap where test_name ='choles
 result_float >160 )=0 or (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
-bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0))
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0))
 where YesNoUnsureQuestions.question = 'Do you have a history of hyperlipidemia or elevated cholesterol?';
 
 --ldl ynu survey vs ehr yes/yes
@@ -1031,7 +1047,7 @@ where  p.mrn = s.mrn and s.question=YesNoUnsureQuestions.question and
 s.response_choice = 'U' and   (select count(distinct(emr_prescription.patient_id)) from emr_prescription 
 where emr_prescription.patient_id = p.id and 
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
-bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0)
+bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')=0)
 where YesNoUnsureQuestions.question = 'Are you currently being prescribed medications for high cholesterol?';
 
 --hypertension ynu survey vs ehr yes/yes
@@ -1439,135 +1455,229 @@ where b.question='How would you classify your weight?' and (
 (response_choice='OB' and Type=  'Obese')  ) group by response_choice, b.question);
 
 --weight type ehr yes 
-update WeightType set ehryes =( select count(distinct p.mrn) 
-  from emr_patient p,  emr_encounter c
-where 
- c.patient_id = p.id and
-p.mrn in (select distinct(mrn) from emr_surveyresponse where 
-question='How would you classify your weight?' ) and  (
-(Type=  'Low' and bmi is not null and bmi <18  ) or
-(Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
-(Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
-(Type=  'Obese' and bmi is not null and bmi >130 ) 
-)  group by Type, c.date order by c.date desc limit 1);
+update WeightType set ehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >18 and bmi <25 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
+
+update WeightType set ehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi<18 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >25.01 and bmi <30 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >130 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
 
 --weight type ehr no 
-update WeightType set ehrno = (select (select count(distinct p.mrn) from emr_patient p ,   emr_encounter c 
-where c.patient_id = p.id and  
-   c.mrn in (select distinct mrn from emr_surveyresponse 
-   where question='How would you classify your weight?' ))
-        - count(*) as "EHR No"
-from emr_patient b , emr_encounter c 
-where c.patient_id = b.id and  
-b.mrn in (select mrn from emr_surveyresponse where question='How would you classify your weight?') 
-and  ((Type=  'Low' and bmi is not null and bmi <18  ) or
-(Type=  'Normal' and bmi is not null and bmi >18 and bmi <25  ) or
-(Type=  'Overweight' and bmi is not null and bmi >25.01 and bmi <30  ) or
-(Type=  'Obese' and bmi is not null and bmi >130 ) 
-) group by Type, c.date order by c.date desc limit 1);
+update WeightType set ehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <18 or bmi >25 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
+
+update WeightType set ehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi>18 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <25.01 or bmi >30 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <130 and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
 
 --weight type ehr missing 
-update WeightType set ehrmissing =( select count(distinct p.mrn) 
-  from emr_patient p,  emr_encounter c
-where 
- c.patient_id = p.id and
-p.mrn in (select distinct mrn from emr_surveyresponse where 
-question='How would you classify your weight?' ) and  (
-(Type=  'Low' and bmi is  null  ) or
-(Type=  'Normal' and bmi is  null   ) or
-(Type=  'Overweight' and bmi is  null   ) or
-(Type=  'Obese' and bmi is  null  ) 
-) group by bmi, c.date order by c.date desc limit 1);
+update WeightType set ehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
+
+update WeightType set ehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
 
 --weight survey vs ehr yes/yes
-update WeightType set ptyesehryes = (select count(distinct p.mrn) as "Pt yes / EHR yes" 
-from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='How would you classify your weight?' and
-       c.patient_id = p.id and 
-       ((Type=  'Low' and response_choice='L'  ) or
-	(Type=  'Normal' and response_choice='N'  ) or
-	(Type=  'Overweight' and response_choice='OW' ) or
-	(Type=  'Obese' and response_choice='OB' )  )
-     and ((bmi is not null and bmi <18 and response_choice='L') or 
-	 (bmi is not null and bmi >18 and bmi <25 and response_choice='N') or 
-	 (bmi is not null and bmi >25.01 and bmi <30 and response_choice='OV') or
-	 (bmi is not null and bmi >130 and response_choice='OB')
-	 ) group by response_choice, c.date order by c.date desc limit 1);
+update WeightType set ptyesehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >18 and bmi <25 and
+question='How would you classify your weight?' and response_choice='N' 
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
 
+update WeightType set ptyesehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi<18 and
+question='How would you classify your weight?' and response_choice='L'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ptyesehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >25.01 and bmi <30 and
+question='How would you classify your weight?' and response_choice='OW'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ptyesehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >130 and
+question='How would you classify your weight?' and response_choice='OB'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
+ 
 --weight survey vs ehr yes/no 
-update WeightType set ptyesehrno = (select count(distinct p.mrn) as "Pt yes / EHR no" 
-from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='How would you classify your weight?' and
-       c.patient_id = p.id and 
-       ((Type=  'Low' and response_choice='L'  ) or
-	(Type=  'Normal' and response_choice='N'  ) or
-	(Type=  'Overweight' and response_choice='OW' ) or
-	(Type=  'Obese' and response_choice='OB' )   )
-     and ((bmi is not null and bmi >18 and response_choice='L') or 
-	 (bmi is not null and (bmi <18 or bmi >25) and response_choice='N') or 
-	 (bmi is not null and (bmi <25.01 or bmi >30) and response_choice='OV') or
-	 (bmi is not null and bmi < 130 and response_choice='OB')
-	 ) group by Type, c.date order by c.date desc limit 1);
-	 
---weight survey vs ehr no/yes 
-update WeightType set ptnoehryes = (select count(distinct p.mrn) as "Pt no / EHR yes" 
-from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='How would you classify your weight?' and
-       c.patient_id = p.id and 
-       ((Type=  'Low' and response_choice<>'L'  ) or
-	(Type=  'Normal' and response_choice<>'N'  ) or
-	(Type=  'Overweight' and response_choice<>'OW' ) or
-	(Type=  'Obese' and response_choice<>'OB' )   )
-     and ((bmi is not null and bmi <18 and response_choice<>'L') or 
-	 (bmi is not null and bmi >18 and bmi <25 and response_choice<>'N') or 
-	 (bmi is not null and bmi >25.01 and bmi <30 and response_choice<>'OV') or
-	 (bmi is not null and bmi > 130 and response_choice<>'OB')
-	 ) group by Type, c.date order by c.date desc limit 1);
+update WeightType set ptyesehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <18 and bmi >25 and
+question='How would you classify your weight?' and response_choice='N' 
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
 
---weight survey vs ehr no/no   
-update WeightType set ptnoehrno = (select count(distinct p.mrn) as "Pt no / EHR no" 
-from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='How would you classify your weight?' and
-       c.patient_id = p.id and 
-       ((Type=  'Low' and response_choice<>'L'  ) or
-	(Type=  'Normal' and response_choice<>'N' ) or
-	(Type=  'Overweight' and response_choice<>'OW'  ) or
-	(Type=  'Obese' and response_choice<>'OB' )  )
-     and ((bmi is not null and bmi >18 and response_choice<>'L') or 
-	 (bmi is not null and (bmi <18 or bmi >25) and response_choice<>'N') or 
-	 (bmi is not null and (bmi <25.01 or bmi >30) and response_choice<>'OV') or
-	 (bmi is not null and bmi < 130 and response_choice<>'OB')
-	 ) group by Type, c.date order by c.date desc limit 1);	
+update WeightType set ptyesehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi>18 and
+question='How would you classify your weight?' and response_choice='L'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ptyesehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <25.01 and bmi >30 and
+question='How would you classify your weight?' and response_choice='OW'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ptyesehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <130 and
+question='How would you classify your weight?' and response_choice='OB'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
+ 	 
+--weight survey vs ehr no/yes 
+update WeightType set ptnoehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >18 and bmi <25 and
+question='How would you classify your weight?' and response_choice<>'N' 
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
+
+update WeightType set ptnoehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi<18 and
+question='How would you classify your weight?' and response_choice<>'L'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ptnoehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >25.01 and bmi <30 and
+question='How would you classify your weight?' and response_choice<>'OW'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ptnoehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi >130 and
+question='How would you classify your weight?' and response_choice<>'OB'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
+
+--weight survey vs ehr no/no  
+update WeightType set ptnoehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <18 and bmi >25 and
+question='How would you classify your weight?' and response_choice<>'N' 
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
+
+update WeightType set ptnoehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi>18 and
+question='How would you classify your weight?' and response_choice<>'L'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ptnoehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <25.01 and bmi >30 and
+question='How would you classify your weight?' and response_choice<>'OW'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ptnoehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn and bmi <130 and
+question='How would you classify your weight?' and response_choice<>'OB'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
 
 --weight survey vs ehr yes/missing
-update WeightType set ptyesehrmissing = (select count(distinct p.mrn) as "Pt yes / EHR missing" 
-from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='How would you classify your weight?' and
-       c.patient_id = p.id and 
-       ((Type=  'Low' and bmi is  null and response_choice='L' ) or
-	(Type=  'Normal' and bmi is  null and response_choice='N'  ) or
-	(Type=  'Overweight' and bmi is  null and response_choice='OW' ) or
-	(Type=  'Obese' and bmi is  null and response_choice='OB' )  )
-     and ((bmi is  null  and response_choice='L') or 
-	 (bmi is  null  and response_choice='N') or 
-	 (bmi is  null   and response_choice='OW') or
-	 (bmi is  null  and response_choice='OB')
-	 ) group by response_choice, c.date order by c.date desc limit 1);	
+update WeightType set ptyesehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice='N' 
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
 
---weight survey vs ehr no/missing  
-update WeightType set ptnoehrmissing = (select count(distinct p.mrn) as "Pt no / EHR missing" 
-from emr_surveyresponse s, emr_patient p , emr_encounter c 
- where p.mrn=s.mrn and question='How would you classify your weight?' and
-       c.patient_id = p.id and 
-       ((Type=  'Low' and bmi is  null and response_choice<>'L' ) or
-	(Type=  'Normal' and bmi is  null and response_choice<>'N'  ) or
-	(Type=  'Overweight' and bmi is  null and response_choice<>'OW' ) or
-	(Type=  'Obese' and bmi is null and response_choice<>'OB' )  )
-     and ((bmi is  null  and response_choice<>'L') or 
-	 (bmi is  null  and response_choice<>'N') or 
-	 (bmi is  null   and response_choice<>'OW') or
-	 (bmi is  null  and response_choice<>'OB')
-	 ) group by Type, c.date order by c.date desc limit 1);	
+update WeightType set ptyesehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice='L'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ptyesehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice='OW'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ptyesehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice='OB'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
+
+--weight survey vs ehr no/missing 
+update WeightType set ptnoehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice<>'N' 
+ order by c.date desc limit 1)>0 ) where Type = 'Normal';
+
+update WeightType set ptnoehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice<>'L'
+ order by c.date desc limit 1)>0 )where  Type = 'Low';
+
+update WeightType set ptnoehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice<>'OW'
+ order by c.date desc limit 1)>0 )where Type = 'Overweight';
+
+update WeightType set ptnoehrmissing =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where  e.mrn = c.mrn and bmi is  null and
+question='How would you classify your weight?' and response_choice<>'OB'
+ order by c.date desc limit 1)>0 )where Type = 'Obese';
 
 --weight type TOTALS
 INSERT INTO WeightType  (Type  , SelfReportYes ,SelfReportNo  ,
@@ -1633,16 +1743,13 @@ CREATE TEMPORARY TABLE LineList(
 INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race , EHR_age ) 
   select p.natural_key, p.mrn, p.first_name, p.last_name, p.date_of_birth,
      p.gender, p.race, date_part('year',age(p.date_of_birth))
-     from emr_patient p where p.mrn in (select b.mrn from  emr_surveyresponse b) ;  
+     from emr_patient p where p.mrn in (select b.mrn from  emr_surveyresponse b) ;      
 
 update LineList set 
- EHR_diastolic = (select e.bp_diastolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
-and e.bp_diastolic is not null order by e.date desc limit 1);
-update LineList set 
- EHR_systolic = (select e.bp_systolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
-and e.bp_systolic is not null order by e.date desc limit 1);
-
-update LineList set     
+EHR_systolic = (select e.bp_systolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
+and e.bp_systolic is not null order by e.date desc limit 1),  
+EHR_diastolic = (select e.bp_diastolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
+and e.bp_diastolic is not null order by e.date desc limit 1),  
   survey_gender = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your gender?'),
   survey_race = (select case WHEN response_choice = 'B' THEN 'BLACK' WHEN response_choice = 'W' THEN 'CAUCASIAN' WHEN response_choice = 'A' THEN 'ASIAN' WHEN response_choice = 'H' THEN 'HISPANIC'
   WHEN response_choice = 'O' THEN 'OTHER' WHEN response_choice = 'I' THEN 'INDIAN' WHEN response_choice = 'NA' THEN 'NAT AMERICAN' WHEN response_choice = 'AL' THEN 'ALASKAN' WHEN response_choice = 'NH' THEN 'NATIVE HAWAI/PACIFIC ISLANDER' 
@@ -1654,7 +1761,7 @@ update LineList set
   Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your systolic blood pressure the last time it was measured by your doctor?'),
   Survey_BP_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='systolic-diastolic / unsure'),
   Survey_HBP = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever been diagnosed with high blood pressure?'),
-  EHR_HBP = (select case when  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )<2 
+  EHR_HBP = (select case when  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )>2 
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient where 
  emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and 
 lower(name) similar to '%(benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|
@@ -1725,3 +1832,18 @@ EHR_ldl_med =  (select  case when (select count(distinct(emr_prescription.patien
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0 THEN  'Y' ELSE 'N' END);
+ 
+update LineList set Survey_diastolic=0 where Survey_diastolic is null;
+update LineList set Survey_systolic=0 where Survey_systolic is null;
+update LineList set Survey_BP_unsure='N/A' where Survey_BP_unsure is null;
+update LineList set Survey_DiabetesType='N/A' where Survey_DiabetesType is null;
+update LineList set Survey_a1c_value=0 where Survey_a1c_value is null;
+update LineList set EHR_a1c_value=0 where EHR_a1c_value is null;
+update LineList set Survey_height=0 where Survey_height is null;
+update LineList set EHR_height=0 where EHR_height is null;
+update LineList set Survey_weight=0 where Survey_weight is null;
+update LineList set EHR_weight=0 where EHR_weight is null;
+update LineList set EHR_bmi=0 where EHR_bmi is null;
+update LineList set Survey_ldl='N/A' where Survey_ldl is null;
+update LineList set Survey_ldl_value=0 where Survey_ldl_value is null;
+update LineList set EHR_ldl_value=0 where EHR_ldl_value is null;
