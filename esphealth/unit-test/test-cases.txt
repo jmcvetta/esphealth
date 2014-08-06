@@ -113,13 +113,14 @@ pid (2 events,
 1  patient with  gonorrhea positive test -deenaH
   same patient with 2 encounters with pid icd9 code 099.56 within 28 days after test 
   
-chlamydia (5 events , 2 cases , 2 elr)
+chlamydia (6 events 3 neg, 2 cases , 2 elr)
 2 patients (should generate 1 cases)
 1 patient with chla test positive -deenaF
  same patient with chla test positive after 28 recurrence days 
  same patient with chla test positive within recurrence days (28). NEG
 1 patient with chla test negative NEG  -deenaH
-using positive as a value > result high and added threshold in conf
+1 patient with chlam test with value  > result high ref
+1 patient with chalm test code set with threshold >7  in conf lab test map and result >7 
 
 syphillis from version 3
 events: 5pos rpr 1 neg, 1 pos vdrl, 1 fta, 1neg tppa, 3pos tppa, 1neg tppa
