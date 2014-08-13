@@ -121,6 +121,9 @@ chlamydia (6 events 3 neg, 2 cases , 2 elr)
 1 patient with chla test negative NEG  -deenaH
 1 patient with chlam test with value  > result high ref
 1 patient with chalm test code set with threshold >7  in conf lab test map and result >7 
+1 patient with pos gonorrhea  for reporting within 28 days
+same patient with metmorfin med for reporting within 28 days
+same patient with code 642.11 icd9 for reporting within 28 days. reportable labs, meds and dx codes need to be set.
 
 syphillis from version 3
 events: 5pos rpr 1 neg, 1 pos vdrl, 1 fta, 1neg tppa, 3pos tppa, 1neg tppa
@@ -148,7 +151,6 @@ pertussis
 
 1 patient with lab test of 'pertussis_pcr_order','pertussis_culture_order','pertussis_serology_order' -billx
   same patient with med antibiotic prescription within 7 days of diagnosis
-
        
 tb
 7 patients (should generate 5 cases)
