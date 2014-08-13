@@ -184,11 +184,11 @@ class Hepatitis_C(HepatitisNew):
     '''
 
     # A future version of this disease definition may also detect chronic hep c
-    conditions = ['hepatitis_c_new:acute']
+    conditions = ['sandbox:hepatitis_c:acute']
 
-    uri = URI_ROOT + 'hepatitis_c_new' + URI_VERSION
+    uri = URI_ROOT + 'sandbox:hepatitis_c:acute' + URI_VERSION
 
-    short_name = 'hepatitis_c_new:acute'
+    short_name = 'sandbox:hepatitis_c:acute'
 
     test_name_search_strings = TEST_NAME_SEARCH_STRINGS
 
@@ -359,7 +359,7 @@ class Hepatitis_C(HepatitisNew):
             criteria += ' AND (1 OR 2)(jaundice (not of newborn) OR alt>400) AND (4)not negative(pos/ind) hep c signal cutoff AND (5)not negative(pos/ind) c-riba)} within 28 days; exclude if:'
             criteria += ' prior/current dx=chronic hep c OR prior/current dx=unspecified hep c OR (3)prior positive c-elisa ever OR (5)prior positive c-riba ever OR (6)prior positive c-rna ever'
             created, this_case = self._create_case_from_event_obj(
-                condition = 'hepatitis_c_new:acute', 
+                condition = 'sandbox:hepatitis_c:acute', 
                 criteria = criteria, 
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
@@ -439,7 +439,7 @@ class Hepatitis_C(HepatitisNew):
                 continue
             
             created, this_case = self._create_case_from_event_obj(
-                condition = 'hepatitis_c_new:acute', 
+                condition = 'sandbox:hepatitis_c:acute', 
                 criteria = 'Criteria #3: positive c-rna and c-elisa negative w/in the prior 12 months',  
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
@@ -517,7 +517,7 @@ class Hepatitis_C(HepatitisNew):
                 continue
             
             created, this_case = self._create_case_from_event_obj(
-                condition = 'hepatitis_c_new:acute', 
+                condition = 'sandbox:hepatitis_c:acute', 
                 criteria = 'Criteria #4: c-elisa positive and c-elisa negative w/in the prior 12 months and no prior positive of c-elisa, c-riba or c-rna ever',  
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
