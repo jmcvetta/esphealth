@@ -482,3 +482,7 @@ ALTER TABLE emr_labresult_details
  ALTER COLUMN ref_range TYPE character varying(30),
  ADD COLUMN comment_type character varying(5),
  ADD COLUMN comment_source character varying(5);
+ 
+--- aug 2014 reportables requeueing feature in case report
+ALTER TABLE	nodis_case
+	ADD COLUMN reportables text;
