@@ -394,7 +394,7 @@
 {% endif %}
 
 
-{% if case.reportable_encounters.count %}
+{% if case.reportable_encounters.0.count %}
 <h3>
     Related Physicians Encounters
 </h3>
@@ -410,7 +410,7 @@
         <th>Temperature</th>
         <th>Clinician</th>
     </tr>
-    {% for enc in case.reportable_encounters.all %}
+    {% for enc in case.reportable_encounters.0.all %}
     {% if enc not in case.encounters %}
     <tr>
         <td>{{ enc.pk }}</td>
