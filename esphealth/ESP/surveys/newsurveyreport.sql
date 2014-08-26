@@ -325,12 +325,6 @@ select count(*) as "Pt no / EHR no" from emr_surveyresponse s, emr_patient p
 	(response_choice<>'NH' and raceethnicity=   'Native Hawai' and (upper(race) <> upper(raceethnicity) and upper(race) <> upper('NATIVE HAWAIIAN') and upper(race) <> upper('PACIFIC ISLANDER/HAWAIIAN')) ) or
 	(response_choice<>'PD' and raceethnicity=   'Patient Decl' and upper(race) <> upper(raceethnicity))  ) group by raceethnicity);
 
---TOTALS
-INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo  ,
-    EHRYes ,  EHRNo ,PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo )
- select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
-  sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno) from CategoricalVariables;
-
 update CategoricalVariables set SelfReportYes=0  where SelfReportYes is null;
 update CategoricalVariables set SelfReportNo=0  where SelfReportNo is null;
 update CategoricalVariables set EHRYes=0  where EHRYes is null;
@@ -339,7 +333,13 @@ update CategoricalVariables set PtYesEHRYes=0  where PtYesEHRYes is null;
 update CategoricalVariables set PtYesEHRNo=0  where PtYesEHRNo is null;
 update CategoricalVariables set PtNoEHRYes=0  where PtNoEHRYes is null;
 update CategoricalVariables set PtNoEHRNo=0  where PtNoEHRNo is null;
- 
+
+--TOTALS
+INSERT INTO CategoricalVariables  (RaceEthnicity  , SelfReportYes ,SelfReportNo  ,
+    EHRYes ,  EHRNo ,PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo )
+ select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ptyesehryes),
+  sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno) from CategoricalVariables;
+
 --yes/no/unsure questions
 drop TABLE if exists YesNoUnsureQuestions;
 
@@ -1404,6 +1404,9 @@ where p.mrn = b.mrn and question='What kind of diabetes do you have?'  and respo
   (select count(*) from nodis_case c  where 
             c.condition  ='diabetes:gestational' and c.patient_id = p.id )=0  ) 
   where Type='Gestational' ;
+
+update DiabetesType set SelfReportYes=0  where SelfReportYes is null;
+update DiabetesType set SelfReportNo=0  where SelfReportNo is null;
  	 
 --diabetes type TOTALS
 INSERT INTO DiabetesType  (Type  , SelfReportYes ,SelfReportNo  ,
@@ -1455,6 +1458,14 @@ where b.question='How would you classify your weight?' and (
 (response_choice='OB' and Type=  'Obese')  ) group by response_choice, b.question);
 
 --weight type ehr yes 
+
+----TODO fix these this way.
+ select count(distinct e.mrn) from emr_surveyresponse e where ( 
+select bmi from emr_encounter c
+where bmi is not null and e.mrn = c.mrn  and
+question='How would you classify your weight?'
+ order by c.date desc limit 1)>18 ;
+ 
 update WeightType set ehryes =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
 select bmi from emr_encounter c
 where bmi is not null and e.mrn = c.mrn and bmi >18 and bmi <25 and
@@ -1482,7 +1493,7 @@ question='How would you classify your weight?'
 --weight type ehr no 
 update WeightType set ehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
 select bmi from emr_encounter c
-where bmi is not null and e.mrn = c.mrn and bmi <18 or bmi >25 and
+where bmi is not null and e.mrn = c.mrn and (bmi <18 or bmi >25) and
 question='How would you classify your weight?'
  order by c.date desc limit 1)>0 ) where Type = 'Normal';
 
@@ -1494,7 +1505,7 @@ question='How would you classify your weight?'
 
 update WeightType set ehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
 select bmi from emr_encounter c
-where bmi is not null and e.mrn = c.mrn and bmi <25.01 or bmi >30 and
+where bmi is not null and e.mrn = c.mrn and (bmi <25.01 or bmi >30) and
 question='How would you classify your weight?'
  order by c.date desc limit 1)>0 )where Type = 'Overweight';
 
@@ -1607,7 +1618,7 @@ question='How would you classify your weight?' and response_choice<>'OB'
 --weight survey vs ehr no/no  
 update WeightType set ptnoehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
 select bmi from emr_encounter c
-where bmi is not null and e.mrn = c.mrn and bmi <18 and bmi >25 and
+where bmi is not null and e.mrn = c.mrn and (bmi <18 or bmi >25) and
 question='How would you classify your weight?' and response_choice<>'N' 
  order by c.date desc limit 1)>0 ) where Type = 'Normal';
 
@@ -1619,7 +1630,7 @@ question='How would you classify your weight?' and response_choice<>'L'
 
 update WeightType set ptnoehrno =(select count(distinct e.mrn) from emr_surveyresponse e where ( 
 select bmi from emr_encounter c
-where bmi is not null and e.mrn = c.mrn and bmi <25.01 and bmi >30 and
+where bmi is not null and e.mrn = c.mrn and (bmi <25.01 or bmi >30) and
 question='How would you classify your weight?' and response_choice<>'OW'
  order by c.date desc limit 1)>0 )where Type = 'Overweight';
 
@@ -1679,12 +1690,15 @@ where  e.mrn = c.mrn and bmi is  null and
 question='How would you classify your weight?' and response_choice<>'OB'
  order by c.date desc limit 1)>0 )where Type = 'Obese';
 
+update WeightType set SelfReportYes=0  where SelfReportYes is null;
+update WeightType set SelfReportNo=0  where SelfReportNo is null;
+ 	 
 --weight type TOTALS
 INSERT INTO WeightType  (Type  , SelfReportYes ,SelfReportNo  ,
     EHRYes ,  EHRNo ,EHRMissing, PtYesEHRYes , PtYesEHRNo , PtNoEHRYes , PtNoEHRNo, ptyesehrmissing,ptnoehrmissing )
  select 'TOTAL', sum(selfreportyes), sum(selfreportno),sum(ehryes),sum(ehrno), sum(ehrmissing), sum(ptyesehryes),
   sum(ptyesehrno), sum(ptnoehryes), sum(ptnoehrno), sum(ptyesehrmissing), sum(ptnoehrmissing) from WeightType;
- 
+
 --line list
 drop TABLE if exists LineList;
 
@@ -1742,14 +1756,14 @@ CREATE TEMPORARY TABLE LineList(
 
 INSERT INTO LineList  (Patientid  ,  mrn , FirstName , LastName , DOB,  EHR_gender , EHR_race , EHR_age ) 
   select p.natural_key, p.mrn, p.first_name, p.last_name, p.date_of_birth,
-     p.gender, p.race, date_part('year',age(p.date_of_birth))
+     p.gender, CASE WHEN p.race is null THEN 'N/A' ELSE p.race END, date_part('year',age(p.date_of_birth))
      from emr_patient p where p.mrn in (select b.mrn from  emr_surveyresponse b) ;      
 
 update LineList set 
 EHR_systolic = (select e.bp_systolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
-and e.bp_systolic is not null order by e.date desc limit 1),  
+   and e.bp_systolic is not null order by e.date desc limit 1),  
 EHR_diastolic = (select e.bp_diastolic from emr_encounter as e, emr_patient where emr_patient.id = e.patient_id and LineList.mrn =emr_patient.mrn 
-and e.bp_diastolic is not null order by e.date desc limit 1),  
+   and e.bp_diastolic is not null order by e.date desc limit 1),  
   survey_gender = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What is your gender?'),
   survey_race = (select case WHEN response_choice = 'B' THEN 'BLACK' WHEN response_choice = 'W' THEN 'CAUCASIAN' WHEN response_choice = 'A' THEN 'ASIAN' WHEN response_choice = 'H' THEN 'HISPANIC'
   WHEN response_choice = 'O' THEN 'OTHER' WHEN response_choice = 'I' THEN 'INDIAN' WHEN response_choice = 'NA' THEN 'NAT AMERICAN' WHEN response_choice = 'AL' THEN 'ALASKAN' WHEN response_choice = 'NH' THEN 'NATIVE HAWAI/PACIFIC ISLANDER' 
@@ -1759,7 +1773,7 @@ and e.bp_diastolic is not null order by e.date desc limit 1),
   survey_age = (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your age?'),
   Survey_diastolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What is your last diastolic blood pressure?'),
   Survey_systolic =(select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your systolic blood pressure the last time it was measured by your doctor?'),
-  Survey_BP_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='systolic-diastolic / unsure'),
+  Survey_BP_unsure = (select response_boolean  from emr_surveyresponse b where LineList.mrn =b.mrn and question ='systolic-diastolic / unsure'),
   Survey_HBP = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever been diagnosed with high blood pressure?'),
   EHR_HBP = (select case when  (select count(*) from emr_encounter b where  LineList.mrn =b.mrn and (b.bp_systolic >140 or b.bp_diastolic > 90) )>2 
  or (select count(distinct(emr_prescription.patient_id)) from emr_prescription, emr_patient where 
@@ -1771,7 +1785,7 @@ nebivolol|oxprenolol|pindolol|propranolol|amlodipine|clevidipine|felodopine|isra
 diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|fenoldopam|hydralazine)%')>0 THEN 'Y' ELSE 'N' END),
  Survey_HBP_med =(select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high blood pressure?'),    
  Survey_Diabetes = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Do you have diabetes?'),
- Survey_DiabetesType  = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What kind of diabetes do you have?'),
+ Survey_DiabetesType  = (select CASE WHEN response_choice ='' THEN 'N/A' WHEN response_choice IS NULL THEN 'N/A' ELSE response_choice  END  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='What kind of diabetes do you have?'),
  Survey_a1c = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your hemoglobin A1C level checked?'),
  Survey_a1c_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your most recent hemoglobin A1C value?'),
  Survey_a1c_value_unsure = (select response_boolean from emr_surveyresponse b where LineList.mrn =b.mrn and question ='a1c unsure'),
@@ -1781,7 +1795,7 @@ diltiazem|verapamil|chlorthalidone|hydrochlorothiazide|indapamide|aliskiren|feno
  when response_choice = 'OB' then 'Obese' END 
     from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='How would you classify your weight?'),
  Survey_hyperlipidemia = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Do you have a history of hyperlipidemia or elevated cholesterol?'),
- Survey_ldl = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your LDL level checked?'),
+ Survey_ldl = (select CASE WHEN response_choice ='' THEN 'N/A' WHEN response_choice is null THEN 'N/A' ELSE response_choice  END  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Have you ever had your LDL level checked?'),
  Survey_ldl_value =  (select response_float from  emr_surveyresponse b where LineList.mrn =b.mrn and question ='What was your last LDL level?'),
  Survey_ldl_med = (select response_choice  from emr_surveyresponse b  where  LineList.mrn =b.mrn and b.question='Are you currently being prescribed medications for high cholesterol?'),
  EHR_height = (select emr_encounter.height from  emr_encounter, emr_patient  where emr_patient.id = emr_encounter.patient_id and LineList.mrn = emr_encounter.mrn and emr_encounter.height is not null order by emr_encounter.date desc limit 1),
@@ -1832,11 +1846,11 @@ EHR_ldl_med =  (select  case when (select count(distinct(emr_prescription.patien
 where emr_prescription.patient_id = emr_patient.id and LineList.mrn =emr_patient.mrn and  
 lower(name) similar to '%(lovastatin|atorvastatin|fluvastatin|pravastatin|rosuvastatin|simvastatin|
 bezafibrate|fenofibrate|fenofibric acid|gemfibrozil|cholestyramine|colesevelam|colestipol|niacin|ezetimibe)%')>0 THEN  'Y' ELSE 'N' END);
- 
+
+update LineList set Survey_ldl='N/A' where Survey_ldl is null;
+update LineList set Survey_BP_unsure='N/A' where Survey_BP_unsure is null;
 update LineList set Survey_diastolic=0 where Survey_diastolic is null;
 update LineList set Survey_systolic=0 where Survey_systolic is null;
-update LineList set Survey_BP_unsure='N/A' where Survey_BP_unsure is null;
-update LineList set Survey_DiabetesType='N/A' where Survey_DiabetesType is null;
 update LineList set Survey_a1c_value=0 where Survey_a1c_value is null;
 update LineList set EHR_a1c_value=0 where EHR_a1c_value is null;
 update LineList set Survey_height=0 where Survey_height is null;
@@ -1844,6 +1858,5 @@ update LineList set EHR_height=0 where EHR_height is null;
 update LineList set Survey_weight=0 where Survey_weight is null;
 update LineList set EHR_weight=0 where EHR_weight is null;
 update LineList set EHR_bmi=0 where EHR_bmi is null;
-update LineList set Survey_ldl='N/A' where Survey_ldl is null;
 update LineList set Survey_ldl_value=0 where Survey_ldl_value is null;
 update LineList set EHR_ldl_value=0 where EHR_ldl_value is null;
