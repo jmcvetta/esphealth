@@ -338,6 +338,7 @@ class ConditionConfig(models.Model):
     dx_code_days_after = models.IntegerField(blank=False, default=28)
     med_days_before = models.IntegerField(blank=False, default=28)
     med_days_after = models.IntegerField(blank=False, default=28)
+    url_name = models.CharField('Optional url name for case details', max_length=100, null=True)
     
     class Meta:
         verbose_name = 'Condition Configuration'

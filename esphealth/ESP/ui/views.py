@@ -14,7 +14,6 @@ import datetime
 import csv
 import django_tables as tables
 
-
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
@@ -633,6 +632,71 @@ def case_detail(request, case_id):
         'status_form': status_form,
         }
     return render_to_response('nodis/case_detail.html', values, context_instance=RequestContext(request))
+
+@login_required
+def pertussis_detail(request, case_id):
+    '''
+    Detailed case view with asthma/bronchitis/vaccine history
+    '''
+    case = get_object_or_404(Case, pk=case_id)
+    #history = case.casestatushistory_set.all().order_by('-timestamp')
+    patient = case.patient
+    pid = patient.pk
+    vax = Immunization.objects.filter(patient=pid).order_by('date')
+    # patient.age is derived directly from patient.date_of_birth.  When the 
+    # latter is None, the former will also be None
+    try:
+        dob = patient.date_of_birth.strftime(PY_DATE_FORMAT)
+        age = patient.age.years
+    except AttributeError: 
+        age = None
+        dob = None
+    if age >= 90:
+        age = '90+'
+    created = case.created_timestamp.strftime(PY_DATE_FORMAT)
+    updated = case.updated_timestamp.strftime(PY_DATE_FORMAT)
+    rep_encounters, rep_dx_codes = case.reportable_encounters
+    #TODO: make ICD10 compatible
+    asthma_bronchitis = ['icd9:493','icd9:493.0','icd9:493.00','icd9:493.01','icd9:493.02','icd9:493.1','icd9:493.10',
+                         'icd9:493.11','icd9:493.12','icd9:493.2','icd9:493.20','icd9:493.21','icd9:493.22','icd9:493.8',
+                         'icd9:493.82','icd9:493.9','icd9:493.90','icd9:493.91','icd9:493.92','icd9:466','icd9:466.0',
+                         'icd9:490','icd9:491','icd9:491.0','icd9:491.1','icd9:491.2','icd9:491.20','icd9:491.21',
+                         'icd9:491.22','icd9:491.8','icd9:491.9','icd9:506.0','icd10:J20','icd10:J20.0','icd10:J20.1',
+                         'icd10:J20.2','icd10:J20.3','icd10:J20.4','icd10:J20.5','icd10:J20.6','icd10:J20.7','icd10:J20.8',
+                         'icd10:J20.9','icd10:J40','icd10:J41','icd10:J41.0','icd10:J41.1','icd10:J41.8','icd10:J42',
+                         'icd10:J45','icd10:J45.2','icd10:J45.20','icd10:J45.21','icd10:J45.22','icd10:J45.3',
+                         'icd10:J45.30','icd10:J45.31','icd10:J45.32','icd10:J45.4','icd10:J45.40','icd10:J45.41',
+                         'icd10:J45.42','icd10:J45.5','icd10:J45.50','icd10:J45.51','icd10:J45.52','icd10:J45.9',
+                         'icd10:J45.90','icd10:J45.901','icd10:J45.902','icd10:J45.909','icd10:J45.99','icd10:J45.991',
+                         'icd10:J45.998','icd10:J68.0','icd10:Z82.5']
+    ab_enc_hist = Encounter.objects.filter(patient=pid,dx_codes__in=asthma_bronchitis,date__lte=case.date)
+    #
+    # Reportable Info
+    #
+    #
+    # Non-Reportable Info
+    #
+    #other_enc = set(Encounter.objects.filter(patient=patient)) - set(case.encounters.all())
+    #other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
+    #other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
+    data = {'status': case.status}
+    status_form = CaseStatusForm(initial=data)
+    values = {
+        'title': 'Detail Report: Case #%s' % case.pk,
+        "request":request,
+        "case": case,
+        'pid': pid,
+        'condition': case.condition,
+        'rep_enc': rep_encounters,
+        'age': age,
+        'dob': dob,
+        'vax': vax,
+        'ab_enc_hist': ab_enc_hist,
+        'created': created,
+        'updated': updated,
+        'status_form': status_form,
+        }
+    return render_to_response('nodis/pertussis_detail.html', values, context_instance=RequestContext(request))
 
 def case_status_update(request, case_id):
     '''

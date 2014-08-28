@@ -42,6 +42,7 @@ urlpatterns = patterns('ESP.ui.views',
     # Case Detail
     #
     url(r'^cases/view/(?P<case_id>\d+)/$', 'case_detail', name='nodis_case_detail'),
+    url(r'^cases/viewpert/(?P<case_id>\d+)/$', 'pertussis_detail', name='nodis_pertussis_detail'),
     url(r'^cases/update/(?P<case_id>\d+)/$', 'case_status_update', name='nodis_case_update'),
     url(r'^cases/transmit/(?P<case_id>\d+)/$', 'case_queue_for_transmit', name='nodis_case_transmit'),
     url(r'^provider/(?P<provider_id>\w+)/$', 'provider_detail', name='provider_detail'),

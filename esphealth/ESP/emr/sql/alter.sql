@@ -486,3 +486,9 @@ ALTER TABLE emr_labresult_details
 --- aug 2014 reportables requeueing feature in case report
 ALTER TABLE	nodis_case
 	ADD COLUMN reportables text;
+	 
+ --change to conf_conditionconfig to support condtion-specific case detail pages
+ --8/26/2014
+ ALTER TABLE conf_conditionconfig
+   ADD COLUMN url_name character varying(100);
+

@@ -269,6 +269,7 @@ esphealth/ESP/templates/nodis/all_records.html -text
 esphealth/ESP/templates/nodis/case_detail.html -text
 esphealth/ESP/templates/nodis/case_list.html -text
 esphealth/ESP/templates/nodis/missing_case_detail.html -text
+esphealth/ESP/templates/nodis/pertussis_detail.html -text svneol=unset#text/plain
 esphealth/ESP/templates/nodis/provider_detail.html -text
 esphealth/ESP/templates/nodis/validator_exact.html -text
 esphealth/ESP/templates/nodis/validator_missing.html -text
@@ -311,6 +312,8 @@ esphealth/ESP/ui/management/commands/__init__.py -text
 esphealth/ESP/ui/management/commands/batch.py -text
 esphealth/ESP/ui/management/commands/status_report.py -text
 esphealth/ESP/ui/management/commands/validate_cases.py -text
+esphealth/ESP/ui/templatetags/__init__.py -text svneol=unset#text/plain
+esphealth/ESP/ui/templatetags/templatefilters.py -text svneol=unset#text/plain
 esphealth/ESP/ui/tests.py -text
 esphealth/ESP/ui/urls.py -text
 esphealth/ESP/ui/views.py -text
