@@ -61,6 +61,7 @@ def date_range(as_string=False, format='%Y%m%d'):
     return date.strftime(format) if as_string else date         
 
 def gender():
+    #TODO add more choices T or ??
     return ('M' if random.random() <= 0.49 else 'F')
 
 def marital_status():
