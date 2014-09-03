@@ -94,8 +94,8 @@ class ConditionConfigAdmin(admin.ModelAdmin):
     list_filter = ['initial_status']
     
 class ReportableLabAdmin(admin.ModelAdmin):
-    ordering = ['condition', 'native_code']
-    list_display = ['condition', 'native_code', 'output_code']
+    ordering = ['condition', 'native_name']
+    list_display = ['condition', 'native_name', 'output_code']
     list_filter = ['condition']
 
 class ReportableMedicationAdmin(admin.ModelAdmin):
