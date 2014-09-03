@@ -345,7 +345,9 @@ class ConditionConfig(models.Model):
     
     def __str__(self):
         return self.name
-
+    
+    def get_max_reportables_days_after(self):
+        return max(self.med_days_after, self.dx_code_days_after, self.lab_days_after)
 
 class ReportableLab(models.Model):
     '''
@@ -354,8 +356,8 @@ class ReportableLab(models.Model):
     definition.
     '''
     condition = models.ForeignKey(ConditionConfig, blank=False)
-    native_code = models.CharField(max_length=100, blank=False, db_index=True)
-    native_name = models.CharField(max_length=255, blank=True, null=True)
+    native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    native_name = models.CharField('Abstract Lab Name', max_length=255, blank=False, db_index=True)
     output_code = models.CharField(max_length=100, blank=False, db_index=True)
     #
     # Reporting
