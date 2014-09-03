@@ -40,7 +40,7 @@ from ESP.conf.models import LabTestMap, ResultString
 
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
-
+from ESP.static.models import DrugSynonym
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,6 +96,7 @@ class Case(models.Model):
     status = models.CharField('Case status', max_length=32, 
         blank=False, choices=STATUS_CHOICES, default='AR')
     notes = models.TextField(blank=True, null=True)
+    reportables = models.TextField(blank=True, null=True)
     # Timestamps:
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
@@ -104,6 +105,7 @@ class Case(models.Model):
     # Events that define this case
     #
     events = models.ManyToManyField(Event, blank=False)
+    #TODO followup_events = models.ManyToManyField(Event, blank=False)
     timespans = models.ManyToManyField(Timespan, blank=False)
 
     class Meta:
@@ -153,7 +155,13 @@ class Case(models.Model):
 
     def __get_reportable_labs(self):
         from ESP.nodis.base import DiseaseDefinition
-        reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
+        #redmine 516 use abstract labs in reportables instead of native codes.
+        reportable_labnames = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_name', flat=True))
+        
+        reportable_codes = set()
+        for labname in reportable_labnames:
+            reportable_codes |=set(LabTestMap.objects.filter(test_name =labname, reportable=True).values_list('native_code', flat=True))
+        
         # get native codes from lab heuristics
         for heuristic in DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
             if isinstance(heuristic, BaseLabResultHeuristic):
@@ -233,8 +241,10 @@ class Case(models.Model):
         if not med_names:
             return Prescription.objects.none()
         med_names = list(med_names)
-        q_obj = Q(name__icontains=med_names[0])
-        for med in med_names:
+        #redmine 515 
+        all_drugs = DrugSynonym.generics_plus_synonyms(med_names)
+        q_obj = Q(name__icontains=all_drugs[0])
+        for med in all_drugs:
             q_obj |= Q(name__icontains=med)
         q_obj &= Q(patient=self.patient)
         if conf:
@@ -246,6 +256,15 @@ class Case(models.Model):
         #log_query('Reportable prescriptions for %s' % self, prescriptions)
         return prescriptions
     reportable_prescriptions = property(__get_reportable_prescriptions)
+    
+    def create_reportables_list(self):
+        reportableDx = self.reportable_encounters
+        if reportableDx:
+            reportableDx = reportableDx[0].order_by('natural_key').values_list('natural_key', flat=True)
+        reportableRx = self.reportable_prescriptions.order_by('natural_key').values_list('natural_key', flat=True)
+        reportableLx = self.reportable_labs.order_by('natural_key').values_list('natural_key', flat=True)
+        
+        return ', '.join(reportableDx) + ',' + ', '.join(reportableRx) + ',' + ', '.join(reportableLx)
 
     def __str__(self):
         return '%s # %s' % (self.condition, self.pk)
