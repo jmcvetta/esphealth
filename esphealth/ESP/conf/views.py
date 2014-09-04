@@ -55,11 +55,11 @@ from ESP.hef.base import BaseLabResultHeuristic
 
 @login_required
 def heuristic_mapping_report(request):
-    values = {'title': 'Code Mapping Report'}
+    values = {'title': 'Heuristic Mapping Summary'}
     mapped = []
     unmapped = []
     
-    for heuristic in BaseLabResultHeuristic.get_all() : 
+    for heuristic in BaseLabResultHeuristic.get_all(): 
         maps = LabTestMap.objects.filter(test_name=heuristic.test_name)
         if not maps:
             # if unmapped doesnt already have test name then add it
