@@ -369,7 +369,7 @@ def map_native_code(request, native_code):
     labs_count = labs.count()
     without_ref_high_percent = float(without_ref_high) / float(labs_count) * 100
     values = {
-        'title': 'Map Native Code to Heuristic',
+        'title': 'Map Native Code to Abstract Lab',
         "request":request,
         'native_code': native_code,
         'native_names': native_names,

@@ -55,7 +55,7 @@ from ESP.hef.base import BaseLabResultHeuristic
 
 @login_required
 def heuristic_mapping_report(request):
-    values = {'title': 'Heuristic Mapping Summary'}
+    values = {'title': 'Abstract Lab Mapping Summary'}
     mapped = []
     unmapped = []
     
