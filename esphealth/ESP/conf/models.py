@@ -356,25 +356,17 @@ class ReportableLab(models.Model):
     definition.
     '''
     condition = models.ForeignKey(ConditionConfig, blank=False)
-    native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     native_name = models.CharField('Abstract Lab Name', max_length=255, blank=False, db_index=True)
-    output_code = models.CharField(max_length=100, blank=False, db_index=True)
-    #
-    # Reporting
-    # 
-    snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
-    snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
-    snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
     #
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
     class Meta:
-        unique_together = ['native_code', 'condition']
+        unique_together = ['native_name', 'condition']
         verbose_name = 'Reportable Lab Test'
     
     def __str__(self):
-        msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.condition)
+        msg = '%s (%s)' % (self.native_name, self.condition)
         return msg
 
 
