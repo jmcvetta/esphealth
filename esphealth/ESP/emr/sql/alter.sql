@@ -496,6 +496,6 @@ ALTER TABLE	nodis_case
 ALTER TABLE conf_reportablelab 
   DROP COLUMN output_code,
   DROP COLUMN native_code,
-  DROP COLUMN snomed_pos ,
-  DROP COLUMN snomed_neg ,
+  DROP COLUMN snomed_pos,
+  DROP COLUMN snomed_neg,
   DROP COLUMN snomed_ind;
