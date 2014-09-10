@@ -493,4 +493,9 @@ ALTER TABLE	nodis_case
    ADD COLUMN url_name character varying(100);
 -- 8/3/2014 redmine 516
 -- changing to allow nulls in native_codes reportable labs 
-ALTER TABLE conf_reportablelab ALTER COLUMN native_code DROP NOT NULL;
+ALTER TABLE conf_reportablelab 
+  DROP COLUMN output_code,
+  DROP COLUMN native_code,
+  DROP COLUMN snomed_pos ,
+  DROP COLUMN snomed_neg ,
+  DROP COLUMN snomed_ind;
