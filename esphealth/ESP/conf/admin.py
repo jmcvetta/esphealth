@@ -95,7 +95,7 @@ class ConditionConfigAdmin(admin.ModelAdmin):
     
 class ReportableLabAdmin(admin.ModelAdmin):
     ordering = ['condition', 'native_name']
-    list_display = ['condition', 'native_name', 'output_code']
+    list_display = ['condition', 'native_name']
     list_filter = ['condition']
 
 class ReportableMedicationAdmin(admin.ModelAdmin):
