@@ -147,6 +147,7 @@ class Command(BaseCommand):
             print >> sys.stderr, ''             
         
         self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d.%H.%M.%s') 
+        counter = 0
         if cases:
             counter = self.requeue(options,  cases)
         log.info('Cases requeued: %s' % counter)
