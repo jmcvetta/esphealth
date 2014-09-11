@@ -473,8 +473,9 @@ class CaseFilterFormNoPHI(forms.Form):
 
 @login_required
 def case_list(request, status):
-    values = {}
-    if request.user.has_perm('nodis.view_phi'):
+    values = {} 
+    # add ability to see phi for active staff too
+    if (request.user.is_staff and request.user.is_active ) or  (request.user.has_perm('nodis.view_phi')):
         CaseTable = CaseTablePHI
         CaseFilterForm = CaseFilterFormPHI
     else: # User cannot view or search by PHI
@@ -504,7 +505,8 @@ def case_list(request, status):
             qs = qs.filter(date__lte=date_before)
         if date_after:
             qs = qs.filter(date__gte=date_after)
-        if request.user.has_perm('nodis.view_phi'):
+        #TODO add ability to see phi for active staff too
+        if (request.user.is_staff and request.user.is_active ) or  (request.user.has_perm('nodis.view_phi')):
             patient_mrn = search_form.cleaned_data['patient_mrn']
             patient_last_name = search_form.cleaned_data['patient_last_name']
             if patient_mrn:
