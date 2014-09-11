@@ -128,7 +128,7 @@ class Command(BaseCommand):
                 cmnd = CaseReportCommand()
                 cmnd.handle(
                     case_id=None,
-                    status='Q',
+                    status='Q', #TODO add list of statuses here ?
                     batch_size=None,
                     mdph=CASE_REPORT_MDPH,
                     transmit=BATCH_TRANSMIT_CASE_REPORT,
