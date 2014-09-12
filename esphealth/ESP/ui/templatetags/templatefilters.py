@@ -22,6 +22,8 @@ def get_url(condition):
     '''
     try:
         url_name=ConditionConfig.objects.get(name__exact=condition).url_name
+        if (url_name=='' or url_name==None):
+            url_name='nodis_case_detail'
     except ObjectDoesNotExist:
         url_name='nodis_case_detail'
     return url_name
