@@ -481,8 +481,10 @@ esphealth/media/js/syndrome_map.js -text
 esphealth/media/js/vaers.js -text
 esphealth/requirements.esp-plugins.frozen.txt -text
 esphealth/requirements.frozen.txt -text
+esphealth/requirements.modules.txt -text
 esphealth/requirements.plugins.txt -text
 esphealth/requirements.pypi.txt -text
+esphealth/requirements.uninstall.txt -text
 esphealth/setup.bat -text
 esphealth/setup.sh -text
 esphealth/share/apache.conf.sample -text

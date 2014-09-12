@@ -1,0 +1,17 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#                    Electronic Support for Public Health
+#                              PIP Requirements
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+#-------------------------------------------------------------------------------
+#
+# ESP Modules to uninstall
+#
+#-------------------------------------------------------------------------------
+
+# Electronic lab reporting 
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
+elr-positive-test
