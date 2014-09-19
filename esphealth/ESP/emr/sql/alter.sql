@@ -185,6 +185,9 @@ ALTER TABLE static_icd9
  RENAME TO static_dx_code;
  
 UPDATE  static_dx_code SET "type" = 'icd9', code = combotypecode;
+--you must run the following BEFORE loading ANY icd10 data!!!
+UPDATE static_dx_code SET combotypecode='icd9:'||code 
+  where type='icd9';
 
 -- conf model changes    
 ALTER TABLE  conf_conditionconfig
