@@ -186,8 +186,41 @@ ALTER TABLE static_icd9
  
 UPDATE  static_dx_code SET "type" = 'icd9', code = combotypecode;
 --you must run the following BEFORE loading ANY icd10 data!!!
+ALTER TABLE emr_encounter_icd9_codes DROP CONSTRAINT new_emr_encounter_icd9_codes_icd9_id_fkey;
+ALTER TABLE emr_problem DROP CONSTRAINT new_emr_problem_icd9_id_fkey;
+ALTER TABLE emr_hospital_problem DROP CONSTRAINT new_emr_hospital_problem_icd9_id_fkey;
+ALTER TABLE conf_reportableicd9 DROP CONSTRAINT new_conf_reportableicd9_icd9_id_fkey;
 UPDATE static_dx_code SET combotypecode='icd9:'||code 
   where type='icd9';
+
+ALTER TABLE conf_reportableicd9 ALTER COLUMN icd9_id TYPE character varying (20);
+ALTER TABLE emr_problem ALTER COLUMN icd9_id TYPE character varying (20);
+ALTER TABLE emr_hospital_problem ALTER COLUMN icd9_id TYPE character varying (20);
+ALTER TABLE emr_encounter_icd9_codes ALTER COLUMN icd9_id TYPE character varying (20);
+
+UPDATE conf_reportableicd9 set icd9_id='icd9:'||icd9_id;
+UPDATE emr_hospital_problem set icd9_id='icd9:'||icd9_id;
+UPDATE emr_problem set icd9_id='icd9:'||icd9_id;
+UPDATE emr_encounter_icd9_codes set icd9_id='icd9:'||icd9_id;
+
+ALTER TABLE conf_reportableicd9
+  ADD CONSTRAINT new_conf_reportableicd9_icd9_id_fkey FOREIGN KEY (icd9_id)
+      REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE emr_hospital_problem
+  ADD CONSTRAINT new_emr_hospital_problem_icd9_id_fkey FOREIGN KEY (icd9_id)
+      REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE emr_problem
+  ADD CONSTRAINT new_emr_problem_icd9_id_fkey FOREIGN KEY (icd9_id)
+      REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE emr_encounter_icd9_codes
+  ADD CONSTRAINT new_emr_encounter_icd9_codes_icd9_id_fkey FOREIGN KEY (icd9_id)
+      REFERENCES static_dx_code (combotypecode) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
+
+
 
 -- conf model changes    
 ALTER TABLE  conf_conditionconfig
