@@ -15,6 +15,7 @@ import csv
 import django_tables as tables
 
 from django import forms
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
@@ -248,7 +249,7 @@ def labtest_detail(request):
     native_codes = request.POST.getlist('tests')
     if not native_codes:
         msg = 'Request not understood: no test codes specified for detail query'
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg)
         return redirect_to(request, reverse('labtest_lookup'))
     details = []
     for nc in native_codes:
@@ -359,7 +360,7 @@ def map_native_code(request, native_code):
                 msg = 'Saved code map: %s' % cm
             else:
                 msg = 'Updated code map: %s' % cm
-            request.user.message_set.create(message=msg)
+            messages.add_message(request,messages.INFO,msg) 
             log.debug(msg)
             return redirect_to(request, reverse('unmapped_labs_report'))
     result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
@@ -392,7 +393,7 @@ def ignore_code_set(request):
     native_codes = request.POST.getlist('codes')
     if not native_codes:
         msg = 'Request not understood: no test codes specified to be ignored'
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg) 
         return redirect_to(request, reverse('unmapped_labs_report'))
     for nc in native_codes:
         ic_obj, created = IgnoredCode.objects.get_or_create(native_code=nc)
@@ -401,7 +402,7 @@ def ignore_code_set(request):
             msg = 'Native code "%s" has been added to the ignore list' % nc
         else:
             msg = 'Native code "%s" is already on the ignore list' % nc
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg) 
         log.debug(msg)
     return redirect_to(request, reverse('unmapped_labs_report'))
 
@@ -707,12 +708,12 @@ def case_status_update(request, case_id):
     '''
     if not request.method == 'POST':
         msg = 'case_status_update() can only be called from a form POST'
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg)
         return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
     form = CaseStatusForm(request.POST)
     if not form.is_valid():
         msg = 'Invalid form -- no action taken'
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg)
         return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
     case = get_object_or_404(Case, pk=case_id)
     new_status = form.cleaned_data['status']
@@ -721,7 +722,7 @@ def case_status_update(request, case_id):
         comment = None 
         if new_status == case.status:
             msg = 'You must either change the change the case status, make a comment, or both.'
-            request.user.message_set.create(message=msg)
+            messages.add_message(request,messages.INFO,msg)
             return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
     old_status = case.status
     case.status = new_status
@@ -732,7 +733,7 @@ def case_status_update(request, case_id):
     hist.save() # Add a history object
     log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
     msg = 'Case status updated.'
-    request.user.message_set.create(message=msg)
+    messages.add_message(request,messages.INFO,msg)
     return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
 
 
@@ -742,7 +743,7 @@ def case_queue_for_transmit(request, case_id):
     '''
     if not request.method == 'POST':
         msg = 'case_queue_for_transmit() can only be called from a form POST'
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg)
         return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
     case = get_object_or_404(Case, pk=case_id)
     old_status = case.status
@@ -754,7 +755,7 @@ def case_queue_for_transmit(request, case_id):
     hist.save() # Add a history object
     log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
     msg = 'Case #%s has been queued for transmission to the Health Department' % case.pk
-    request.user.message_set.create(message=msg)
+    messages.add_message(request,messages.INFO,msg)
     return redirect_to(request, reverse('nodis_cases_all'))
 
 
@@ -1202,9 +1203,9 @@ def missing_case_detail(request, result_id):
             data = form.cleaned_data
             ref_case = result.ref_case
             if not data['notes'] == ref_case.notes:
-                request.user.message_set.create(message='Updated notes for reference case # %s' % ref_case.pk)
+                messages.add_message(request,messages.INFO,'Updated notes for reference case # %s' % ref_case.pk)
             if data['ignore']:
-                request.user.message_set.create(message='Ignoring reference case # %s' % ref_case.pk)
+                messages.add_message(request,messages.INFO,'Ignoring reference case # %s' % ref_case.pk)
             ref_case.notes = data['notes']
             ref_case.ignore = data['ignore']
             ref_case.save()
