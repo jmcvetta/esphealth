@@ -162,6 +162,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
 )
 ROOT_URLCONF = 'ESP.urls'
 LOGIN_URL = config['Web']['login_url']
@@ -187,6 +188,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+    'django.contrib.messages',
     'ESP.static', 
     'ESP.conf', 
     'ESP.emr',
