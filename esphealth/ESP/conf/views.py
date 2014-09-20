@@ -16,6 +16,7 @@ import pprint
 import operator
 
 from django import forms as django_forms, http
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
@@ -102,7 +103,7 @@ def ignore_code(request, native_code):
             msg = 'Native code "%s" has been added to the ignore list' % native_code
         else:
             msg = 'Native code "%s" is already on the ignore list' % native_code
-        request.user.message_set.create(message=msg)
+        messages.add_message(request,messages.INFO,msg)
         log.debug(msg)
         return redirect_to(request, reverse('unmapped_labs_report'))
     else:
