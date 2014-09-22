@@ -36,7 +36,7 @@ on pat.id=lastenc.patient_id
 --
 -- WHERE criteria 
 --
-WHERE pat.date_of_death IS NULL;
+WHERE pat.date_of_death IS NULL and pat.mrn is not null and pat.mrn <> '' ;
 --
 -- Max blood pressure between two and three years
 --  using most recent max mean aterial pressure for the period
