@@ -66,7 +66,7 @@ from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
 from ESP.static.models import Dx_code
-from ESP.conf.models import LabTestMap
+from ESP.conf.models import LabTestMap, ReportableMedication
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider, Provenance
 from ESP.emr.models import LabResult
@@ -270,6 +270,7 @@ class hl7Batch:
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
         rep_encounters, rep_dx_codes = case.reportable_encounters
+        #adds repotable dx codes obr 
         self.addCaseOBR(condition=case.condition, dx_code=rep_dx_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
             rx=rxobjs[0]
@@ -281,26 +282,22 @@ class hl7Batch:
             lx =lxobjs[0]
         else:
             lx = None
+        #adds dx codes and encounters obx 
         self.addCaseOBX(demog=patient, orcs=orcs, dx_code=rep_dx_codes, lx=lx, rx=rx,
             encounters=rep_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)  
                       
         totallxs = list(lxobjs)
-        # need check if any Gonorrhea test for Chlamydia
-        if case.condition == 'chlamydia':
-            genorlxs =self.getOtherLxs('gonorrhea', patient, lx)
-            totallxs = totallxs + list(genorlxs)
-        elif case.condition == 'gonorrhea':
-            genorlxs =self.getOtherLxs('chlamydia', patient, lx)
-            totallxs = totallxs + list(genorlxs)
-        #generate for all conditions     
-        genorlxs = self.getOtherLxs(case.condition, patient, lx)
-        totallxs = totallxs + list(genorlxs)   
+        #generate for all conditions    
+        #TODO maybe remove this get other lab events  
+        #genorlxs = self.getOtherLxs(case.condition, patient, lx)
+        #totallxs = totallxs + list(genorlxs)   
+        #TODO perhaps add genotherlx , rx and dx for reinfection 
+        
         # only removing duplicates if they are real labs except the tb dummy lab  
         if totallxs and totallxs[0].pk != 0:
             cleanlxids = self.removeDuplicateLx(totallxs)
             totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
-        
         self.addLXOBX(case=case,lxRecList=totallxs, orus=orus)
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
         return [i.id for i in totallxs]
@@ -321,9 +318,12 @@ class hl7Batch:
     def getOtherLxs(self, cond,demog,lxids):
         returnlxs=[]
 
-        # NOTE: Do we really want lab results from all of this patient's cases
+        # NOTE: TODO ask:Do we really want lab results from all of this patient's cases
         # of this condition, rather than lab results from only this particular
-        # case?
+        # case? if this is not correct.. then remove this code because it will 
+        # return all the lab events in the new heuristic labs.
+        # this goes across all cases, based on 30 after result date of first reportable lab
+        # and 30 days before the order date of the first reportable lab
         cases = Case.objects.filter(patient=demog, condition=cond)
         all_case_labs = LabResult.objects.filter(events__case__in=cases)
         # exclude labs anyway if they have reportable flag as false.
@@ -1185,8 +1185,6 @@ class Command(BaseCommand):
             help='Export a single case with specified case ID'),
         make_option('--status', action='store', dest='status', default='Q',
             help='Export only cases with this status ("Q" by default)'),
-        make_option('--batch-size', action='store', type='int', dest='batch_size', metavar='NUM',
-            default=None, help='Generate batches of NUM cases per file'),
         make_option('--mdph', action='store_true', dest='mdph', default=False,
             help='Export cases in HL7v3 dialect required by Massachusetts Department of Public Health'),
         make_option('--transmit', action='store_true', dest='transmit', default=False, 
@@ -1221,7 +1219,7 @@ class Command(BaseCommand):
         options = Values(options)
         if options.sample: # '--sample' implies '--no-sent-status'
             options.sent_status = False
-        if options.one_file and options.batch_size:
+        if options.one_file and CASE_REPORT_BATCH_SIZE:
             print >> sys.stderr, '--batch-size and --one-file cannot be used together'
             sys.exit(104)
         if options.stdout and options.transmit:
@@ -1293,19 +1291,19 @@ class Command(BaseCommand):
         #
         # Split cases into batches
         #
-        options.batch_size = CASE_REPORT_BATCH_SIZE
-        if options.one_file or not options.batch_size:
-            options.batch_size = case_count
+        batch_size = CASE_REPORT_BATCH_SIZE
+        if options.one_file or not batch_size:
+            batch_size = case_count
         batch_serial = 0
         self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d.%H.%M.%s')
-        for index in range(0, case_count, options.batch_size):
+        for index in range(0, case_count, batch_size):
             filename_values = { 
                 # Used to populate file name template -- serial is updated below
                 'serial_number': batch_serial,
                 'timestamp': self.timestamp,
                 }
             if cases:
-                batch_cases = cases[index:index+options.batch_size]
+                batch_cases = cases[index:index+batch_size]
             #
             # Generate report message
             #
@@ -1347,8 +1345,8 @@ class Command(BaseCommand):
                                 if (case.status == 'RQ'):
                                     case.status = 'RS'
                                 else:
-                                    #TODO set it to S1 and check if >=15 days and if so resend and set to SF 
                                     case.status = 'S'
+                                case.reportables = case.create_reportables_list()
                                 case.sent_timestamp = datetime.datetime.now()
                                 case.save()
                             log.debug("Set status to 'S' or 'RS' for this batch of cases")
@@ -1406,7 +1404,7 @@ class Command(BaseCommand):
                 log.critical('    %s' % e)
         case_report = batch.renderBatch()
         return case_report
-    
+      
     def transmit(self, options, report_file):
         '''
         Transmit a batch of cases to its recipient (e.g. dept of public health)
