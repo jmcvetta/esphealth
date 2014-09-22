@@ -45,6 +45,7 @@ class DiseaseDefinition(object):
     __metaclass__ = abc.ABCMeta
     
     criteria = ''
+    recurrence_interval = None
     #
     # Abstract class interface
     #
@@ -95,7 +96,7 @@ class DiseaseDefinition(object):
             names for tests potentially relevant to this disease.
         @rtype: [String, String, ...]
         '''
-    
+        
     @abc.abstractmethod
     def generate(self):
         '''
