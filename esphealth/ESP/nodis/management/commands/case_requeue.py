@@ -49,6 +49,7 @@ from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
 from ESP.settings import  REQUEUE_LAG_DAYS
+from ESP.settings import  REQUEUE_REF_DATE
 
 #===============================================================================
 #
@@ -83,9 +84,7 @@ class Command(BaseCommand):
         make_option('--case', action='store', dest='case_id', type='int', metavar='ID', 
             help='Check a single case with specified case ID'),
         make_option('--status', action='store', dest='status', default='S',
-            help='Check only cases with this status ("S" by default)'),
-         make_option('--ref_date', action='store', dest='ref_date', 
-            help='Check only cases based on this reference date'),   
+            help='Check only cases with this status ("S" by default)'),  
         
         )
     
@@ -167,10 +166,11 @@ class Command(BaseCommand):
                 #
                 #case.date + window of time is in the future  
                 # 
-                if not options.ref_date:
+                if not REQUEUE_REF_DATE or REQUEUE_REF_DATE =='TODAY':
                     ref_date = datetime.date.today()
                 else:
-                    ref_date = date_from_str(options.ref_date)
+                    ref_date = date_from_str(REQUEUE_REF_DATE)
+               
                 if ref_date <= case.date + datetime.timedelta(days=REQUEUE_LAG_DAYS + max_reportable_days):
                     # check reportables
                     reportables = case.create_reportables_list()
