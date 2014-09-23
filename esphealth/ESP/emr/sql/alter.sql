@@ -279,7 +279,7 @@ CREATE TABLE emr_labinfo
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE emr_labinfo OWNER TO esp;
+
 
 -- Index: emr_labinfo_provenance_id
 
@@ -363,7 +363,7 @@ CREATE TABLE emr_specimen
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE emr_specimen OWNER TO esp;
+
 
 -- Index: emr_specimen_laborder_id
 
