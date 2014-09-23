@@ -13,5 +13,5 @@
 #-------------------------------------------------------------------------------
 
 # Electronic lab reporting 
-#-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
-elr-positive-test
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
+#elr-positive-test

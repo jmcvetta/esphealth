@@ -12,8 +12,8 @@
 #
 #-------------------------------------------------------------------------------
 
-psycopg2 == 2.4.1  # Database Adapter (newer versions have bug with Django test runner -JM 1 Feb 2012)
-django >= 1.3      # Web application framework with ORM
+psycopg2 >= 2.4.1  # Database Adapter (newer versions have bug with Django test runner -JM 1 Feb 2012)
+django == 1.4.15      # Web application framework with ORM
 south              # Database migration framework
 python-dateutil    # Date-math utilities
 simplejson         # JSON data formatting
