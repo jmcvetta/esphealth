@@ -384,6 +384,7 @@ esphealth/doc/disease-protocols/Combined_Hepatitis_B.doc -text
 esphealth/doc/disease-protocols/Gonorrhea.doc -text
 esphealth/doc/disease-protocols/Hepatitis_A.doc -text
 esphealth/doc/planning/Changing[!!-~]Disease[!!-~]States.xmind -text svneol=unset#unset
+esphealth/doc/specifications/ESP_Filespec.xlsx -text
 esphealth/doc/specifications/EpicCare_ETL_file_spec.doc -text
 esphealth/doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
 esphealth/doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
