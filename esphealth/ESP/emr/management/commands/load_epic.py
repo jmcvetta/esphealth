@@ -54,7 +54,7 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
 from ESP.emr.models import Patient_Guardian, Patient_Addr, Patient_ExtraData, Order_idInfo, Provider_idInfo, Provider_phones, Labresult_Details
-from ESP.emr.models import Specimen, SpecObs
+from ESP.emr.models import Specimen, SpecObs, Order_Extension
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
 from ESP.conf.models import VaccineCodeMap
@@ -1539,6 +1539,44 @@ class LabOrderLoader(BaseLoader):
         except:
             raise
 
+class OrderExtLoader(BaseLoader):
+    fields = [
+        'patient_id',
+        'order_id',
+        'provider_id',
+        'date',
+        'question',
+        'answer',
+              ]
+    
+    model = Order_Extension
+    
+    def load_row(self, row):
+        natural_key = self.generateNaturalkey('')
+                
+        values = {
+            'provenance' : self.provenance,
+            'natural_key' : natural_key,
+            'patient' : self.get_patient(row['patient_id']),
+            'provider' : self.get_provider(row['provider_id']),
+            'order': self.get_laborder(row['order_id']),
+            'order_natural_key': string_or_none(row['order_id']),
+            'date': self.date_or_none(row['date']),
+            'question': string_or_none(row['question']),
+            'answer': string_or_none(row['answer']),    
+                  }
+        
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Order_Extension, values, ['order_natural_key','question','answer'])
+            log.debug('Saved order extension object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+        
+
 
 class OrderIdInfoLoader(BaseLoader):
     fields = [
@@ -2242,6 +2280,7 @@ class Command(LoaderCommand):
             ('epicgrd', PatientGuardianLoader),
             ('epicmud', PatientExtraLoader),
             ('epicord', LabOrderLoader),
+            ('epicoex', OrderExtLoader),
             ('epicoid', OrderIdInfoLoader),
             ('epicspc', SpecimenLoader),
             ('epicsob', SpecObsLoader),
