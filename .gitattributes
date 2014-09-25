@@ -490,6 +490,8 @@ esphealth/setup.bat -text
 esphealth/setup.sh -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
+esphealth/share/daily_batch.sh -text
+esphealth/share/db_backup.sh -text
 esphealth/share/django.wsgi.sample -text
 esphealth/share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 esphealth/share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
