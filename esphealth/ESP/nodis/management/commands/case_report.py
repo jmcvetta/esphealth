@@ -269,7 +269,8 @@ class hl7Batch:
         ##Clinical information
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
-        rep_encounters, rep_dx_codes = case.reportable_encounters
+        rep_dx_codes = case.reportable_dx_codes
+        rep_encounters = case.reportable_encounters[0]
         #adds repotable dx codes obr 
         self.addCaseOBR(condition=case.condition, dx_code=rep_dx_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:

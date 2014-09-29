@@ -213,12 +213,12 @@ class Case(models.Model):
             return dx_code_objs.distinct()
         else:
             return Dx_code.objects.none()
-    reportable_dx_codes = property(__get_reportable_dx_codes)
+    reportable_dx_codes_list = property(__get_reportable_dx_codes)
 
     #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
     def __get_reportable_encounters(self):
         q_obj = Q(patient=self.patient)
-        rep_dx_codes = self.reportable_dx_codes
+        rep_dx_codes = self.reportable_dx_codes_list
         if rep_dx_codes:
             q_obj &= Q(dx_codes__in=rep_dx_codes)
         conf = self.condition_config
@@ -231,6 +231,10 @@ class Case(models.Model):
         #log_query('Encounters for %s' % self, encs)
         return encs, rep_dx_codes
     reportable_encounters = property(__get_reportable_encounters)
+    
+    @property
+    def reportable_dx_codes(self):
+        return Dx_code.objects.filter(encounter__in=self.reportable_encounters[0])
 
     def __get_reportable_prescriptions(self):
         conf = self.condition_config
