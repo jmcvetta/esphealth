@@ -70,8 +70,8 @@ class DrugSynonym (models.Model):
        
         alldrugnames = drugnames
         for drug in drugnames:
-            alldrugsqs= DrugSynonym.objects.filter(generic_name__icontains = drug)
-            for otherdrug in alldrugsqs:
+            allotherdrugsqs= DrugSynonym.objects.filter(generic_name__icontains = drug)
+            for otherdrug in allotherdrugsqs:
                 if not otherdrug.comment == 'Self':
                     alldrugnames.append(otherdrug.other_name)
         return alldrugnames   
