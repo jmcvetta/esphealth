@@ -22,6 +22,7 @@ from ESP.hef.base import BaseLabResultHeuristic, LabResultPositiveHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.models import Timespan
 from ESP.conf.models import ConditionConfig
+from ESP.utils import date_from_str
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -41,6 +42,8 @@ from ESP.conf.models import LabTestMap, ResultString
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 from ESP.static.models import DrugSynonym
+
+from ESP.settings import  REQUEUE_REF_DATE
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,34 +155,66 @@ class Case(models.Model):
     def __get_prescriptions(self):
         return Prescription.objects.filter(events__in=self.all_events).order_by('date')
     prescriptions = property(__get_prescriptions)
-
-    def __get_reportable_labs(self):
+    
+    def __get_heuristics_labs(self):
         from ESP.nodis.base import DiseaseDefinition
-        #redmine 516 use abstract labs in reportables instead of native codes.
-        reportable_labnames = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_name', flat=True))
-        
         reportable_codes = set()
-        for labname in reportable_labnames:
-            reportable_codes |=set(LabTestMap.objects.filter(test_name =labname, reportable=True).values_list('native_code', flat=True))
-        
+        disease_definition = DiseaseDefinition.get_by_short_name(self.condition)
+         
         # get native codes from lab heuristics
-        for heuristic in DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
+        for heuristic in disease_definition.event_heuristics:
             if isinstance(heuristic, BaseLabResultHeuristic):
                 reportable_codes |=set(LabTestMap.objects.filter(test_name =heuristic.test_name, reportable=True).values_list('native_code', flat=True))
         q_obj = Q(patient=self.patient)
         q_obj &= Q(native_code__in=reportable_codes)
+        #if no recurrence interval but there is a days after or before in the condition config 
+        # use that
+        #if there is no recurrence interval or condition config use ref_date as end_date.
+        if disease_definition.recurrence_interval:
+            start = self.date - datetime.timedelta(days=disease_definition.recurrence_interval)
+            end = self.date + datetime.timedelta(days=disease_definition.recurrence_interval)       
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
+        else:
+            conf = self.condition_config
+            if conf:
+                start = self.date - datetime.timedelta(days=conf.lab_days_before)
+                end = self.date + datetime.timedelta(days=conf.lab_days_after)       
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+            else:
+                if not REQUEUE_REF_DATE or REQUEUE_REF_DATE =='TODAY':
+                    end = datetime.date.today()
+                else:
+                    end = date_from_str(REQUEUE_REF_DATE)
+                q_obj &= Q(date__lte=end)
+        
+        labs = LabResult.objects.filter(q_obj).distinct()
+        return labs
+    heuristics_labs = property(__get_heuristics_labs)
+
+    def __get_reportable_labs(self):
+        #redmine 516 use abstract labs in reportables instead of native codes.
         conf = self.condition_config
-        if conf:
+        if conf: 
+            reportable_labnames = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_name', flat=True))
+            reportable_codes = set()
+            for labname in reportable_labnames:
+                reportable_codes |=set(LabTestMap.objects.filter(test_name =labname, reportable=True).values_list('native_code', flat=True))
+        
+            q_obj = Q(patient=self.patient)
+            q_obj &= Q(native_code__in=reportable_codes)
+       
             start = self.date - datetime.timedelta(days=conf.lab_days_before)
             end = self.date + datetime.timedelta(days=conf.lab_days_after)       
             q_obj &= Q(date__gte=start)
             q_obj &= Q(date__lte=end)
-        labs = LabResult.objects.filter(q_obj).distinct()
+            labs = LabResult.objects.filter(q_obj).distinct()
         # log_query('Reportable labs for %s' % self, labs)
         # this will affect case reports and 
         if not labs and not self.lab_results:
             labs = LabResult.objects.none()
-            #TODO add code here if pid case and has no labs associated then add dummy lab too
+            #add code here if pid case and has no labs associated then add dummy lab too
             if self.condition.upper() == 'TUBERCULOSIS' or self.condition.upper() == 'PID':
                 # new feature redmine 482
                 # This code is used for case report hl7 and case detail view 
@@ -188,83 +223,132 @@ class Case(models.Model):
                 # we create a dummy one.
                 dummy_lab = LabResult.createDummyLab(self.patient, [self])
                 labs._result_cache.append(dummy_lab)
-        return labs
-    
+        if labs:
+            labs |= self.heuristics_labs
+        else:
+            labs = self.heuristics_labs   
+        return labs.distinct()
     reportable_labs = property(__get_reportable_labs)
 
-    def __get_reportable_dx_codes(self):
-        
-        from ESP.nodis.base import DiseaseDefinition
-        
-        conf = self.condition_config
-        if conf:
-            dx_code_objs = Dx_code.objects.filter(reportabledx_code__condition=conf)
-        else:
-            dx_code_objs = Dx_code.objects.none()
-        disease_def_event_heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
-        for heuristic in  disease_def_event_heuristics:
-            if isinstance(heuristic, DiagnosisHeuristic):
-                
-                for dx_code_query in heuristic.dx_code_queries:
-                    if not dx_code_objs:
-                        dx_code_objs = Dx_code.objects.filter( dx_code_query.dx_code_q_obj)
-                    else: dx_code_objs |= Dx_code.objects.filter(dx_code_query.dx_code_q_obj)
-        if  dx_code_objs:
-            return dx_code_objs.distinct()
-        else:
-            return Dx_code.objects.none()
-    reportable_dx_codes_list = property(__get_reportable_dx_codes)
-
-    #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
-    def __get_reportable_encounters(self):
-        q_obj = Q(patient=self.patient)
-        rep_dx_codes = self.reportable_dx_codes_list
-        if rep_dx_codes:
-            q_obj &= Q(dx_codes__in=rep_dx_codes)
-        conf = self.condition_config
-        if conf:
-            start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
-            end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
-            q_obj &= Q(date__gte=start)
-            q_obj &= Q(date__lte=end)
-        encs = Encounter.objects.filter(q_obj)
-        #log_query('Encounters for %s' % self, encs)
-        return encs, rep_dx_codes
-    reportable_encounters = property(__get_reportable_encounters)
-    
     @property
     def reportable_dx_codes(self):
         return Dx_code.objects.filter(encounter__in=self.reportable_encounters[0])
 
-    def __get_reportable_prescriptions(self):
+    #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
+    def __get_reportable_encounters(self):
+             
+        q_obj = Q(patient=self.patient)
         conf = self.condition_config
-        
-        from ESP.nodis.base import DiseaseDefinition
-        med_names = DiseaseDefinition.get_by_short_name(self.condition).medications
-        med_names |= set(ReportableMedication.objects.filter(condition=conf).values_list('drug_name', flat=True))
-        if not med_names:
-            return Prescription.objects.none()
-        med_names = list(med_names)
-        #redmine 515 
-        all_drugs = DrugSynonym.generics_plus_synonyms(med_names)
-        q_obj = Q(name__icontains=all_drugs[0])
-        for med in all_drugs:
-            q_obj |= Q(name__icontains=med)
-        q_obj &= Q(patient=self.patient)
+        rep_dx_codes = Dx_code.objects.none()
         if conf:
-            start = self.date - datetime.timedelta(days=conf.med_days_before)
-            end = self.date + datetime.timedelta(days=conf.med_days_after)
+            rep_dx_codes = Dx_code.objects.filter(reportabledx_code__condition=conf).distinct()
+            if rep_dx_codes:
+                q_obj &= Q(dx_codes__in=rep_dx_codes)
+            start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
+            end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
             q_obj &= Q(date__gte=start)
             q_obj &= Q(date__lte=end)
-        prescriptions = Prescription.objects.filter(q_obj).distinct()
+            encs = Encounter.objects.filter(q_obj)
+        #########################################################################
+        from ESP.nodis.base import DiseaseDefinition  
+        disease_definition = DiseaseDefinition.get_by_short_name(self.condition)
+        heuristic_dx_codes = Dx_code.objects.none()
+        for heuristic in  disease_definition.event_heuristics:
+            if isinstance(heuristic, DiagnosisHeuristic):
+                for dx_code_query in heuristic.dx_code_queries:
+                    if not heuristic_dx_codes:
+                        heuristic_dx_codes = Dx_code.objects.filter( dx_code_query.dx_code_q_obj)
+                    else: heuristic_dx_codes |= Dx_code.objects.filter(dx_code_query.dx_code_q_obj)     
+        q_obj = Q(patient=self.patient)
+        heuristic_dx_codes = heuristic_dx_codes.distinct()
+        q_obj &= Q(dx_codes__in=heuristic_dx_codes)
+            
+        if disease_definition.recurrence_interval:
+            start = self.date - datetime.timedelta(days=disease_definition.recurrence_interval)
+            end = self.date + datetime.timedelta(days=disease_definition.recurrence_interval)       
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
+        else:
+            if conf:
+                start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
+                end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+            else:
+                if not REQUEUE_REF_DATE or REQUEUE_REF_DATE =='TODAY':
+                    end = datetime.date.today()
+                else:
+                    end = date_from_str(REQUEUE_REF_DATE)
+                q_obj &= Q(date__lte=end)
+                         
+        if not encs:
+            encs = Encounter.objects.filter(q_obj)
+        else:
+            encs |=  Encounter.objects.filter(q_obj)
+        #log_query('Encounters for %s' % self, encs)
+        rep_codes = rep_dx_codes | heuristic_dx_codes
+        return encs.distinct(), rep_codes.distinct()
+    reportable_encounters = property(__get_reportable_encounters)
+
+    def __get_reportable_prescriptions(self):
+        conf = self.condition_config
+        prescriptions = Prescription.objects.none()
+        if conf:
+            med_names = set(ReportableMedication.objects.filter(condition=conf).values_list('drug_name', flat=True))
+            if med_names:
+                med_names = list(med_names)
+                #redmine 515 
+                all_drugs = DrugSynonym.generics_plus_synonyms(med_names)
+                q_obj = Q(name__icontains=all_drugs[0])
+                for med in all_drugs:
+                    q_obj |= Q(name__icontains=med)
+                q_obj &= Q(patient=self.patient)
+                start = self.date - datetime.timedelta(days=conf.med_days_before)
+                end = self.date + datetime.timedelta(days=conf.med_days_after)
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+                prescriptions = Prescription.objects.filter(q_obj).distinct()    
+        ######################################################
+        from ESP.nodis.base import DiseaseDefinition
+        disease_definition = DiseaseDefinition.get_by_short_name(self.condition)
+        med_names = disease_definition.medications
+        if not med_names:
+            return prescriptions
+        else:
+            med_names = list(med_names)
+            #redmine 515 
+            all_drugs = DrugSynonym.generics_plus_synonyms(med_names)
+            q_obj = Q(name__icontains=all_drugs[0])
+            for med in all_drugs:
+                q_obj |= Q(name__icontains=med)
+            q_obj &= Q(patient=self.patient)
+            if disease_definition.recurrence_interval:
+                start = self.date - datetime.timedelta(days=disease_definition.recurrence_interval)
+                end = self.date + datetime.timedelta(days=disease_definition.recurrence_interval)       
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+            else:
+                if conf:
+                    start = self.date - datetime.timedelta(days=conf.med_days_before)
+                    end = self.date + datetime.timedelta(days=conf.med_days_after)
+                    q_obj &= Q(date__gte=start)
+                    q_obj &= Q(date__lte=end)
+                else:
+                    if not REQUEUE_REF_DATE or REQUEUE_REF_DATE =='TODAY':
+                        end = datetime.date.today()
+                    else:
+                        end = date_from_str(REQUEUE_REF_DATE)
+                    q_obj &= Q(date__lte=end)  
+                
+            prescriptions |= Prescription.objects.filter(q_obj).distinct()
         #log_query('Reportable prescriptions for %s' % self, prescriptions)
-        return prescriptions
+        return prescriptions.distinct()
     reportable_prescriptions = property(__get_reportable_prescriptions)
     
     def create_reportables_list(self):
-        reportableDx = self.reportable_encounters
+        reportableDx = self.reportable_encounters[0]   
         if reportableDx:
-            reportableDx = reportableDx[0].order_by('natural_key').values_list('natural_key', flat=True)
+            reportableDx =  reportableDx.order_by('natural_key').values_list('natural_key', flat=True)
         reportableRx = self.reportable_prescriptions.order_by('natural_key').values_list('natural_key', flat=True)
         reportableLx = self.reportable_labs.order_by('natural_key').values_list('natural_key', flat=True)
         
