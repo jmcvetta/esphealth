@@ -29,7 +29,7 @@ from ESP.emr.models import Patient_ExtraData
 from ESP.emr.models import Patient_Guardian
 from ESP.emr.models import Provider_idInfo
 from ESP.emr.models import Provider_phones
-from ESP.emr.models import Order_idInfo
+from ESP.emr.models import Order_idInfo, Order_Extension
 from ESP.emr.models import LabInfo
 from ESP.emr.models import Specimen
 from ESP.emr.models import SpecObs
@@ -84,6 +84,12 @@ class LabOrderAdmin(admin.ModelAdmin):
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['procedure_name', 'procedure_code']
     ordering = ['-date']
+    
+class Order_ExtensionAdmin(admin.ModelAdmin):
+    ordering = ['order_natural_key']
+    list_display = ['order_natural_key', 'question']
+    search_fields = ['order_natural_key', 'question']
+    
 
 class Order_idInfoAdmin(admin.ModelAdmin):
     ordering = ['order_natural_key']
@@ -188,6 +194,7 @@ admin.site.register(Patient_Guardian, Patient_GuardianAdmin)
 admin.site.register(Provider_idInfo, Provider_idInfoAdmin)
 admin.site.register(Provider_phones, Provider_phonesAdmin)
 admin.site.register(Order_idInfo, Order_idInfoAdmin)
+admin.site.register(Order_Extension, Order_ExtensionAdmin)
 admin.site.register(LabInfo, LabInfoAdmin)
 admin.site.register(Specimen, SpecimenAdmin)
 admin.site.register(SpecObs, SpecObsAdmin)
