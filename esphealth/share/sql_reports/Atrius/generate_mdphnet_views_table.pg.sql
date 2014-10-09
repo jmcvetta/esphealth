@@ -1,4 +1,4 @@
-drop table if exists esp_temp_smoking;
+﻿drop table if exists esp_temp_smoking cascade;
 create table esp_temp_smoking as
    select case when t1.latest='Yes' then 'Current'
                when t2.yesOrQuit='Quit' then 'Former'
@@ -37,7 +37,7 @@ drop view if exists esp_demographic_v;
 CREATE OR REPLACE VIEW esp_demographic_v AS
 SELECT '1'::varchar(1) centerid,
        pat.natural_key patid,
-       pat.date_of_birth - ('1960-01-01'::date) birth_date,
+       (pat.date_of_birth::date - ('1960-01-01'::date))::integer birth_date,
        CASE
          WHEN UPPER(gender) = 'M' THEN 'M'::char(1)
          WHEN UPPER(gender) = 'F' THEN 'F'::char(1)
@@ -56,13 +56,35 @@ SELECT '1'::varchar(1) centerid,
          WHEN UPPER(race) = 'CAUCASIAN' THEN 5
          ELSE 0
        END race,
+       case 
+         when upper(race)='HISPANIC' then 6 
+         when UPPER(race) = 'CAUCASIAN' then 5
+         when UPPER(race) in ('ASIAN','INDIAN','NATIVE HAWAI') then 2
+         when UPPER(race) = 'BLACK'then 3
+         when UPPER(race) in ('NAT AMERICAN','ALASKAN') then 1
+         else 0
+       end as race_ethnicity,
        pat.zip5,
        smk.smoking
   FROM public.emr_patient pat,
        public.emr_provenance prvn,
        esp_temp_smoking smk
   WHERE pat.provenance_id=prvn.provenance_id and prvn.source ilike 'epicmem%'
-        and pat.natural_key=smk.patid;
+        and pat.natural_key=smk.patid 
+        and exists (select null from emr_encounter t0 where t0.patient_id=pat.id); --patient must have at least one encounter record;
+
+-- Instantiate table from previously created view
+drop table if exists esp_demographic cascade;
+create table esp_demographic as select * from esp_demographic_v;
+create unique index esp_demographic_patid_unique_idx on esp_demographic (patid);
+create index esp_demographic_centerid_idx on esp_demographic (centerid);
+create index esp_demographic_birth_date_idx on esp_demographic (birth_date);
+create index esp_demographic_sex_idx on esp_demographic (sex);
+create index esp_demographic_hispanic_idx on esp_demographic (hispanic);
+create index esp_demographic_race_idx on esp_demographic (race);
+create index esp_demog_race_eth_idx on esp_demographic (race_ethnicity);
+create index esp_demographic_zip5_idx on esp_demographic (zip5);
+alter table esp_demographic add primary key (patid);
 
 drop view if exists esp_encounter_v;
 CREATE OR REPLACE VIEW esp_encounter_v AS
@@ -76,15 +98,13 @@ SELECT '1'::varchar(1) centerid,
        'AV'::varchar(10) as enc_type, --this is initial value for Mass League data
        enc.site_natural_key facility_code,
        date_part('year', enc.date)::integer enc_year,
-       age_at_year_start(enc.date, pat.date_of_birth) age_at_enc_year,
-       age_group_5yr(enc.date, pat.date_of_birth)::varchar(5) age_group_5yr,
-       age_group_10yr(enc.date, pat.date_of_birth)::varchar(5) age_group_10yr,
-       age_group_ms(enc.date, pat.date_of_birth)::varchar(5) age_group_ms
+       age_at_year_start(enc.date, pat.date_of_birth::date) age_at_enc_year,
+       age_group_5yr(enc.date, pat.date_of_birth::date)::varchar(5) age_group_5yr,
+       age_group_10yr(enc.date, pat.date_of_birth::date)::varchar(5) age_group_10yr,
+       age_group_ms(enc.date, pat.date_of_birth::date)::varchar(5) age_group_ms
   FROM public.emr_encounter enc
-         INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
-         INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
-         LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
-  WHERE prvn.source ilike 'epicmem%';
+         INNER JOIN (select t0.* from public.emr_patient t0 join esp_demographic t1 on t1.patid=t0.natural_key) pat ON enc.patient_id = pat.id
+         LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id;
 
 drop view if exists esp_diagnosis_v;
 CREATE OR REPLACE VIEW esp_diagnosis_v AS
@@ -111,18 +131,16 @@ SELECT '1'::varchar(1) centerid,
        enc.site_name facility_location,
        enc.site_natural_key facility_code,
        date_part('year', enc.date)::integer enc_year,
-       age_at_year_start(enc.date, pat.date_of_birth) age_at_enc_year,
-       age_group_5yr(enc.date, pat.date_of_birth)::varchar(5) age_group_5yr,
-       age_group_10yr(enc.date, pat.date_of_birth)::varchar(5) age_group_10yr,
-       age_group_ms(enc.date, pat.date_of_birth)::varchar(5) age_group_ms
+       age_at_year_start(enc.date, pat.date_of_birth::date) age_at_enc_year,
+       age_group_5yr(enc.date, pat.date_of_birth::date)::varchar(5) age_group_5yr,
+       age_group_10yr(enc.date, pat.date_of_birth::date)::varchar(5) age_group_10yr,
+       age_group_ms(enc.date, pat.date_of_birth::date)::varchar(5) age_group_ms
   FROM public.emr_encounter enc
-         INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
-         INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
+         INNER JOIN (select t0.* from public.emr_patient t0 join esp_demographic t1 on t1.patid=t0.natural_key) pat ON enc.patient_id = pat.id
          INNER JOIN (select * from public.emr_encounter_dx_codes 
                      where strpos(trim(dx_code_id),'.')<>3
                        and length(trim(dx_code_id))>=3 ) diag ON enc.id = diag.encounter_id
-         LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
-  WHERE prvn.source ilike 'epicmem%';
+         LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id;
 
 drop view if exists esp_disease_v;
 CREATE OR REPLACE VIEW esp_disease_v AS
@@ -130,31 +148,17 @@ SELECT '1'::varchar(1) centerid,
        pat.natural_key patid,
        disease.condition,
        disease.date - ('1960-01-01'::date) date,
-       age_at_year_start(disease.date, pat.date_of_birth) age_at_detect_year,
-       age_group_5yr(disease.date, pat.date_of_birth)::varchar(5) age_group_5yr,
-       age_group_10yr(disease.date, pat.date_of_birth)::varchar(5) age_group_10yr,
-       age_group_ms(disease.date, pat.date_of_birth)::varchar(5) age_group_ms,
+       age_at_year_start(disease.date, pat.date_of_birth::date) age_at_detect_year,
+       age_group_5yr(disease.date, pat.date_of_birth::date)::varchar(5) age_group_5yr,
+       age_group_10yr(disease.date, pat.date_of_birth::date)::varchar(5) age_group_10yr,
+       age_group_ms(disease.date, pat.date_of_birth::date)::varchar(5) age_group_ms,
        disease.criteria,
        disease.status,
        disease.notes
   FROM public.nodis_case disease
-         INNER JOIN public.emr_patient pat ON disease.patient_id = pat.id
-         INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
-  WHERE prvn.source ilike 'epicmem%';
+         INNER JOIN (select t0.* from public.emr_patient t0 join esp_demographic t1 on t1.patid=t0.natural_key) pat ON disease.patient_id = pat.id;
 
-
--- Instantiate tables from previously created views
-drop table if exists esp_demographic cascade;
-create table esp_demographic as select * from esp_demographic_v;
-create unique index esp_demographic_patid_unique_idx on esp_demographic (patid);
-create index esp_demographic_centerid_idx on esp_demographic (centerid);
-create index esp_demographic_birth_date_idx on esp_demographic (birth_date);
-create index esp_demographic_sex_idx on esp_demographic (sex);
-create index esp_demographic_hispanic_idx on esp_demographic (hispanic);
-create index esp_demographic_race_idx on esp_demographic (race);
-create index esp_demographic_zip5_idx on esp_demographic (zip5);
-alter table esp_demographic add primary key (patid);
-
+-- Instantiate table from previously created view
 drop table if exists esp_encounter cascade;
 create table esp_encounter as select * from esp_encounter_v;
 create index esp_encounter_centerid_idx on esp_encounter (centerid);
@@ -219,6 +223,13 @@ drop view if exists esp_diagnosis_v;
 drop view if exists esp_encounter_v;
 drop view if exists esp_demographic_v;
 
+--now vacuum analyze each table
+vacuum analyze esp_demographic;
+vacuum analyze esp_encounter;
+vacuum analyse esp_diagnosis;
+vacuum analyse esp_disease;
+
+/*
 -- Create the summary table for 3-digit ICD9 codes and populate it with information for the 5 year age groups
 DROP TABLE if exists esp_diagnosis_icd9_3dig cascade;
 CREATE TABLE esp_diagnosis_icd9_3dig AS
@@ -394,7 +405,7 @@ create index diag5dig_sex_idx on esp_diagnosis_icd9_5dig (sex);
 create index diag5dig_period_idx on esp_diagnosis_icd9_5dig (period);
 create index diag5dig_code_idx on esp_diagnosis_icd9_5dig (code_);
 create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
-
+*/
 
 -- UVT_TABLES
 --    UVT_SEX
@@ -427,6 +438,22 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              END item_text
         FROM esp_demographic pat;
         ALTER TABLE UVT_RACE ADD PRIMARY KEY (item_code);
+
+--    UVT_RACE_ETHNICITY
+      drop table if exists UVT_RACE_ETHNICITY;
+      create table uvt_race_ethnicity as
+      select distinct 
+             pat.race_ethnicity item_code,
+             case
+               when pat.race_ethnicity=5 then 'White'::varchar(50)
+               when pat.race_ethnicity=3 then 'Black'::varchar(50)
+               when pat.race_ethnicity=2 then 'Asian'::varchar(50)
+               when pat.race_ethnicity=6 then 'Hispanic'::varchar(50)
+               when pat.race_ethnicity=1 then 'Native American'::varchar(50)
+               when pat.race_ethnicity=0 then 'Unknown'::varchar(50)
+             end item_text
+     from esp_mdphnet.esp_demographic pat;
+     alter table esp_mdphnet.uvt_race_ethnicity add primary key (item_code);
         
 --    UVT_ZIP5
       DROP TABLE if exists uvt_zip5;

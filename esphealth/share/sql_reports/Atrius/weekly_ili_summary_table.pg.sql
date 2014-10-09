@@ -21,7 +21,7 @@ SELECT distinct respcodes.id from
                          public.emr_encounter_dx_codes iliFcodes
                      where iliFcodes.encounter_id=ilivis.id
                           and ilivis.temperature is null
-                          and iliFcodes.dx_id in ('icd9:780.6','icd9:780.31'))
+                          and iliFcodes.dx_code_id in ('icd9:780.6','icd9:780.31'))
                      fevcodes on respcodes.id=fevcodes.id
                  where fevvis.id is not null or fevcodes.id is not null;
 alter table ili_visits add primary key (id);

@@ -33,10 +33,11 @@ join
 	FROM emr_encounter
 	GROUP BY patient_id) lastenc
 on pat.id=lastenc.patient_id 
+join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
 --
 -- WHERE criteria 
 --
-WHERE pat.date_of_death IS NULL;
+WHERE  prvn.source ilike 'epicmem%' and pat.date_of_death IS NULL;
 --
 -- Max blood pressure between two and three years
 --  using most recent max mean aterial pressure for the period

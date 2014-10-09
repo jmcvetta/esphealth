@@ -23,7 +23,7 @@ vacuum analyze mdphnet_updated_patients;
 CREATE table esp_demographic_u AS
 SELECT '1'::varchar(1) centerid,
        pat.natural_key patid,
-       pat.date_of_birth - ('1960-01-01'::date) birth_date,
+       (pat.date_of_birth::date - ('1960-01-01'::date))::integer birth_date,
        CASE
          WHEN UPPER(gender) = 'M' THEN 'M'::char(1)
          WHEN UPPER(gender) = 'F' THEN 'F'::char(1)
@@ -42,9 +42,21 @@ SELECT '1'::varchar(1) centerid,
          WHEN UPPER(race) = 'CAUCASIAN' THEN 5
          ELSE 0
        END race,
+       case 
+         when upper(race)='HISPANIC' then 6 
+         when UPPER(race) = 'CAUCASIAN' then 5
+         when UPPER(race) in ('ASIAN','INDIAN','NATIVE HAWAI') then 2
+         when UPPER(race) = 'BLACK'then 3
+         when UPPER(race) in ('NAT AMERICAN','ALASKAN') then 1
+         else 0
+       end as race_ethnicity,
        zip5
   FROM public.emr_patient pat
-  inner join mdphnet_updated_patients updtpats on updtpats.patid=pat.natural_key;
+  inner join mdphnet_updated_patients updtpats on updtpats.patid=pat.natural_key
+  inner join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
+  where prvn.source ilike 'epicmem%'
+    and exists (select null from emr_encounter t0 where t0.patient_id=pat.id); --patient must have at least one encounter record
+  
 
 --create the table of encounter ids that have been updated
 create table mdphnet_updated_encounters as select t0.natural_key as encounterid from emr_encounter t0,
@@ -76,7 +88,9 @@ SELECT '1'::varchar(1) centerid,
   FROM public.emr_encounter enc
          INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
          LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
-         inner join mdphnet_updated_encounters updts on updts.encounterid=enc.natural_key;
+         inner join mdphnet_updated_encounters updts on updts.encounterid=enc.natural_key
+         inner join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
+         where prvn.source ilike 'epicmem%';
 
 --diagnoses are based on encounter ICD9 data, so same subset
 CREATE table esp_diagnosis_u AS
@@ -113,7 +127,9 @@ SELECT '1'::varchar(1) centerid,
                      where strpos(trim(dx_code_id),'.')<>3
                        and length(trim(dx_code_id))>=3 ) diag ON enc.id = diag.encounter_id
          LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
-         inner join mdphnet_updated_encounters updtencs on updtencs.encounterid=enc.natural_key;
+         inner join mdphnet_updated_encounters updtencs on updtencs.encounterid=enc.natural_key
+         inner join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
+         where prvn.source ilike 'epicmem%';
 
 --create the table of disease pkey vars (patid, condition, date) that have been updated
 create table mdphnet_updated_diseases as select t2.natural_key as patid, t0.condition, t0.date
@@ -141,7 +157,8 @@ SELECT '1'::varchar(1) centerid,
          INNER JOIN public.emr_patient pat ON disease.patient_id = pat.id
 	 inner join mdphnet_updated_diseases updt on 
                  updt.condition=disease.condition and updt.date=disease.date
-  where updt.patid=pat.natural_key;
+         inner join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
+         where updt.patid=pat.natural_key and prvn.source ilike 'epicmem%';
 
 --Now that update sets are pulled,
 --add timestamp to current history, as the point where then next update should start from
@@ -178,6 +195,21 @@ insert into mdphnet_schema_update_history
              END item_text
         FROM esp_demographic_u pat
         where not exists (select null from uvt_race t0 where t0.item_code=pat.race);
+
+--   UVT_RACE_ETHNICITY
+     select distinct 
+         pat.race_ethnicity item_code,
+               case
+                    when pat.race_ethnicity=5 then 'White'::varchar(50)
+                    when pat.race_ethnicity=3 then 'Black'::varchar(50)
+                    when pat.race_ethnicity=2 then 'Asian'::varchar(50)
+                    when pat.race_ethnicity=6 then 'Hispanic'::varchar(50)
+                    when pat.race_ethnicity=1 then 'Native American'::varchar(50)
+                    when pat.race_ethnicity=0 then 'Unknown'::varchar(50)
+                end item_text
+     from esp_demographic_U pat
+     where not exists (select null from uvt_race_ethnicity t0 where t0.item_code=pat.race_ethnicity) ;
+alter table esp_mdphnet.uvt_race_ethnicity add primary key (item_code);
 
 --    UVT_CENTER
       insert into UVT_CENTER 
@@ -366,6 +398,7 @@ update esp_demographic t0
       sex=t1.sex,
       hispanic=t1.hispanic,
       race=t1.race,
+      race_ethnicity=t1.race_ethnicity,
       zip5=t1.zip5
   from (select *
         from esp_demographic_u) t1
