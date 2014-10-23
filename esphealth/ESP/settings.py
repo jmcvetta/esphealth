@@ -213,6 +213,7 @@ FILTER_CENTERS = config['Reporting']['filter_centers']
 SHOW_SURVEYS = config['Reporting']['show_surveys']
 REQUEUE_LAG_DAYS = config['Reporting']['lag_days']
 REQUEUE_REF_DATE = config['Reporting']['requeue_ref_date']
+EPT = config['Reporting']['ept']
 #
 # Mapping table to express lab specimen source in SNOMED codes, derived
 # from MDPH ELR Portal specimen source vocabulary page.
