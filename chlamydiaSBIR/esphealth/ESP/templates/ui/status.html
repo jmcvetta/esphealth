@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<p>Date:  {{ today_string }}
+<br>Site:  {{ site_name }}
+<br>
+<br>
+{{ comment }}
+
+<h2>
+    <hr>
+    Nodis
+    <hr>
+</h2>
+
+
+<div id="all_case_summary" style="float:right;">
+    <h3>
+        All Cases:
+    </h3>
+    {% if all_case_summary.count %}
+    <table id="new_case_summary_table">
+        <tr>
+            <th>Condition
+            <th>Count
+        {% for item in all_case_summary %}
+        <tr>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>
+        <em>No cases</em>
+    </p>
+    {% endif %}
+</div>
+
+<div id="new_case_summary" style="float: left;">
+    <h3>
+        New Cases Today: 
+    </h3>
+    {% if new_case_summary.count %}
+    <table id="new_case_summary_table">
+        <tr>
+            <th>Condition
+            <th>Count
+        {% for item in new_case_summary %}
+        <tr>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>
+        <em>No new cases today</em>
+    </p>
+    {% endif %}
+</div>
+
+<p style="clear: left;">&nbsp;</p>
+
+<div id="report_summary" style="float: left; clear: left;">
+
+    <h3>
+        Case Reports:
+    </h3>
+
+    <p>
+        <em>Case reports transmitted in past day</em>
+    </p>
+
+    {% if reports %}
+        <table id="case_reports">
+            <tr>
+                <th>Case ID
+                <th>Condition
+                <th>Case Date
+                <th>Patient DB ID
+                <th>Report Timestamp
+                <th>Report Sent?
+                <th>Report Filename
+            {% for rep in reports %}
+                {% for c in rep.cases.all %}
+                <tr>
+                    <td><a href="{% url nodis_case_detail c.pk %}">{{ c.pk }}</a>
+                    <td>{{ c.condition }}
+                    <td>{{ c.date }}
+                    <td>{{ c.patient.pk }}
+                    <td>{{ rep.timestamp }}
+                    <td>{{ rep.sent }}
+                    <td>{{ rep.filename }}
+                {% endfor %}
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>
+            <em>No cases reported in past day</em>
+        </p>
+    {% endif %}
+</div>
+
+
+
+<div style="clear: both;" />
+
+<p>&nbsp;</p>
+
+<h2 style="clear: both;">
+    <hr>
+    Data Provenance
+    <hr>
+</h2>
+
+<div id="provenance_summary" style="clear: both;">
+
+    <p>
+        <em>Data load summary for past day</em>
+    </p>
+
+    <table id="provenance_summary_table">
+        <tr>
+            <th>Status
+            <th>Number of Files
+        {% for i in data_status %}
+        <tr>
+            <td>{{ i.status }}
+            <td>{{ i.count }}
+        {% endfor %}
+    </table>
+
+</div>
+
+
+<div id="provenance_detail" style="clear: both;">
+    
+    <p>
+        <em>Data sources loaded in past day</em>
+    </p>
+    <table id="provenance_detail_table">
+        <tr>
+            <th>Source
+            <th>Timestamp
+            <th>Status
+	    <th>Valid Record Count
+            <th>Error Count
+        </tr>
+        {% for prov in provenances %}
+        <tr>
+            <td>{{ prov.source }}
+            <td>{{ prov.timestamp }}
+            <td>{{ prov.status }}
+	    <td>{{ prov.valid_rec_count }}
+	    <td>{{ prov.error_count }}
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+{% comment %}
+
+<div id="unmapped_lab_summary">
+    <h2>
+        <hr>
+        Unmapped Lab Tests
+        </hr>
+    </h2>
+    <table>
+        <tr>
+            <th>Native Name</th>
+            <th>Native Code</th>
+            <th>Lab Record Count</th>
+        </tr>
+        {% for item in unmapped_labs %}
+        <tr>
+            <td>{{ item.native_name }}</td>
+            <td>{{ item.native_code }}</td>
+            <td>{{ item.count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endcomment %}
+
+{% endblock %}

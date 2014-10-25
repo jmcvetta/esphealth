@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
+
+<head>
+    <title>
+        {% if title %}{{ title }} -{% endif %} Electronic medical record Support for Public Health (ESPnet)
+    </title>
+
+    <link href="{{ site_css_folder }}base.css" rel="stylesheet" type="text/css" />
+
+    <link rel="stylesheet" href="{{ site_css_folder }}jquery-ui.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="{{ site_css_folder }}ui.theme.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="{{ site_javascript_folder }}/jdMenu-1.4.1/jquery.jdMenu.css" type="text/css" media="all" />
+    <script src="{{ site_javascript_folder }}jquery-1.4.2.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}jquery-ui-1.8.4.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}/jdMenu-1.4.1/jquery.bgiframe.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}/jdMenu-1.4.1/jquery.dimensions.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}/jdMenu-1.4.1/jquery.jdMenu.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}/jdMenu-1.4.1/jquery.positionBy.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}flexigrid/flexigrid.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('ul.jd_menu').jdMenu();
+        });
+    </script>
+
+    {% block extrastyle %}{% endblock %}
+    {% block extrascript %}{% endblock %}
+
+
+</head>
+
+<body>
+
+    <div id="header">
+	<span id="version_site_user"> 
+		<br>
+		Version: {{ version }}
+    		{% if user.is_authenticated %}
+		<br>
+		Site: {{ site_name }}
+		<br>
+		User: {{ user }}
+		{% endif %}
+	</span>
+        <h1>
+	<img src="{{ site_image_folder }}/caduceus.gif" alt="caduceus" border=0 />
+	
+		<span id="main_title">ESP &mdash; Electronic medical record Support for Public Health (ESPnet)</span>
+        </h1>
+    </div>
+
+
+    {% if user.is_authenticated %}
+    <div id="navigation">
+        <ul class='jd_menu'>
+            <li><a href="{% url status %}">Status</a></li>
+             {% if show_surveys %}
+            <li>Surveys &raquo;
+            	<ul>
+            		<li><a href="{% url survey_import %}">Import Responses</a></li>
+            		<li>Survey Results &raquo;
+            		<ul>
+            		    <li><a href="{% url view_survey_report %}">View Last BRFSS Demo</a></li>
+            			<li><a href="{% url generate_survey_report %}">Generate BRFSS Demo</a></li>
+            		</ul>
+            		</li>
+             	</ul>
+             	</li>
+               {% endif %}	
+            <li>Nodis &raquo;
+                <ul>
+                    <li><a href="{% url nodis_cases_all %}">Cases - All</a></li>
+                    <li><a href="{% url nodis_cases_awaiting_review %}">Cases - Awaiting Review</a></li>
+                    <li><a href="{% url nodis_cases_under_review %}">Cases - Under Review</a></li>
+                    <li><a href="{% url nodis_cases_queued %}">Cases - Queued</a></li>
+                    <li><a href="{% url nodis_cases_sent %}">Cases - Sent</a></li>
+                </ul>
+            </li>
+            <li><a href="{% url vaers.views.index %}">Vaers &raquo;</a>
+	      <ul>
+            <li><a href="{% url vaers.vaccine.views.index %}">Vaccine Mapping</a></li>
+			<li><a href="{% url vaers.vaccine.views.manufacturers %}">Manufacturers Mapping</a></li>
+			<li><a href="{% url vaers.views.report %}">Satscan Clustering Report</a></li>
+			<li><a href="{% url vaers.views.download_vae_listing %}">Download VAERS Line Listing</a></li>
+			 </ul>
+	    </li>
+            <li>Administration &raquo;
+                <ul>
+		    {% if user.is_staff %}
+                    <li><a href="{% url admin:index %}">Site Administration</a></li>
+		    {% endif %}
+                    <li><a href="{% url heuristic_mapping_report %}">Lab Mapping Summary</a></li>
+                    <li><a href="{% url unmapped_labs_report %}">Unmapped Lab Tests Report</a></li>
+                    <li><a href="{% url validator_summary %}">Case Validator</a></li>
+                    <li><a href="{% url labtest_lookup %}">Lab Test Lookup</a></li>
+                </ul>
+            </li>
+            <li><a href="{% url about %}">About</a></li>
+            {% if user.is_authenticated %}
+            <li><a href="{% url logout %}">Logout</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% else %}
+    <hr>
+    {% endif %}
+
+    <div id="content">
+        <h1 id="title">{{ title }}</h1>
+
+	{% if messages %}
+	<div id="messages">
+	    <ul id="message_list">
+	    {% for message in messages %}
+		<li>{{ message }}</li>
+	    {% endfor %}
+	    </ul>
+	</div>
+	{% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</body>
+
+</html>

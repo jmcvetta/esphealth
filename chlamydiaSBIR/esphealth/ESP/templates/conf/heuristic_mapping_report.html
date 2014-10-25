@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+    </script>
+{% endblock %}
+
+
+{% block content %}
+
+<p align="center">{{ date }} &mdash; {{ site_name }}</p>
+
+<h2>Unmapped</h2>
+
+<table>
+    <tr> <td>
+        {% for heuristic in unmapped %}
+          {{ heuristic }} <BR>
+	        {% if forloop.counter|divisibleby:"10" %} 
+	        </td>
+	          {% if not forloop.last %}
+	            <td>
+	            {% endif %}
+	        {% endif %}
+        {% endfor %}
+    </tr> 
+    </table>
+
+
+<h2>Mapped</h2>
+
+<table>
+    <tr>
+        <th>Abstract Lab Name
+        <th>Native Codes
+    {% for item in mapped %}
+    <tr>
+        <td valign="top">{{ item.0 }}
+        <td valign="top">{{ item.1|join:"<br>" }}
+    {% endfor %}
+</table>
+
+
+{% endblock %}

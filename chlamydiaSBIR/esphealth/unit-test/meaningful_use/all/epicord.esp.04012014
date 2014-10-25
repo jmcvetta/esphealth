@@ -1,0 +1,33 @@
+001.01^18547545^111_TEST000123A^5671-3^^^^1^MNGFL_PRV_001^Lead [Mass/volume] in Blood^^F^^^^V1586^^Lead exposure^20120615^20120615^^
+001.02^18568545^112_TEST0001365^1742-6^^^^1^MNGFL_PRV_002^Alanine aminotransferase [Enzymatic actiity/Volume] in Serum or Plasma^^F^^^^5733^^Hepatitis B infection^20120806^20120806^^
+001.03^18789547^113_3456723^24467-3^^^^1^MNGFL_PRV_003^CD3+CD4+ (T4 helper) cells [#/volume] in Blood^^F^^^^042^^Confirmed HIV infection^20120801^20120801^^
+002.01^12346^211_PN-F20120325-1^5609-3^^^^1^MNGFL_PRV_004^Cadmium [Mass/volume] in Blood^^F^^^^^^^20120325^^Order Comment^
+002.02^12346^212_PN-F20120325-1^5609-3^^^^1^MNGFL_PRV_005^Cadmium [Mass/volume] in Blood^^F^^^^^^^20120729^^Order Comment^
+002.03^12346^213_PN-F20120325-1^5671-3^^^^1^MNGFL_PRV_006^Lead [Mass/volume] in Blood^^F^^^^^^^20120511^^Order Comment^
+003.01^PATID1234^311_ORD723222-4^625-4^^^^1^MNGFL_PRV_007^Bacteria identified in Stool by Culture^^P^^^^^^^20110528123500-0500^^^
+003.02^PATID123487^312_ORD723225^6463-4^^^^1^MNGFL_PRV_008^Bacteria identified in Unspecified specimen by Culture^^P^^^^^^^201207081200^201207081300^^
+003.03^2012BJ123498^313_ORD72387593^6463-4^^^^1^MNGFL_PRV_009^Bacteria identified in Unspecified specimen by Culture^^P^^^^^^^20120818^^^
+004.01^PATID1234^411_ORD723222-4-1^625-4_1^^^^1^MNGFL_PRV_010^Bacteria identified in Stool by Culture^^F^^^^^^^20110528^^^
+004.01^PATID1234^411_ORD723222-4-2^50545-3^^^^2^MNGFL_PRV_010^Bacterial susceptibility panel in Isolate by Minimum inhibitory concentration (MIC)^411_ORD723222-4_OBS_1_RES_1^F^^^^^^^20110528^^^411_ORD723222-4_OBS_1_RES_1
+004.02^PATID1234^412_VM8907334-1^40699-1^^^^1^MNGFL_PRV_011^Mycobacterium sp identified in Unspecified specimen^^F^^^^^^^20120315^^^
+004.02^PATID1234^412_VM8907334-2^29579-0^^^^2^MNGFL_PRV_011^Mycobacterial susceptibility panel in Isolate^412_VM8907334_OBS_1_RES_1^F^^^^^^^20120315^^^412_VM8907334_OBS_1_RES_1
+004.03^P12345887^413_ORD2113586-3-1^6463-4^^^^1^MNGFL_PRV_012^Bacteria identified in Unspecified specimen by Culture^^F^^^^^^^20120612^^^
+004.03^P12345887^413_ORD2113586-3-2^50545-3^^^^2^MNGFL_PRV_012^Bacterial Susceptibility Panel in Isolate by Minimum Inhibitory Concentration (MIC)^413_ORD2113586-3_OBS_1_RES_1^F^^^^^^^20120612^^^413_ORD2113586-3_OBS_1_RES_1
+005A.01^PATID1234^5A11_ORD723222^AHEPR^^^^1^MNGFL_PRV_013^Acute Hepatititis Panel with Reflex^^F^^^^^^^20120628070100^^^
+005A.03^SMB3948814^5A13_OR723222980^51657-5^^^^1^MNGFL_PRV_014^Hepatitis C Virus Ab[Presence] in Body Fluid^^F^^^^^^^201206010701^^^
+005B.01^PATID1234^5B11_ORD723222^AHEPR^^^^1^MNGFL_PRV_015^Acute Hepatititis Panel with Reflex^^F^^^^^^^20120628070100^^^
+005B.01^PATID1234^5B11_ORD723222-2^11011-4^^^^2^MNGFL_PRV_015^Hepatitis C virus RNA [Units/volume] (viral load) in Serum or Plasma by Probe and target amplification method^5B11_ORD723222_OBS_1_RES_4^F^^^^^^^20120628070100^^^5B11_ORD723222_OBS_1_RES_4
+005B.03^SMB3948814^5B13_OR723222980-1^51657-5^^^^1^MNGFL_PRV_016^Hepatitis C Virus Ab[Presence] in Body Fluid^^F^^^^^^^201206010701^^^
+005B.03^SMB3948814^5B13_OR723222980-2^11011-4^^^^2^MNGFL_PRV_016^Hepatitis C virus RNA [Units/volume] (viral load) in Serum or Plasma by Probe and target amplification method^5B13_OR723222980_OBS_1_RES_2^F^^^^^^^201206010701^^^5B13_OR723222980_OBS_1_RES_2
+006.01^PATID1234^611_OR980768901-1^6812-2^^^^1^MNGFL_PRV_020^Dengue virus IgM Ab [Titer] in Serum^^F^^^^^^^20120601095300^^^
+006.02^PATID125789^612_2012-0987890001^31147-2^^^^1^MNGFL_PRV_021^Reagin Ab [Titer] in Serum by RPR^^F^^^^^^^20111105143000-0600^^^
+006.03^PATID139948312^613_ord12-0987066712^33331-0^^^^1^MNGFL_PRV_022^West Nile virus IgM Ab [Titer] in Serum^^F^^^^^^^20120801^^^
+007.01^PATID1234^711_O12-897451-23^23826-1^^^^1^MNGFL_PRV_023^Bordetella pertussis DNA [Presence] in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120710^^^
+007.02^NJ2012-08556^712_TR09820981-2012^40982-1^^^^1^MNGFL_PRV_024^Influenza virus B RNA [Presence] in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120808^^^
+007.03^PATID5678^713_Ord2012-568798-1^48174-7^^^^1^MNGFL_PRV_025^Mycobacterium tuberculosis complex rRNA [Presence] in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120316^^^
+008.01^WILJ2012-979952^811_Ord89017782^64017-7^^^^1^MNGFL_PRV_026^Chlamydia trachomatis and Neisseria gonorrhoeae rRNA panel in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120731140000^^^
+008.02^P2008-706781-2^812_O2012-8711-12^60566-7^^^^1^MNGFL_PRV_027^Respiratory virus DNA and RNA 12 panel in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120108-0600^^^
+008.03^MJ200978990544^813_TPMG097865^46197-0^^^^1^MNGFL_PRV_028^Measles virus Ab [Presence] in Serum^^F^^^^^^^20120630114000-0800^^^
+009.01^ShuA20120618-1^911_Ord123499^6463-4^^^^1^MNGFL_PRV_029^Bacteria identified in Unspecified specimen by Culture^^F^^^^^^^20120618^^^
+009.02^BB20120315-351^912_Ord68034987^543-9^^^^1^MNGFL_PRV_030^Mycobacterium sp identified in Unspecified specimen by Organism specific culture^^F^^^^^^^20120315^^^
+009.03^NECS2012080-2^913_Ord12389600762^11475-1^^^^1^MNGFL_PRV_031^Microorganism identified in Unspecified specimen by Culture^^F^^^^^^^201208081500-0800^^^

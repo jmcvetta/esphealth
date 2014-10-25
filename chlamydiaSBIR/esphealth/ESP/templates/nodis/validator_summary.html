@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<p align="center">
+<i>
+    Validator Run #{{ run.pk }}
+    <br>{{ run.timestamp|date:"r" }}
+    <br>Completed: {{ run.complete }}
+</i>
+</p>
+
+<h2 align="center">
+    Summary
+</h2>
+
+<table>
+    <tr>
+        <th>Status
+        <th>Count
+        <th>Percentage
+    <tr>
+        <td><a href="{% url validate_missing %}">Missing</a>
+        <td>{{ run.missing.count }}
+        <td>{{ run.percent_missing|floatformat:3 }}%
+    <tr>
+        <td><a href="{% url validate_new %}">New</a>
+        <td>{{ run.new.count }}
+        <td>{{ run.percent_new|floatformat:3 }}%
+    <tr>
+        <td><a href="{% url validate_similar %}">Similar</a>
+        <td>{{ run.similar.count }}
+        <td>{{ run.percent_similar|floatformat:3 }}%
+    <tr>
+        <td><a href="{% url validate_exact %}">Exact</a>
+        <td>{{ run.exact.count }}
+        <td>{{ run.percent_exact|floatformat:3 }}%
+    <tr>
+        <td><em>TOTAL</em>
+        <td>{{ run.results.count }}
+        <td>&nbsp;
+</table>
+
+{% endblock %}

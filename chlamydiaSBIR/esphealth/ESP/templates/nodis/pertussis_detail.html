@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+    <style type="text/css">
+    table {
+        border-width: thin;
+        border-spacing: 0;
+        border-style: solid;
+        border-color: gray;
+        border-collapse: separate;
+        background-color: white;
+    }
+    table th {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        vertical-align: text-top;
+        -moz-border-radius: ;
+    }
+    table td {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        vertical-align: text-top;
+        -moz-border-radius: ;
+    }
+    </style>
+
+{% endblock %}
+
+{% block content %}
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<p id="suspected_condition">
+    Suspected Condition: <strong>{{ condition }}</strong>
+</p>
+
+<hr>
+
+<h2>
+    Patient Information
+</h2>
+
+<table id="patient_info">
+    <tr>
+        <th>DB ID #</th>
+	    <th>Medical Record Number</th>
+        <th>Patient Name</th>
+	    <th>Street Address</th>	    
+	    <th>Unit #</th>	    
+        <th>City</th>
+        <th>phone</th>
+        <th>Parent/Guardian</th>
+        <th>Physician</th>
+        <th>Physician Phone</th>
+        <th>Physician Adress</th>
+        <th>Unit or Dept.</th>
+        <th>City</th>
+    </tr>
+    <tr>
+        <td>{{ case.patient.pk }}</td>
+        <td>{{ case.patient.mrn }}</td>
+        <td>{{ case.patient.name }}</td>
+        <td>{{ case.patient.address1 }}</td>
+        <td>{{ case.patient.address2 }}</td>
+        <td>{{ case.patient.city }}</td>
+        <td>({{ case.patient.areacode }}) {{ case.patient.tel }}</td>
+        <td>{{ case.patient.patient_guardian.first_name }} {{ case.patient.patient_guardian.last_name }}</td>
+        <td>{{ case.provider.first_name }} {{ case.provider.last_name }}</td>
+        <td>({{ case.provider.areacode }}) {{ case.provider.telephone }}</td>
+        <td> {{ case.provider.dept_address_1}}</td>
+        <td> {{ case.provider.dept}}</td>
+        <td> {{ case.provider.dept_city}}</td>
+    </tr>
+</table>
+
+<h2>
+    Demographics
+</h2>
+
+<table id="patient_demog">
+    <tr>
+        <th>Date of Birth</th>
+        <th>Age</th>
+        <th>Gender</th>
+        <th>Race</th>
+        <th>Ethnicity</th>
+        <th>home_language</th>
+        <th>Created Date</th>
+        <th>Last Updated</th>
+        <th>Case Definition</th>
+        <th>Comment</th>
+    </tr>
+    <tr>
+        <td>{{ dob }}</td>
+        <td>{{ age }}</td>
+        <td>{{ case.patient.gender }}</td>
+        <td>{{ case.patient.race }}</td>
+        <td>{{ case.patient.ethnicity }}</td>
+        <td>{{ case.patient.home_language }}</td>        
+        <td>{{ created }}</td>
+        <td> {{ updated }}</td>
+        <td>{{ case.definition }}</td>
+        <td> {{ case.comments|default:"-" }}</td>
+    </tr>
+</table>
+
+<h2>
+    Case Criteria
+</h2>
+
+<p>
+    {{ case.criteria }}
+</p>
+
+
+<h2>
+    Case Components
+</h2>
+
+<h3>
+    Physician Encounters (Clinical Data)
+</h3>
+
+<table id="encounters">
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Date</th>
+        <th>Dx Codes</td>
+        <th>Dept or Site</th>
+        <th>Hosp Admit DT</th>
+        <th>Hosp Dsch DT</th>
+        <th>Clinician</th>
+    </tr>
+    {% for enc in case.encounters.all %}
+    <tr>
+        <td>{{ enc.pk }}</td>
+        <td>
+            {% for event in enc.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ enc.date }} </td>
+        <td>
+            {% for i in enc.dx_codes.all %}
+                {{ i.code }} {{ i.name }}
+                {% if not forloop.last %}
+                <br>
+                {% endif %}
+            {% empty %}
+                -
+            {% endfor %}
+        </td>
+        <td>{{ enc.site_name }}</td>
+        <td>{{ enc.hosp_admit_dt }}</td>
+        <td>{{ enc.hosp_dschrg_dt }}</td>
+        <td>
+            <a href="{% url provider_detail enc.provider.pk %}">
+            {{enc.provider.name}}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>
+    Related Physicians Encounters (Clinical Data)
+</h3>
+
+<table id="rep_encounters">
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Date</th>
+        <th>Dx Codes</td>
+        <th>Dept or Site</th>
+        <th>Hosp Admit DT</th>
+        <th>Hosp Dsch DT</th>
+        <th>Clinician</th>
+    </tr>
+    {% for enc in rep_enc %}
+    {% if enc not in case.encounters %}
+    <tr>
+        <td>{{ enc.pk }}</td>
+        <td>
+            {% for event in enc.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ enc.date }} </td>
+        <td>
+            {% for i in enc.dx_codes.all %}
+                {{ i.code }} {{ i.name }}
+                {% if not forloop.last %}
+                <br>
+                {% endif %}
+            {% empty %}
+                -
+            {% endfor %}
+        </td>
+        <td>{{ enc.site_name }}</td>
+        <td>{{ enc.hosp_admit_dt }}</td>
+        <td>{{ enc.hosp_dschrg_dt }}</td>
+        <td>
+            <a href="{% url provider_detail enc.provider.pk %}">
+            {{enc.provider.name}}
+            </a>
+        </td>
+     </tr>
+    {% endif %}
+    {% endfor %}
+</table>
+
+<h3>
+    Prior history of asthma or bronchitis (Clinical Data)
+</h3>
+
+<table id="rep_encounters">
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Date</th>
+        <th>Dx Codes</td>
+        <th>Dept or Site</th>
+        <th>Hosp Admit DT</th>
+        <th>Hosp Dsch DT</th>
+        <th>Clinician</th>
+    </tr>
+    {% for enc in ab_enc_hist %}
+    {% if enc not in case.encounters %}
+    <tr>
+        <td>{{ enc.pk }}</td>
+        <td>
+            {% for event in enc.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ enc.date }} </td>
+        <td>
+            {% for i in enc.dx_codes.all %}
+                {{ i.code }} {{ i.name }}
+                {% if not forloop.last %}
+                <br>
+                {% endif %}
+            {% empty %}
+                -
+            {% endfor %}
+        </td>
+        <td>{{ enc.site_name }}</td>
+        <td>{{ enc.hosp_admit_dt }}</td>
+        <td>{{ enc.hosp_dschrg_dt }}</td>
+        <td>
+            <a href="{% url provider_detail enc.provider.pk %}">
+            {{enc.provider.name}}
+            </a>
+        </td>
+     </tr>
+    {% endif %}
+    {% endfor %}
+</table>
+
+<h3>
+    Prescriptions
+</h3>
+
+<table id="prescriptions">
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Route</th>
+        <th>Dose</th>
+        <th>Frequency</th>
+        <th>Quantity</th>
+        <th>NDC</th>
+        <th>Clinician</th>
+    </tr>
+    {% for rx in case.prescriptions %}
+    <tr>
+        <td>{{ rx.pk }}</td>
+        <td>
+            {% for event in rx.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ rx.date }}</td>
+        <td>{{ rx.name }}</td>
+        <td>{{ rx.directions }}</td>
+        <td>{{ rx.route }}</td>
+        <td>{{ rx.dose }}</td>
+        <td>{{ rx.frequency }}
+        <td>{{ rx.quantity }}</td>
+        <td>{{rx.code}}</td>
+        <td>
+            <a href="{% url provider_detail rx.provider.pk %}">
+                {{ rx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>
+    Related Prescriptions
+</h3>
+  
+<table id="prescriptions">
+  
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Route</th>
+        <th>Dose</th>
+        <th>Frequency</th>
+        <th>Quantity</th>
+        <th>NDC</th>
+        <th>Clinician</th>
+    </tr>
+     
+    {% for rx in case.reportable_prescriptions %}
+    	
+    	{% if rx not in case.prescriptions %}
+    	    	   	
+    <tr>
+        <td>{{ rx.pk }}</td>
+        <td>
+            {% for event in rx.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ rx.date }}</td>
+        <td>{{ rx.name }}</td>
+        <td>{{ rx.directions }}</td>
+        <td>{{ rx.route }}</td>
+        <td>{{ rx.dose }}</td>
+        <td>{{ rx.frequency }}
+        <td>{{ rx.quantity }}</td>
+        <td>{{rx.code}}</td>
+        <td>
+            <a href="{% url provider_detail rx.provider.pk %}">
+                {{ rx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    	{% endif %}
+    {% endfor %}
+    
+</table>
+
+
+<h3>
+    Lab Results
+</h3>
+
+<table id="lab_results">
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Order Date</th>
+        <th>Result Date</th>
+        <th>Test Code (native)</th>
+        <th>Test Name (native)</th>
+        <th>Test Results</th>
+        <th>Abnormal Flag</th>
+        <th>Normal Range</th>
+        <th>OrderID</th>
+        <th>Clinician</th>
+        <th>Comment</th>
+    </tr>
+    {% for lab in case.lab_results.all %}
+    <tr>
+        <td>{{ lab.pk }}</td>
+        <td>
+            {% for event in lab.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ lab.date }}</td>
+        <td>{{ lab.result_date }}</td>
+        <td>{{ lab.native_code }}</td>
+        <td>{{ lab.native_name }}</td>
+        <td>{{ lab.result_string }}</td>
+        <td>{{ lab.abnormal_flag|default:"-" }} </td>
+        <td>{{ lab.ref_low_string|default:"" }}  -  {{ lab.ref_high_string|default:"" }}</td>
+        <td>{{ lab.order_natural_key }}</td>
+        <td>
+            <a href="{% url provider_detail lab.provider.pk %}">
+                {{ lab.provider.name }}
+            </a>
+        </td>
+        <td>
+            {{ lab.comment }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>
+    Related Labs
+</h3>
+
+<table id="lab_results">
+    <tr>
+        <th>DB ID #</th>
+        <th>Heuristic Event(s)</th>
+        <th>Order Date</th>
+        <th>Result Date</th>
+        <th>Test Code (native)</th>
+        <th>Test Name (native)</th>
+        <th>Test Results</th>
+        <th>Abnormal Flag</th>
+        <th>Normal Range</th>
+        <th>OrderID</th>
+        <th>Clinician</th>
+        <th>Comment</th>
+    </tr>
+    {% for lab in case.reportable_labs.all %}
+    {% if lab not in case.lab_results %}
+    <tr>
+        <td>{{ lab.pk }}</td>
+        <td>
+            {% for event in lab.events.all %}
+            {{ event.name }}
+            {% if not forloop.last %}
+            <br>
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{ lab.date }}</td>
+        <td>{{ lab.result_date }}</td>
+        <td>{{ lab.native_code }}</td>
+        <td>{{ lab.native_name }}</td>
+        <td>{{ lab.result_string }}</td>
+        <td>{{ lab.abnormal_flag|default:"-" }} </td>
+        <td>{{ lab.ref_low_string|default:"" }}  -  {{ lab.ref_high_string|default:"" }}</td>
+        <td>{{ lab.order_natural_key }}</td>
+        <td>
+            <a href="{% url provider_detail lab.provider.pk %}">
+                {{ lab.provider.name }}
+            </a>
+        </td>
+        <td>
+            {{ lab.comment }}
+        </td>
+    </tr>
+     {% endif %}
+    {% endfor %}
+</table>
+
+
+<h3>
+    Vaccine History
+</h3>
+
+<table id="vax_history">
+    <tr>
+        <th>Imm name</th>
+        <th>Date</th>
+        <th>Dose</th>
+        <th>Manufacturer</th>
+        <th>Lot #</th>
+        <th>Status</th>
+        <th>Clinician</th>
+    </tr>
+    {% for vx in vax %}
+    <tr>
+        <td>{{ vx.name }}</td>
+        <td>{{ vx.date }}</td>
+        <td>{{ vx.dose }}</td>
+        <td>{{ vx.manufacturer }}</td>
+        <td>{{ vx.lot }}</td>
+        <td>{{ vx.imm_status }}</td>
+        <td>
+            <a href="{% url provider_detail vx.provider.pk %}">
+                {{ vx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+{% endblock %}
+

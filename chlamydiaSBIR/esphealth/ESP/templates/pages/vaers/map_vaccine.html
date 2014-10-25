@@ -1,0 +1,12 @@
+{% extends "vaers.html" %}
+{% block content %}
+{% if message %}<div class="warning">{{message}}</div>{% endif %}
+
+<span>{{native_vaccine.native_name}}</span>
+<form method="post" action="{% url vaers.vaccine.views.vaccine_detail native_vaccine.native_code %}">
+  {{ form.as_p }}
+  <button>Save</button>
+  {% csrf_token %}
+</form>
+{% endblock %}
+
