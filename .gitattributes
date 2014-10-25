@@ -169,6 +169,13 @@ chlamydiaSBIR/esphealth/ESP/phit/models.py -text
 chlamydiaSBIR/esphealth/ESP/phit/phit.diabetes.1.sql -text
 chlamydiaSBIR/esphealth/ESP/phit/phit.diabetes.2.sql -text
 chlamydiaSBIR/esphealth/ESP/phit/phit.diabetes.3.sql -text
+chlamydiaSBIR/esphealth/ESP/qmetric/__init__.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/base.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/management/__init__.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/__init__.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/load_elements.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/update_valuesets.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/models.py -text
 chlamydiaSBIR/esphealth/ESP/secrets.spec.ini -text
 chlamydiaSBIR/esphealth/ESP/sendMsgs/bcdc.jar -text
 chlamydiaSBIR/esphealth/ESP/settings.py -text
