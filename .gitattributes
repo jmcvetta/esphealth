@@ -235,6 +235,7 @@ esphealth/ESP/templates/conf/code_maintenance.html -text
 esphealth/ESP/templates/conf/code_map.html -text
 esphealth/ESP/templates/conf/confirm_ignore_code.html -text
 esphealth/ESP/templates/conf/heuristic_mapping_report.html -text
+esphealth/ESP/templates/conf/heuristic_reportables.html -text
 esphealth/ESP/templates/conf/loinc_mapping.html -text
 esphealth/ESP/templates/default-bg-reverse.gif -text
 esphealth/ESP/templates/default-bg.gif -text
