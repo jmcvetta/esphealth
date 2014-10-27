@@ -1502,8 +1502,15 @@ class Dx_CodeQuery(object):
     
     @property
     def verbose_name(self):
-        return 'Dx code Query: %s | %s | %s | %s | %s' % (self.exact, self.starts_with, self.ends_with, self.contains, self.type),
-
+        if self.exact:
+            code = self.exact
+        elif self.starts_with:
+            code = 'starts with '+self.starts_with
+        elif self.ends_with:
+            code = 'ends with '+ self.ends_with
+        elif self.contains:
+            code = 'contains '+ self.contains
+        return self.type + ':' + code
 
 class DiagnosisHeuristic(BaseEventHeuristic):
     '''
