@@ -22,6 +22,8 @@ from ESP.settings import MEDIA_ROOT, MEDIA_URL
 
 urlpatterns = patterns('ESP.conf.views',
     url(r'^codes/ignore/(?P<native_code>.+)/$', 'ignore_code', name='ignore_code'),
+    #change name worst case .. good point TODO 
+    url(r'^codes/reportables/', 'heuristic_reportables', name='heuristic_reportables'),
     url(r'^codes/report', 'heuristic_mapping_report', name='heuristic_mapping_report'),
     #url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
 )
