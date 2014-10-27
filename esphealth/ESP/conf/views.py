@@ -43,7 +43,7 @@ from ESP.nodis.base import DiseaseDefinition
 from ESP.emr.models import LabResult
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
-from ESP.hef.base import BaseLabResultHeuristic
+from ESP.hef.base import BaseLabResultHeuristic, BaseEventHeuristic, PrescriptionHeuristic, DiagnosisHeuristic
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -88,6 +88,39 @@ def heuristic_mapping_report(request):
     values['unmapped'] = unmapped
     return render_to_response('conf/heuristic_mapping_report.html', values, context_instance=RequestContext(request))
 
+@login_required
+def heuristic_reportables(request):
+    values = {'title': 'Heuristic Reportables Summary'}
+    
+    reportable_rx = []
+    reportable_dx = []
+    reportable_lx = []
+    
+    for heuristic in BaseLabResultHeuristic.get_all():
+        if heuristic.test_name not in reportable_lx:
+            reportable_lx.append(heuristic.test_name)
+    
+    for heuristic in DiagnosisHeuristic.get_all():
+        if isinstance(heuristic, DiagnosisHeuristic):
+            for dx_code in heuristic.dx_code_queries:
+                if dx_code not in reportable_dx:
+                    reportable_dx.append(dx_code)
+            
+    for heuristic in PrescriptionHeuristic.get_all():
+        if isinstance(heuristic, PrescriptionHeuristic):
+            for drug in heuristic.drugs:
+                if drug not in reportable_rx:
+                    reportable_rx.append(drug)
+    
+    reportable_lx.sort()
+    reportable_dx.sort()
+    reportable_rx.sort()
+    
+    values['reportable_lx'] = reportable_lx
+    values['reportable_dx'] = reportable_dx
+    values['reportable_rx'] = reportable_rx
+    
+    return render_to_response('conf/heuristic_reportables.html', values, context_instance=RequestContext(request))
 
 
 @user_passes_test(lambda u: u.is_staff)
