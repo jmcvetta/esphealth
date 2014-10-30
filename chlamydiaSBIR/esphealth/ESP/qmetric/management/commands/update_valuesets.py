@@ -55,6 +55,7 @@ class Command(BaseCommand):
         url2 = url1 + '/' + tgtvalue
         treq = urllib.urlencode({'service': 'http://umlsks.nlm.nih.gov'})
         for elem in Element.objects.filter(cmsname=options['cmsname'], source='VSAC'):
+            #TODO: add progress to log.  Also, add a filter to limit to a specific code type for each Value Set.
             vsa2 = urllib2.Request(url2,treq)
             ticket = urllib2.urlopen(vsa2)
             ticketval = ticket.read()
