@@ -11,13 +11,10 @@
 @license: LGPL
 '''
 
-from ESP.nodis.base import SinglePositiveTestDiseaseDefinition
+from ESP.nodis.base import ReinfectionDiseaseDefinition
 
 
-
-
-
-class Chlamydia(SinglePositiveTestDiseaseDefinition):
+class Chlamydia(ReinfectionDiseaseDefinition):
     '''
     Chlamydia
     '''
