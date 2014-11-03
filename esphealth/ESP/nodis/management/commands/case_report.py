@@ -66,14 +66,15 @@ from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
 from ESP.static.models import Dx_code
-from ESP.conf.models import LabTestMap, ReportableMedication
+from ESP.conf.models import LabTestMap, ReportableMedication, ReportableExtended_Variables, Extended_VariablesMap, Extended_VariablesResultMap
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider, Provenance
-from ESP.emr.models import LabResult
+from ESP.emr.models import LabResult, Order_Extension
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.conf.models import LabTestMap, ResultString
+from ESP.conf.models import ConditionConfig
 
 from ESP.hef.base import BaseLabResultHeuristic, TITER_DILUTION_CHOICES
 
@@ -235,6 +236,13 @@ class hl7Batch:
         we need to iterate over the pointers stored in each case to make the
         appropriate segments
         """
+        
+        '''
+                TODO pass in options.elr
+                add a header for the elr only cases in the hl7
+                    ability to send elr to staging and the others to production 
+                send feed to different sites.. change add case to add something in the header
+        '''
         self.currentCase=case.id
         patient = case.patient
         oru = self.casesDoc.createElement('ORU_R01')
@@ -271,6 +279,7 @@ class hl7Batch:
         orus.appendChild(orcs)
         rep_dx_codes = case.reportable_dx_codes
         rep_encounters = case.reportable_encounters[0]
+        
         #adds repotable dx codes obr 
         self.addCaseOBR(condition=case.condition, dx_code=rep_dx_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
@@ -289,18 +298,19 @@ class hl7Batch:
             caseid=case.pk)  
                       
         totallxs = list(lxobjs)
-        #generate for all conditions    
-        #TODO maybe remove this get other lab events  
-        #genorlxs = self.getOtherLxs(case.condition, patient, lx)
-        #totallxs = totallxs + list(genorlxs)   
-        #TODO perhaps add genotherlx , rx and dx for reinfection 
-        
+       
         # only removing duplicates if they are real labs except the tb dummy lab  
         if totallxs and totallxs[0].pk != 0:
             cleanlxids = self.removeDuplicateLx(totallxs)
             totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
         self.addLXOBX(case=case,lxRecList=totallxs, orus=orus)
+        #add reinfection objects 
+        self.genReinfection(case=case, orus=orus)
+        
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
+        # generate extended variables for all conditions , same orus
+        self.addEXVOBX(exvRecList=case.reportable_extended_variables, orus=orus) 
+        
         return [i.id for i in totallxs]
 
     def removeDuplicateLx(self, lxobjs):
@@ -625,7 +635,25 @@ class hl7Batch:
             indx += 1
             orcs.appendChild(obx)
 
-    def addLXOBX(self,case,lxRecList=[],orus=None):
+    def genReinfection(self,case,orus=None):
+        #for now only labs but in the future the rest of heuristic types
+        #TODO inspect what type of event is the first event and decide how to add the tag. 
+        lxRecList = []
+        reinfection_days = ConditionConfig.objects.get(name=case.condition).reinfection_days
+        if reinfection_days >0 and case.followup_events:
+            #only report the first one on the list
+            for event in case.followup_events:
+                first_event = event.content_object
+                break
+                
+            lxRecList.insert(0, first_event)
+                #if the event is a prescription  then use self.addRXOBX(rxRecList=rxobjs, orus=orus)
+                # if the event is an encounter then use  self.addCaseOBX(demog=patient, orcs=orcs, dx_code=rep_dx_codes, lx=lx, rx=rx,
+                #encounters=rep_encounters, condition=case.condition, casenote=case.notes,
+                #caseid=case.pk)  
+            return self.addLXOBX(case,lxRecList,orus, True)
+    
+    def addLXOBX(self,case,lxRecList=[],orus=None, reinf =None):
         if not lxRecList: return
         condition=case.condition
         n=1
@@ -674,6 +702,7 @@ class hl7Batch:
             sps = self.casesDoc.createElement('SPS.1')
             specso = lxRec.specimen_source
             snomed_spec_source_code = '261665006' # Local code for 'Unknown'
+            #TODO for fenway we need to process the specimen source from the lab name to pull out the specimen source. 
             if specso:
                 if CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP.has_key(specso.lower()):
                     snomed_spec_source_code = CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP[specso.lower()]
@@ -726,6 +755,19 @@ class hl7Batch:
             if not clia:
                 clia = INSTITUTION.clia # it was hard coded to '22D0076229'    
             
+            if reinf:
+                reinf_output_code = lxRec.output_or_native_code
+                reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.output_or_native_code).values('reinf_output_code')
+                obx1 = self.makeOBX(
+                    obx1  = [('','1')],
+                    obx2  = [('', 'CE')],
+                    obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
+                    obx5  = [('CE.4',reinf_output_code)],  #TODO show the result?
+                    obx7  = [('',lxRange)],
+                    obx11 = [('', lxRec.status)],
+                    obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
+                    obx15 = [('CE.1',clia), ('CE.3','CLIA')]
+                    )
             if not snomed: ##like ALT/AST and must be number
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
@@ -860,7 +902,39 @@ class hl7Batch:
                     return snomed, snomed2, titer_dilution, finding
                 #if nothing hits, return all None
                 return None, None, None, None
-            
+        
+    def addEXVOBX(self,exvRecList=[],orus=None):
+        """
+        make a record for each extended variable record in the caseDict
+        whew, this hl7 stuff really is a pain to write.
+        All detail, no fun.
+        """
+        if exvRecList:
+            orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
+            orus.appendChild(orcs)
+            for exvRec in exvRecList:
+                question_map = None
+                answer_map  = None
+                exvarmap = Extended_VariablesMap.objects.filter (native_string =  exvRec.question)
+                if exvarmap:
+                    question_map = exvarmap[0].abstract_ext_var
+                    #show question and answer
+                    if  exvarmap[0].value_type:
+                        answer_map  = exvRec.answer
+                    else:
+                        answer_map = Extended_VariablesResultMap.objects.filter(abstract_ext_var = question_map, value = exvRec.answer)
+                        if answer_map:
+                            answer_map = answer_map[0].output_code
+                        else:
+                            log.info('There is no snomed mapped to the EPT answer') 
+                            answer_map  = exvRec.answer
+                else:
+                        log.info('There is no LOINC mapped to the EPT question')  
+                        question_map = exvRec.question
+                        answer_map  = exvRec.answer  
+                if question_map:    
+                    obx1 = self.makeOBX(obx1=[],obx2=[],obx3=[('CE.4',question_map)], obx5=[('CE.4', answer_map)])
+                    orcs.appendChild(obx1)
         
     def addRXOBX(self,rxRecList=[],orus=None):
         """
@@ -1186,6 +1260,8 @@ class Command(BaseCommand):
             help='Export a single case with specified case ID'),
         make_option('--status', action='store', dest='status', default='Q',
             help='Export only cases with this status ("Q" by default)'),
+        make_option('--elr', action='store_true', dest='elr',
+            default=False, help='generates only elr cases'), 
         make_option('--mdph', action='store_true', dest='mdph', default=False,
             help='Export cases in HL7v3 dialect required by Massachusetts Department of Public Health'),
         make_option('--transmit', action='store_true', dest='transmit', default=False, 
@@ -1262,11 +1338,16 @@ class Command(BaseCommand):
         #
         # Generate case query
         #
+        
         if options.case_id:
             q_obj = Q(pk__exact=options.case_id)
         else:
-            q_obj = Q(condition__in=report_conditions)
-            q_obj = q_obj & Q(status=options.status)
+            q_obj = Q(condition__in=report_conditions) & Q(status=options.status)
+        
+        if options.elr:
+            q_obj &= Q(condition__startswith='elr')
+        else:
+            q_obj &= ~Q(condition__startswith='elr')
         if FAKE_PATIENT_MRN:
             q_obj &= ~Q(patient__mrn__iregex=FAKE_PATIENT_MRN)
         if FAKE_PATIENT_SURNAME:
@@ -1336,7 +1417,8 @@ class Command(BaseCommand):
                 #
                 # Transmission
                 #
-                if options.transmit:
+                if options.transmit: 
+                    #success = True for testing and comment out the line below
                     success = self.transmit(options, filepath)
                     if success:
                         if options.mark_sent:
@@ -1396,6 +1478,12 @@ class Command(BaseCommand):
         for case in cases:
             log.debug('Generating HL7 for %s' % case)
             try:
+                '''
+                TODO pass in options.elr
+                add a header for the elr only cases in the hl7
+                    ability to send elr to staging and the others to production 
+                send feed to different sites.. change add case to add something in the header
+                '''
                 batch.addCase(case)
             except NoConditionConfigurationException, e:
                 log.critical('Could not generate HL7 message for case %s!' % case)

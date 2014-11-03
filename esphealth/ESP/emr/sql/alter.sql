@@ -535,3 +535,59 @@ ALTER TABLE conf_reportablelab
   DROP COLUMN snomed_pos,
   DROP COLUMN snomed_neg,
   DROP COLUMN snomed_ind;
+  
+-- cch 10/2/2014 reportable EPT extended variables
+ALTER TABLE conf_conditionconfig
+    ADD COLUMN ext_var_days_before integer ;
+ALTER TABLE conf_conditionconfig
+    ADD COLUMN ext_var_days_after  integer ; 
+    
+ALTER TABLE conf_conditionconfig
+    ADD COLUMN reinfection_days  integer ; 
+ALTER TABLE conf_labtestmap
+	ADD COLUMN reinf_output_code  character varying(255);
+	 
+-- CCH 10/15/2014 FOR PLAN PARENTHOOD
+ALTER TABLE emr_encounter
+	ALTER COLUMN site_natural_key TYPE character varying(50);
+	
+-- cch 11/3/2014 reinfection 
+-- Table: nodis_case_followup_events
+
+-- DROP TABLE nodis_case_followup_events;
+
+CREATE TABLE nodis_case_followup_events
+(
+  id serial NOT NULL,
+  case_id integer NOT NULL,
+  event_id integer NOT NULL,
+  CONSTRAINT nodis_case_followup_events_pkey PRIMARY KEY (id ),
+  CONSTRAINT nodis_case_followup_events_event_id_fkey FOREIGN KEY (event_id)
+      REFERENCES hef_event (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
+  CONSTRAINT nodis_case_followup_events_case_id_key UNIQUE (case_id , event_id )
+)
+WITH (
+  OIDS=FALSE
+);
+
+
+-- Index: nodis_case_followup_events_case_id
+
+-- DROP INDEX nodis_case_followup_events_case_id;
+
+CREATE INDEX nodis_case_followup_events_case_id
+  ON nodis_case_followup_events
+  USING btree
+  (case_id );
+
+-- Index: nodis_case_followup_events_event_id
+
+-- DROP INDEX nodis_case_followup_events_event_id;
+
+CREATE INDEX nodis_case_followup_events_event_id
+  ON nodis_case_followup_events
+  USING btree
+  (event_id );
+
+    

@@ -6,6 +6,7 @@ from ESP.conf.models import ConditionConfig
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableDx_Code
 from ESP.conf.models import ReportableMedication
+from ESP.conf.models import ReportableExtended_Variables, Extended_VariablesMap, Extended_VariablesResultMap
 from ESP.conf.models import ResultString
 from ESP.conf.models import HL7Map
 from ESP.conf.models import ImmuExclusion
@@ -55,7 +56,7 @@ class LabTestMapAdmin(admin.ModelAdmin):
             'fields': ('native_code', 'code_match_type', 'record_type', 'threshold'),
             }),
         ('Reporting', {
-            'fields': ('reportable', 'output_code', 'output_name', 'snomed_pos', 'snomed_neg',  'snomed_ind'),
+            'fields': ('reportable', 'output_code', 'output_name', 'snomed_pos', 'snomed_neg',  'snomed_ind', 'reinf_output_code'),
             'classes': ('collapse',),
             }),
         ('Result Strings', {
@@ -90,6 +91,9 @@ class ConditionConfigAdmin(admin.ModelAdmin):
 	    'dx_code_days_after',
 	    'med_days_before',
 	    'med_days_after',
+        'ext_var_days_before',
+        'ext_var_days_after',
+        'reinfection_days',
         ]
     list_filter = ['initial_status']
     
@@ -108,6 +112,23 @@ class ReportableDx_CodeAdmin(admin.ModelAdmin):
     ordering = ['condition', 'dx_code']
     list_filter = ['condition']
     raw_id_fields = ['dx_code']
+
+class ReportableExtended_VariablesAdmin(admin.ModelAdmin):
+    list_display = ['condition', 'abstract_ext_var']
+    ordering = ['condition', 'abstract_ext_var']
+    list_filter = ['condition']
+    raw_id_fields = ['abstract_ext_var']
+
+class Extended_VariablesMapAdmin(admin.ModelAdmin):
+    list_display = ['native_string', 'abstract_ext_var','value_type']
+    ordering = ['abstract_ext_var', 'native_string']
+    list_filter = ['abstract_ext_var']
+    
+class Extended_VariablesResultMapAdmin(admin.ModelAdmin):
+    list_display = ['abstract_ext_var', 'value', 'output_code']
+    ordering = ['abstract_ext_var', 'output_code']
+    list_filter = ['abstract_ext_var']
+    raw_id_fields = ['abstract_ext_var']
 
 class ResultStringAdmin(admin.ModelAdmin):
     list_display = ['value', 'indicates', 'match_type', 'applies_to_all']
@@ -140,6 +161,9 @@ admin.site.register(ConditionConfig, ConditionConfigAdmin)
 admin.site.register(ReportableLab, ReportableLabAdmin)
 admin.site.register(ReportableMedication, ReportableMedicationAdmin)
 admin.site.register(ReportableDx_Code, ReportableDx_CodeAdmin)
+admin.site.register(ReportableExtended_Variables, ReportableExtended_VariablesAdmin)
+admin.site.register(Extended_VariablesMap, Extended_VariablesMapAdmin)
+admin.site.register(Extended_VariablesResultMap, Extended_VariablesResultMapAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(ResultString, ResultStringAdmin)
 admin.site.register(HL7Map, HL7MapAdmin)

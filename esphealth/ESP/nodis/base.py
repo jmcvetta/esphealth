@@ -3,7 +3,7 @@ ESP Health
 Notifiable Diseases Framework
 Base Classes
 
-@author: Jason McVetta <jason.mcvetta@heliotropi.cc>
+@author: Carolina chacin <cchacin@commoninf.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @contact: http://esphealth.org
 @copyright: (c) 2011 Channing Laboratory
@@ -23,6 +23,7 @@ from ESP.settings import HEF_THREAD_COUNT
 from ESP.settings import FILTER_CENTERS
 from ESP.utils import log
 from ESP.utils import log_query
+from django.db.models import Q
 
 from ESP.hef.base import BaseHeuristic, PrescriptionHeuristic
 from ESP.hef.base import LabResultPositiveHeuristic
@@ -38,7 +39,6 @@ class UnknownDiseaseException(BaseException):
     Raised when a named disease cannot be found
     '''
     pass
-
 
 class DiseaseDefinition(object):
 
@@ -458,8 +458,6 @@ class Report(object):
         report_list = list(report_set)
         report_list.sort(key = lambda h: h.short_name)
         return report_list
-    
-
 
 class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
     '''
@@ -542,3 +540,127 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         
         return new_case_count
     
+class ReinfectionDiseaseDefinition (DiseaseDefinition):
+    '''
+    Defines a single condition, for which a single positive test from a given
+    set is sufficient to detect a case and has reinfection events 
+    '''
+
+    #__metaclass__ = abc.ABCMeta
+    
+    #
+    # Abstract class interface
+    #
+    
+    criteria = ''
+    
+    @abc.abstractproperty
+    def condition(self):
+        '''
+        Condition (singular) which this disease definition can detect.
+        @rtype: String
+        '''
+        
+    @abc.abstractproperty
+    def test_names(self):
+        '''
+        Names of abstract lab tests for which a single positive equals a case
+        @rtype: [String, String, ...]
+        '''
+    
+    @abc.abstractproperty
+    def recurrence_interval(self):
+        '''
+        The minimum number of days which must elapse after a the date of a
+        case, before another case can be declared.  
+        @return: Number of days or None if disease cannot recur
+        @rtype: Integer or None.
+        '''
+    @property
+    def event_heuristics(self):
+        '''
+        Event heuristics on which this disease definition depends.
+        @rtype: List of EventHeuristic instances
+        '''
+        heuristics = set()
+        for test_name in self.test_names:
+            heuristics.add( LabResultPositiveHeuristic(test_name=test_name) )
+        return heuristics
+    
+    @property
+    def reinfection(self):
+        '''
+        retreives the reinfection days from the configuration
+        '''
+        reinfection_days = ConditionConfig.objects.get(name=self.condition).reinfection_days
+        if not reinfection_days:
+            return 0
+        else:
+            return reinfection_days
+        
+    @property
+    def conditions(self):
+        '''
+        Conditions (plural) which this disease definition can detect
+        @rtype: List of strings
+        '''
+        assert str(self.condition) == self.condition # Sanity check, condition must be a string
+        return [self.condition]
+    
+    timespan_heuristics = [] # This type of definition never uses timespans.
+    
+    def generate(self):
+        
+        '''
+        Examine the database and generate new cases of this disease
+        @return: The count of new cases generated
+        @rtype:  Integer
+        '''
+        log.info('Generating cases of %s with Reinfection' % self.short_name)
+        pos_event_names = set()
+        
+        for heuristic in self.event_heuristics:
+            pos_event_names.add(heuristic.positive_event_name)
+        event_qs = Event.objects.filter(name__in=pos_event_names)
+        new_case_count = self._create_cases_from_event_qs(
+            condition = self.condition, 
+            criteria = self.criteria + ' Single positive lab test with reinfection' , 
+            recurrence_interval = self.recurrence_interval, 
+            event_qs = event_qs, 
+            relevant_event_names = pos_event_names,
+            )
+        
+        log.debug('Generated %s new cases of %s with Reinfection' % (new_case_count, self.short_name))
+        
+        '''
+        reinfection logic
+        checks for events that happened within the window of reinfection days .
+        This window starts from the end of the reinfection window. 
+        It will add the events found to the existing cases as a followup_event 
+        and change the status to RQ if the status is S for the existing cases
+        '''
+        if self.reinfection >0:
+            event_names = set()
+            q_obj = Case.objects.filter (patient=event_qs[0].patient)
+            start = self.date + datetime.timedelta(days=self.recurrence_interval) 
+            end = self.date + datetime.timedelta(days=self.reinfection)  
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
+            for heuristic in self.event_heuristics:
+                event_names.add(heuristic.event_names)
+            for case in q_obj:
+                followup_events = Event.objects.filter(name__in=event_names).order_by('date')
+                # filter out the events that are already bound to the case followup events
+                for event in followup_events:
+                    #add events to follow up of these cases 
+                    if not case.followup_events:
+                        case.followup_events = event
+                    elif event not in case.followup_events:
+                        case.followup_events.add(event)
+                        #change the status of all the cases in this query set
+                    if case.status == 'S' or case.status == 'RS':
+                        log.info('Requeing cases of %s with Reinfection' % self.short_name)
+                        case.status = 'RQ'
+                case.save()
+        return new_case_count
+        

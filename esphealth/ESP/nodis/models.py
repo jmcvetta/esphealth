@@ -12,11 +12,12 @@
 
 from django.db.models import Max
 from ESP.static.models import Dx_code
+from django.contrib.contenttypes import generic
 #from ESP.conf.models import CodeMap
 from ESP.conf.models import STATUS_CHOICES
-from ESP.conf.models import ReportableLab
+from ESP.conf.models import ReportableLab, ReportableExtended_Variables, Extended_VariablesMap
 from ESP.conf.models import ReportableMedication
-from ESP.emr.models import LabResult
+from ESP.emr.models import LabResult, Order_Extension
 #from ESP.hef.base import TimespanHeuristic
 from ESP.hef.base import BaseLabResultHeuristic, LabResultPositiveHeuristic
 from ESP.hef.base import DiagnosisHeuristic
@@ -107,8 +108,9 @@ class Case(models.Model):
     #
     # Events that define this case
     #
-    events = models.ManyToManyField(Event, blank=False)
-    #TODO followup_events = models.ManyToManyField(Event, blank=False)
+    events = models.ManyToManyField(Event, blank=False,related_name='events')
+    followup_events = models.ManyToManyField(Event, blank=False,related_name='followup_events')
+    
     timespans = models.ManyToManyField(Timespan, blank=False)
 
     class Meta:
@@ -230,6 +232,26 @@ class Case(models.Model):
         return labs.distinct()
     reportable_labs = property(__get_reportable_labs)
 
+    def __get_reportable_extended_variables(self):
+        
+        conf = self.condition_config
+        if conf: 
+            reportable_extended_variables = set(ReportableExtended_Variables.objects.filter(condition=self.condition).values_list('abstract_ext_var__native_string', flat=True))
+            q_obj = Q(patient=self.patient)
+            q_obj &= Q(question__in = reportable_extended_variables)
+       
+            start = self.date - datetime.timedelta(days=conf.ext_var_days_before)
+            end = self.date + datetime.timedelta(days=conf.ext_var_days_after)       
+            q_obj &= Q(date__gte=start)
+            q_obj &= Q(date__lte=end)
+            extended_variables = Order_Extension.objects.filter(q_obj).distinct()
+        
+        if extended_variables:
+            return extended_variables.distinct()
+        else:
+            return Order_Extension.objects.none()
+    reportable_extended_variables = property(__get_reportable_extended_variables)
+    
     @property
     def reportable_dx_codes(self):
         return Dx_code.objects.filter(encounter__in=self.reportable_encounters[0])
@@ -351,8 +373,10 @@ class Case(models.Model):
             reportableDx =  reportableDx.order_by('natural_key').values_list('natural_key', flat=True)
         reportableRx = self.reportable_prescriptions.order_by('natural_key').values_list('natural_key', flat=True)
         reportableLx = self.reportable_labs.order_by('natural_key').values_list('natural_key', flat=True)
+        reportableEv = self.reportable_extended_variables.order_by('natural_key').values_list('natural_key', flat=True)
+        reportables  = ', '.join(reportableDx) + ',' + ', '.join(reportableRx) + ',' + ', '.join(reportableLx)+','+ ', '.join(reportableEv)
         
-        return ', '.join(reportableDx) + ',' + ', '.join(reportableRx) + ',' + ', '.join(reportableLx)
+        return reportables
 
     def __str__(self):
         return '%s # %s' % (self.condition, self.pk)

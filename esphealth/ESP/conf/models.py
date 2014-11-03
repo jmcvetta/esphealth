@@ -176,6 +176,7 @@ class LabTestMap(models.Model):
     snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
     snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
     snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
+    reinf_output_code = models.CharField('LOINC re-infection code', max_length=255, blank=True, null=True)
     #
     # Notes
     #
@@ -338,6 +339,9 @@ class ConditionConfig(models.Model):
     dx_code_days_after = models.IntegerField(blank=False, default=28)
     med_days_before = models.IntegerField(blank=False, default=28)
     med_days_after = models.IntegerField(blank=False, default=28)
+    ext_var_days_before = models.IntegerField(blank=False, default=28)
+    ext_var_days_after = models.IntegerField(blank=False, default=28)
+    reinfection_days = models.IntegerField(blank=False, default=28)
     url_name = models.CharField('Optional url name for case details', max_length=100, blank=True, null=True)
     
     class Meta:
@@ -373,7 +377,7 @@ class ReportableLab(models.Model):
 class ReportableDx_Code(models.Model):
     '''
     Additional dx codes to be reported for a given condition, in addition to 
-    those tests which are mapped to heuristics included in the condition's 
+    those codes which are mapped to heuristics included in the condition's 
     definition.
     '''
     condition = models.ForeignKey(ConditionConfig, blank=False)
@@ -390,6 +394,46 @@ class ReportableDx_Code(models.Model):
     def __str__(self):
         return '%s (%s)' % (self.dx_code.combotypecode, self.condition)
 
+
+class  Extended_VariablesMap(models.Model): 
+    #(question mapping)
+    native_string = models.CharField(blank=False, max_length=255)
+    abstract_ext_var = models.CharField(blank=False, max_length=255, primary_key=True)
+    value_type = models.BooleanField('Variable sends value and not mapped code?', default=False) #(sending value not mapping) 
+    
+    class Meta:
+        unique_together = ['abstract_ext_var', 'native_string']
+        
+    def __str__(self):
+        return '%s map: %s' % (self.native_string, self.abstract_ext_var)
+
+class Extended_VariablesResultMap(models.Model): 
+    #(answer mapping)
+    abstract_ext_var = models.ForeignKey(Extended_VariablesMap, blank=False)
+    native_string = models.CharField(blank=True, null=True, max_length=255) #(redundant)
+    value = models.CharField(blank=False, max_length=255)
+    output_code = models.CharField(blank=False, max_length=255)
+    
+    class Meta:
+        unique_together = ['abstract_ext_var', 'output_code', 'value']
+    
+    def __str__(self):
+        return '%s output code: %s' % (self.abstract_ext_var, self.output_code)
+
+class  ReportableExtended_Variables(models.Model): 
+    condition = models.ForeignKey(ConditionConfig, blank=False)
+    abstract_ext_var = models.ForeignKey(Extended_VariablesMap, blank=False)
+    #
+    # Notes
+    #
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ['abstract_ext_var', 'condition']
+        verbose_name = 'Reportable Extended Variables'
+    
+    def __str__(self):
+        return '%s (%s)' % (self.abstract_ext_var, self.condition)
 
 class ReportableMedication(models.Model):
     '''

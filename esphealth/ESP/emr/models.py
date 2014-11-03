@@ -881,8 +881,7 @@ class LabOrder(BasePatientRecord):
     obs_end_date = models.CharField(max_length=100, null=True)
     remark  = models.TextField('Remark', blank=True, null=True)
     parent_res = models.CharField('Parent lab result natural key', max_length=128, null=True)
-
-    
+   
     
     @staticmethod
     def delete_fakes():
@@ -1113,7 +1112,7 @@ class LabResult(BasePatientRecord):
             lx.native_code = 'MDPH-250' #this is the loinc, this is a tb lab.. 
             lx.result_string = 'ind'
             lx.order_natural_key = lx.natural_key # same order and key
-            lx.native_name = 'TB NO TEST'
+            lx.native_name = 'NO TEST'
             lx.collection_date = lx.result_date
        
         return lx 
@@ -1627,7 +1626,7 @@ class Encounter(BasePatientRecord):
     encounter_type = models.CharField('Type of encounter', choices=ENCOUNTER_TYPES, max_length=100, blank=True, null=True, db_index=True)
     priority =  models.CharField(max_length=10,choices=PRIORITY_TYPES, blank=False, db_index=True)
     status = models.CharField('Record status', max_length=100, blank=True, null=True, db_index=True)
-    site_natural_key = models.CharField('Native EMR system site ID', max_length=30, blank=True, null=True, db_index=True)
+    site_natural_key = models.CharField('Native EMR system site ID', max_length=50, blank=True, null=True, db_index=True)
     site_name = models.CharField('Encounter site name', max_length=100, blank=True, null=True, db_index=True)
     #
     # Extracted & calculated fields
