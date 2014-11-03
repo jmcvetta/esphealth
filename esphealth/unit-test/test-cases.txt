@@ -137,6 +137,24 @@ events: 5pos rpr 1 neg, 1 pos vdrl, 1 fta, 1neg tppa, 3pos tppa, 1neg tppa
 2/2 patient a lab negative for ttpa, fta-abs  or tp-igg -plattV
 1 patient with a lab positive for vrdl -anneI
 with values for titer and postive and with the word "reactive x:y" as result 
+pending cases:
+USE CASE A:  For syphilis:
+1.       1/1/2014 – ICD9 diagnosis 090
+2.       1/1/2014 – Prescription PEN G – Case sent….case date 1/1/2014
+3.       1/1/2015 – Lab Test TPPA reactive
+4.       1/1/2015 – VDRL greater than 1:8 – Case requeued
+…. Even if we had a row in conf_conditionconfig of:
+Syphilis Q    28  28  28  28  28 28
+USE CASE B:
+ 
+1.       1/1/2014 – ICD9 diagnosis 090
+2.       1/1/2014 – Prescription PEN G – Case sent, case date 1/1/2014
+3.       1/1/2015 – Lab Test TPPA reactive – Case requeued
+USE CASE C:
+1.       1/1/2014 – ICD9 diagnosis 090
+2.       1/1/2014 – Prescription PEN G – Case sent….case date 1/1/2014
+3.       1/1/2015 – VDRL greater than 1:8 
+
 
 pertussis
 5 patients (should generate 4 cases)
@@ -148,7 +166,6 @@ pertussis
   same patient with med antibiotic prescription after 7 days of diagnosis
 1 patient with positive lab for pertussis_pcr -samuel
 1 patient with positive pertussis_culture -whor
-
 1 patient with lab test of 'pertussis_pcr_order','pertussis_culture_order','pertussis_serology_order' -billx
   same patient with med antibiotic prescription within 7 days of diagnosis
        
