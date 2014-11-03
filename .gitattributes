@@ -21,6 +21,9 @@ chlamydiaSBIR/esphealth/ESP/conf/fixtures/sitehl7.json -text
 chlamydiaSBIR/esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
 chlamydiaSBIR/esphealth/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 chlamydiaSBIR/esphealth/ESP/conf/forms.py -text
+chlamydiaSBIR/esphealth/ESP/conf/management/__init__.py -text svneol=unset#text/plain
+chlamydiaSBIR/esphealth/ESP/conf/management/commands/__init__.py -text svneol=unset#text/plain
+chlamydiaSBIR/esphealth/ESP/conf/management/commands/makeini.py -text svneol=unset#text/plain
 chlamydiaSBIR/esphealth/ESP/conf/models.py -text
 chlamydiaSBIR/esphealth/ESP/conf/tests.py -text
 chlamydiaSBIR/esphealth/ESP/conf/urls.py -text

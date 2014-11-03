@@ -40,18 +40,9 @@ config = ConfigObj(application_ini, configspec=application_spec, interpolation=F
 bad_config = False
 for ini_file, conf_obj in [(secrets_ini, secrets), (application_ini, config)]:
     if not os.path.exists(ini_file):
-        print 'Cound not find configuration file %s' % ini_file
-        if os.access(ini_file, os.W_OK):
-            print 'Creating new configuration file.  Please fill it in with your values.'
-        else:
-            print 'Cannot create new configuration file -- do not have write access to %s' % ini_file
-        print
+        print 'Could not find configuration file %s' % ini_file
         bad_config = True
     results = conf_obj.validate(validator, copy=True)
-    try:
-        conf_obj.write()
-    except IOError:
-        logging.info('Do not have write permission on %s' % ini_file)
     if results != True:
         for (section_list, key, _) in flatten_errors(config, results):
             print '%s:' % ini_file
@@ -62,9 +53,9 @@ for ini_file, conf_obj in [(secrets_ini, secrets), (application_ini, config)]:
         bad_config = True
 if bad_config:
     print
-    print 'Configuration error, cannot start ESP.'
+    print 'Configuration problems will limit ESP functionality.'
     print
-    sys.exit(-1)
+    
 
 
 TODAY = datetime.date.today()
@@ -195,6 +186,7 @@ INSTALLED_APPS = (
     'ESP.emr',
     'ESP.hef',
     'ESP.nodis',
+    'ESP.qmetric',
     'ESP.vaers',
     'ESP.ss',
     'ESP.phit',
