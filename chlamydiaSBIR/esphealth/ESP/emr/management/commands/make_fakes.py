@@ -522,6 +522,8 @@ class ProblemWriter(EpicWriter):
         'problem_status',
         'comment',
         'provider_id', #added in 3 added cch
+        'hospital_pl_yn', 
+        'type'
         ]
 
     def write_row(self, problem, **kw):
@@ -530,11 +532,12 @@ class ProblemWriter(EpicWriter):
                 'mrn': problem.mrn,
                 'natural_key': problem.natural_key,
                 'date_noted': str_from_date(problem.date),
-                'dx_code': problem.dx_code,
+                'dx_code': problem.dx_code.code,
                 'problem_status': problem.status,
                 'comment': problem.comment,
-                'provider_id': problem.provider.natural_key
-               
+                'provider_id': problem.provider.natural_key,
+                'hospital_pl_yn': problem.hospital_pl_yn,
+                'type': problem.dx_code.type
                 })
 
 class PregnancyWriter(EpicWriter):

@@ -2116,6 +2116,7 @@ class Problem(BasePatientRecord):
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
     hospital_pl_yn = models.CharField('Hospital-based problem, Y or null',max_length=1, null=True)
+    type = models.CharField('Code type: ICD9, ICD10', max_length=10, null=True, db_index=True)
     
     @staticmethod
     def delete_fakes():
@@ -2133,10 +2134,12 @@ class Problem(BasePatientRecord):
         
         dx_code = Dx_code.objects.order_by('?')[0]
         
-        status = ['active',  'deleted','']         
+        status = ['active',  'deleted','']   
+        pl_yn_list =['Y',None]      
         problem = Problem(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
                          date=date, status=random.choice(status), dx_code=dx_code,
-                         provider=patient.pcp,natural_key=now)
+                         provider=patient.pcp,natural_key=now, hospital_pl_yn=random.choice(pl_yn_list),
+                         type=dx_code.type)
         if save_on_db: problem.save()
         return problem
             

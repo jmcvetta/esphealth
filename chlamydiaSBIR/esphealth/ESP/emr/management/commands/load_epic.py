@@ -190,7 +190,7 @@ class BaseLoader(object):
                )
             html_content = '<pre>\n%s\n</pre>' % report
             msg.attach_alternative(html_content, "text/html")
-            msg.send()
+            #msg.send()
       
       
         self.provenance = prov
@@ -2170,7 +2170,8 @@ class ProblemLoader(BaseLoader):
             'status' : string_or_none(row['problem_status']),
             'comment' : string_or_none(row['comment']),
             'provider' : self.get_provider(row['provider_id']),
-            'hospital_pl_yn' : string_or_none(row['hospital_pl_yn'])
+            'hospital_pl_yn' : string_or_none(row['hospital_pl_yn']),
+            'type' : string_or_none(row['type']),
             }
         
         try:
