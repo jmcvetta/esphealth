@@ -16,10 +16,8 @@ from datetime import datetime
 from ESP.qmetric.base import HQMF_Parser
 from ESP.qmetric.models import Element
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError, transaction
-from django.utils.encoding import DjangoUnicodeDecodeError
+from django.db import transaction
 from ESP.utils import log
-from ESP.utils.utils import sanitize_str
 
 #TODO: this should be a configurable setting
 hqmf_datadir = '/home/bobz/workspace/hqmf'

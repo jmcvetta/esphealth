@@ -75,7 +75,7 @@ class Population(models.Model):
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
-
+    #TODO: add admin interface
     class Meta:
         unique_together = [('cmsname', 'etype', 'patient','date')]
     

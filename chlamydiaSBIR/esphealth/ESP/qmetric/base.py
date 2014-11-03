@@ -39,16 +39,30 @@ class HQMF_Parser:
         assert hqmf_filepath
         file_handle = open(hqmf_filepath)
         self.hqmfdict = xmltodict.parse(file_handle)
+        
+    def gettype(self):
+        mtype=''
+        for attribute in self.hqmfdict['QualityMeasureDocument']['subjectOf']:
+            try:
+                if attribute['measureAttribute']['value']['@displayName']=='Proportion':
+                    mtype='Proportion'
+                    return mtype
+            except:
+                #not all the attribute.measureAttribute.value nodes have @displayname values
+                continue
+        return mtype
 
 class BasePopulationQualifier:
     '''
     Abstract base class for generating Population qualifier events
     '''
     
-    @abc.abstractproperty
-    def criteria_logic(self):
+    @abc.abstractmethod
+    def criteria_logic(self,entry):
         '''
         list of combinatorial logic for criteria list and data elements for population inclusion
+        @return: a dictionary of Q objects
+        @rtype: dictionary
         '''
         
     @abc.abstractmethod
@@ -72,11 +86,25 @@ class RatioQualifier(BasePopulationQualifier):
     Generate population qualifying events for ratio (proportion) metrics
     '''
     
-    def __init__(self, hqmf_filepath, pop_name):
+    def __init__(self, hqmf_parserobj):
         '''
         here is where the magic works -- call the hqmf parser to define criteria logic
         for named population, using hqmf file and name of population (numerator or denominator)
         [hardcode for now...]
+        '''
+        components=hqmf_parserobj.hqmfdict['QualityMeasureDocument']['component']
+        for component in components:
+            if component['section']['title']=='Population criteria':
+                criteria = {}
+                for entry in component['section']['entry']:
+                    criteria.update({entry['observation']['value']['@displayName'], self.criteria_logic(entry)})
+        print criteria
+                
+    def criteria_logic(self,entry):
+        '''
+        list of combinatorial logic for criteria list and data elements for population inclusion
+        @return: a dictionary of Q objects
+        @rtype: dictionary
         '''
         
     def qualifierQS(self):
