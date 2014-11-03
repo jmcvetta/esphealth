@@ -230,7 +230,7 @@ class Hepatitis_C(HepatitisNew):
         # of event is NOT by itself adequate to trigger a case of Hep C.
         
         trigger_conditions = ['lx:hepatitis_c_elisa:positive', 'lx:hepatitis_c_rna:positive']
-        trigger_qs = Event.objects.filter(name__in=trigger_conditions)
+        trigger_qs = Event.objects.filter(name__in=trigger_conditions) # excludes bound events
         trigger_qs = trigger_qs.exclude(case__condition__in=self.conditions)
         trigger_qs = trigger_qs.order_by('date')
         
