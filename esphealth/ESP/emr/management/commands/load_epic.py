@@ -1235,10 +1235,15 @@ class LabResultLoader(BaseLoader):
     
     def load_row(self, row):
         
-        # set date based on the date in the ETL file name
-        if USE_FILENAME_DATE and not row['order_date'] :            
-            log.info('Empty date not allowed, using date from the ETL file name')
-            date = datestring_from_filepath(self.filename)
+        # set date based on the collection date or result date, or elt file name
+        if not row['order_date']:
+            if row['collection_date']:
+                date = row[ 'collection_date']
+            elif row['result_date']:
+                date  = row['result_date']
+            elif USE_FILENAME_DATE:
+                log.info('Empty date not allowed, using date from the ETL file name')
+                date = datestring_from_filepath(self.filename)
         else:
             date = row['order_date']
             
