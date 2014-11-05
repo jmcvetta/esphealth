@@ -640,11 +640,12 @@ class hl7Batch:
         #TODO inspect what type of event is the first event and decide how to add the tag. 
         lxRecList = []
         reinfection_days = ConditionConfig.objects.get(name=case.condition).reinfection_days
-        if reinfection_days >0 and case.followup_events:
+        if reinfection_days >0 and case.followup_events.all():
             #only report the first one on the list
-            for event in case.followup_events:
-                first_event = event.content_object
-                break
+            if case.followup_events.all():
+                for event in case.followup_events.all():
+                    first_event = event.content_object
+                    break
                 
             lxRecList.insert(0, first_event)
                 #if the event is a prescription  then use self.addRXOBX(rxRecList=rxobjs, orus=orus)
@@ -1418,7 +1419,7 @@ class Command(BaseCommand):
                 # Transmission
                 #
                 if options.transmit: 
-                    #success = True for testing and comment out the line below
+                    #success = True #TODO for testing and comment out the line below
                     success = self.transmit(options, filepath)
                     if success:
                         if options.mark_sent:

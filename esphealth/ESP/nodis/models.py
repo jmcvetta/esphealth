@@ -108,8 +108,8 @@ class Case(models.Model):
     #
     # Events that define this case
     #
-    events = models.ManyToManyField(Event, blank=False,related_name='events')
-    followup_events = models.ManyToManyField(Event, blank=False,related_name='followup_events')
+    events = models.ManyToManyField(Event, blank=False,related_name='case')
+    followup_events = models.ManyToManyField(Event, blank=False,related_name='followup')
     
     timespans = models.ManyToManyField(Timespan, blank=False)
 
