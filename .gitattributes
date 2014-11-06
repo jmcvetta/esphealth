@@ -25,6 +25,9 @@ esphealth/ESP/conf/fixtures/sitehl7.json -text
 esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/forms.py -text
+esphealth/ESP/conf/management/__init__.py -text svneol=unset#text/plain
+esphealth/ESP/conf/management/commands/__init__.py -text svneol=unset#text/plain
+esphealth/ESP/conf/management/commands/makeini.py -text svneol=unset#text/plain
 esphealth/ESP/conf/models.py -text
 esphealth/ESP/conf/tests.py -text
 esphealth/ESP/conf/urls.py -text
