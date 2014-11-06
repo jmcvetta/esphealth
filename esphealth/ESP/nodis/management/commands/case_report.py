@@ -757,19 +757,21 @@ class hl7Batch:
                 clia = INSTITUTION.clia # it was hard coded to '22D0076229'    
             
             if reinf:
-                reinf_output_code = lxRec.output_or_native_code
-                reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.output_or_native_code).values('reinf_output_code')
+                reinf_output_code = lxRec.output_or_native_code 
+                reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.output_or_native_code).values_list('reinf_output_code', flat=True)
+                if reinf_output_code:
+                    reinf_output_code= reinf_output_code[0]
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
                     obx2  = [('', 'CE')],
                     obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                    obx5  = [('CE.4',reinf_output_code)],  #TODO show the result?
+                    obx5  = [('CE.4',reinf_output_code)],  
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
                     obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
                     obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     )
-            if not snomed: ##like ALT/AST and must be number
+            elif not snomed: ##like ALT/AST and must be number
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
                     obx2  = [('', obx2_type)],
@@ -793,7 +795,7 @@ class hl7Batch:
                     obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     )
             orcs.appendChild(obx1)
-            if snomed2:
+            if not reinf and snomed2:
                 orcs.appendChild(self.makeOBX(
                     obx1  = [('','2')],
                     obx2  = [('', 'CE')],

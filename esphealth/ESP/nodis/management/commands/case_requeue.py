@@ -42,6 +42,7 @@ from django.db.models import Q
 from django.core.management.base import BaseCommand
 
 from ESP.nodis.base import DiseaseDefinition
+from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.nodis.models import STATUS_CHOICES
 
@@ -161,6 +162,38 @@ class Command(BaseCommand):
                     condition = case.condition
                     condition_config = case.condition_config
                     max_reportable_days = condition_config.get_max_reportables_days_after()
+                    
+                '''
+                reinfection logic
+                checks for events that happened within the window of reinfection days .
+                This window starts from the end of the reinfection window. 
+                It will add the events found to the existing cases as a followup_event 
+                and change the status to RQ if the status is S for the existing cases
+                '''
+                disease_definition = DiseaseDefinition.get_by_short_name(condition)                    
+                if disease_definition.reinfection >0:
+                    event_names = set()
+                    for heuristic in disease_definition.event_heuristics:
+                        for name in heuristic.event_names:
+                            event_names.add(name)
+                     
+                    start = case.date + datetime.timedelta(days=disease_definition.recurrence_interval) 
+                    end = case.date + datetime.timedelta(days=disease_definition.reinfection)  
+                    q_obj = Q(patient=case.patient)
+                    q_obj &= Q(date__gte=start)
+                    q_obj &= Q(date__lte=end)
+                    q_obj &= Q(name__in = event_names)
+                    followup_events = Event.objects.filter(q_obj).order_by('date')
+                    #add events to follow up of these cases 
+                    if followup_events:
+                        for event in followup_events:
+                            if not case.followup_events.all() or event not in case.followup_events.all():
+                                case.followup_events.add(event)
+                                #change the status of all the cases in this query set
+                                if case.status == 'S' or case.status == 'RS':
+                                    log.info('Requeing cases of %s with Reinfection' % condition)
+                                    case.status = 'RQ'
+                    case.save()    
                     
                 log.debug('Requeuing case for %s' % case)
                 #
