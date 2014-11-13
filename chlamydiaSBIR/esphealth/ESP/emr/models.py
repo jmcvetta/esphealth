@@ -648,6 +648,8 @@ class Patient(BaseMedicalRecord):
     def __getDOB(self):
         return self.date_of_birth.strftime("%B %d, %Y")
     DOB = property(__getDOB)
+    def __getdob(self):
+        return self.date_of_birth.date()
         
     def __str__(self):
         return u'%20s %s' % (self.pk, self.name)
@@ -1729,8 +1731,12 @@ class Encounter(BasePatientRecord):
        
         now = int(time.time()*1000) #time in milliseconds
         
+        enctypes=['office visit','preventive care','ER','phone','home healthcare','lab specimen','email']     
+        
         e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
                       mrn=patient.mrn, status='FAKE', date=when, date_closed=when)
+        
+        e.raw_encounter_type = random.choice(enctypes)
         
         e.natural_key = now
         #the order in msVitals depends on the fakevitals load order rows 
@@ -1815,7 +1821,7 @@ class Encounter(BasePatientRecord):
             try:
                 return float(self.raw_bmi)
             except ValueError: # Can't convert raw_bmi to a float
-                log.info('Could not convert raw_bmi "%s" to float - will try to calculate BMI' % self.raw_bmi)
+                log.warning('Could not convert raw_bmi "%s" to float - will try to calculate BMI' % self.raw_bmi)
         # If this encounter has usable height & weight, calculate BMI based on that
         if (self.height and self.weight):
             height = self.height
