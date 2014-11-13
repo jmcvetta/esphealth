@@ -12,7 +12,7 @@
 
 import os
 from optparse import make_option
-from ESP.qmetric.base import RatioQualifier, HQMF_Parser
+from ESP.qmetric.base import DSTU2Qualifier, HQMF_Parser
 from django.core.management.base import BaseCommand
 
 
@@ -37,9 +37,11 @@ class Command(BaseCommand):
             #TODO: raise an exception here
             return
         hp = HQMF_Parser(filepath)
-        if hp.gettype()=='Proportion':
-            popqual = RatioQualifier(hp)
-        #TODO: handle other types of HQMF qmetrics
+        if hp.gettype() in ['POQM_HD000001','POQM_HD000001UV02']:
+            popqual = DSTU2Qualifier(hp)
+            counts=popqual.load_criteria()
+            print str(counts) + " criteria records loaded"
+        #Note: the two types above are the only two HQMF definitions by HL7 as of late 2014.   
         else:
             #TODO: raise exception
             return

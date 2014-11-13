@@ -176,7 +176,7 @@ chlamydiaSBIR/esphealth/ESP/qmetric/__init__.py -text
 chlamydiaSBIR/esphealth/ESP/qmetric/base.py -text
 chlamydiaSBIR/esphealth/ESP/qmetric/management/__init__.py -text
 chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/__init__.py -text
-chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/generate_popevents.py -text svneol=unset#text/plain
+chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/generate_criteria.py -text svneol=unset#text/plain
 chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/load_elements.py -text
 chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/update_valuesets.py -text svneol=unset#text/plain
 chlamydiaSBIR/esphealth/ESP/qmetric/models.py -text
