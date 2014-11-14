@@ -12,8 +12,6 @@
 import abc, xmltodict, ntpath, collections
 from ESP.qmetric.models import Element, Elementmapping, Criteria, Population
 from ESP.emr.models import Patient
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
 from dateutil.relativedelta import relativedelta
 
 
@@ -33,7 +31,7 @@ class ElementMapCollection:
         self.mapped_field=ElementQS.mapped_field
         self.codes=[]
         for emap in ElementQS.ElementMapping_set.all():
-            self.codes.append(emap.code)
+            self.codes.apself.pend(emap.code)
 
 class HQMF_Parser:
     '''
@@ -187,6 +185,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                                             object_id=enc.id)
                             crec.save(force_insert=True)
                             count+=1
+                            if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='laborder':
                         for ordr in patrec.laborder_set.all():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
@@ -194,6 +193,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                                             object_id=ordr.id)
                             crec.save(force_insert=True)
                             count+=1
+                            if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='labresult':
                         for res in patrec.labresult_set.all():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
@@ -201,6 +201,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                                             object_id=res.id)
                             crec.save(force_insert=True)
                             count+=1
+                            if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='prescription':
                         for rx in patrec.prescription_set.all():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
@@ -208,96 +209,15 @@ class DSTU2Qualifier(BasePopulationQualifier):
                                             object_id=rx.id)
                             crec.save(force_insert=True)
                             count+=1
+                            if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='patient':
                         crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
                                         date=patrec.date_of_birth.date(), content_type=elem.content_type,
                                         object_id=patrec.id)
                         crec.save(force_insert=True)
                         count+=1
+                        if (count % 1000)==0: print str(count) + " criteria records loaded"
         return count
-    
-    def generate(self, pstart, pend):
-        '''
-        generate the population qualifiers by applying hqmf logic to criteria elements for the specified period
-        '''
-        ageQ = "select distinct patient_id from qmetric_criteria where critname='Patient Characteristic Birthdate: birth date' and cmsname='" \
-               + self.cmsname + "' and date > '" + (pstart-relativedelta(years=24)).strftime('%Y-%m-%d') + "'::date and date <= '" \
-               + (pstart-relativedelta(years=16)).strftime('%Y-%m-%d') + "'::date"
-        sexQ = "select distinct patient_id from qmetric_criteria where critname='Patient Characteristic Sex: Female' and cmsname='" + self.cmsname + "'"
-        encQ_1 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Office Visit' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        encQ_2 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Face-to-Face Interaction' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        encQ_3 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care Services - Established Office Visit, 18 and Up' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        encQ_4 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care Services-Initial Office Visit, 18 and Up' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        encQ_5 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care - Established Office Visit, 0 to 17' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        encQ_6 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care- Initial Office Visit, 0 to 17' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        encQ_7 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Home Healthcare Services' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_1 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Other Female Reproductive Conditions' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_2 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Genital Herpes' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_3 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Gonococcal Infections and Venereal Diseases' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_4 = "select distinct patient_id from qmetric_criteria where critname='Medication, Active: Contraceptive Medications' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_5 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Inflammatory Diseases of Female Reproductive Organs' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_6 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Chlamydia' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_7 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: HIV' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_8 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Syphilis' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        diagQ_9 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Complications of Pregnancy, Childbirth and the Puerperium' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        labQ_1 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Pregnancy Test' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        labQ_2 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Pap Test' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        labQ_3 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Lab Tests During Pregnancy' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        labQ_4 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Lab Tests for Sexually Transmitted Infections' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        procQ_1 = "select distinct patient_id from qmetric_criteria where critname='Procedure, Performed: Delivery Live Births' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        procQ_2 = "select distinct patient_id from qmetric_criteria where critname='Diagnostic Study, Order: Diagnostic Studies During Pregnancy' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        procQ_3 = "select distinct patient_id from qmetric_criteria where critname='Procedure, Performed: Procedures During Pregnancy' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        procQ_4 = "select distinct patient_id from qmetric_criteria where critname='Procedure, Performed: Procedures Involving Contraceptive Devices' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        medQ_1 = "select distinct patient_id from qmetric_criteria where critname='Medication, Order: Contraceptive Medications' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        exclQ_1 = "select distinct patient_id from qmetric_criteria where critname='Medication, Order: Isotretinoin' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-        exclQ_1 = "select distinct patient_id from qmetric_criteria where critname='Diagnostic Study, Order: X-Ray Study (all inclusive)' and cmsname='" + self.cmsname \
-               + "' and date between '" + pstart.strftime('%Y-%m-%d') + "'::date and '" + pend.strftime('%Y-%m-%d') + "'::date"
-               
-        allQ = 'select * from (' + ageQ + ') age inner join (' + sexQ + ') sex on sex.patient_id=age.patient_id ' \
-              + 'inner join (select * from (' + encQ_1 + ') enc1 ' \
-                   + ' union select * from (' + encQ_2 + ') enc2 ' \
-                   + ' union select * from (' + encQ_3 + ') enc3 ' \
-                   + ' union select * from (' + encQ_4 + ') enc4 ' \
-                   + ' union select * from (' + encQ_5 + ') enc5 ' \
-                   + ' union select * from (' + encQ_6 + ') enc6 ' \
-                   + ' union select * from (' + encQ_7 + ') enc7 ) enc on sex.patient_id=enc.patient_id ' \
-              + 'inner join (select * from (' + diagQ_1 + ') diag1 ' \
-                   + ' union select * from (' + diagQ_2 + ') diag2 ' \
-                   + ' union select * from (' + diagQ_3 + ') diag3 ' \
-                   + ' union select * from (' + diagQ_4 + ') diag4 ' \
-                   + ' union select * from (' + diagQ_5 + ') diag5 ' \
-                   + ' union select * from (' + diagQ_6 + ') diag6 ' \
-                   + ' union select * from (' + diagQ_7 + ') diag7 ' \
-                   + ' union select * from (' + diagQ_8 + ') diag8 ' \
-                   + ' union select * from (' + diagQ_9 + ') diag9 ) diag on sex.patient_id=diag.patient_id ' \
-
-
     
     def get_qset(self,elems,elemname):
         '''
@@ -334,5 +254,121 @@ class ResultGenerator:
     '''
     methods for a command that will populate results table
     '''
+    def __init__(self,pstart,pend,cmsname):
+        self.pstart=pstart
+        self.pend=pend
+        self.cmsname=cmsname
 
+    def loadPop(self,patlist, etype):
+        count=0
+        for pat in patlist:
+            patient = Patient.objects.get(id=pat)
+            pRec=Population(cmsname=self.cmsname, etype=etype, periodstartdate=self.pstart, periodenddate=self.pend, patient=patient)
+            pRec.save(force_insert=True)
+            count+=1
+        return count
+
+    def genpop(self):
+        '''
+        generate the population qualifiers by applying hqmf logic to criteria elements for the specified period
+        '''
+        ageQ = "select distinct patient_id from qmetric_criteria where critname='Patient Characteristic Birthdate: birth date' and cmsname='" \
+               + self.cmsname + "' and date > '" + (self.pstart-relativedelta(years=24)).strftime('%Y-%m-%d') + "'::date and date <= '" \
+               + (self.pstart-relativedelta(years=16)).strftime('%Y-%m-%d') + "'::date"
+        sexQ = "select distinct patient_id from qmetric_criteria where critname='Patient Characteristic Sex: Female' and cmsname='" + self.cmsname + "'"
+        encQ_1 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Office Visit' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        encQ_2 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Face-to-Face Interaction' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        encQ_3 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care Services - Established Office Visit, 18 and Up' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        encQ_4 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care Services-Initial Office Visit, 18 and Up' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        encQ_5 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care - Established Office Visit, 0 to 17' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        encQ_6 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Preventive Care- Initial Office Visit, 0 to 17' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        encQ_7 = "select distinct patient_id from qmetric_criteria where critname='Encounter, Performed: Home Healthcare Services' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_1 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Other Female Reproductive Conditions' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_2 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Genital Herpes' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_3 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Gonococcal Infections and Venereal Diseases' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_4 = "select distinct patient_id from qmetric_criteria where critname='Medication, Active: Contraceptive Medications' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_5 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Inflammatory Diseases of Female Reproductive Organs' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_6 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Chlamydia' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_7 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: HIV' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_8 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Syphilis' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        diagQ_9 = "select distinct patient_id from qmetric_criteria where critname='Diagnosis, Active: Complications of Pregnancy, Childbirth and the Puerperium' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        #labQ_1 is involved in the exclusion rule, so it has to be built differently
+        labQ_2 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Pap Test' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        labQ_3 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Lab Tests During Pregnancy' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        labQ_4 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Order: Lab Tests for Sexually Transmitted Infections' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        procQ_1 = "select distinct patient_id from qmetric_criteria where critname='Procedure, Performed: Delivery Live Births' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        procQ_2 = "select distinct patient_id from qmetric_criteria where critname='Diagnostic Study, Order: Diagnostic Studies During Pregnancy' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        procQ_3 = "select distinct patient_id from qmetric_criteria where critname='Procedure, Performed: Procedures During Pregnancy' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        procQ_4 = "select distinct patient_id from qmetric_criteria where critname='Procedure, Performed: Procedures Involving Contraceptive Devices' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        medQ_1 = "select distinct patient_id from qmetric_criteria where critname='Medication, Order: Contraceptive Medications' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        #these queries have to be joined based on relative date values, so date is included
+        labQ_1 = "select distinct patient_id, date from qmetric_criteria where critname='Laboratory Test, Order: Pregnancy Test' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        exclQ_1 = "select distinct patient_id, date from qmetric_criteria where critname='Medication, Order: Isotretinoin' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+        exclQ_2 = "select distinct patient_id, date from qmetric_criteria where critname='Diagnostic Study, Order: X-Ray Study (all inclusive)' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+               
+        headrQ = 'select sex.patient_id ' 
+        denomQ = ' from (' + ageQ + ') age inner join (' + sexQ + ') sex on sex.patient_id=age.patient_id ' \
+              + ' inner join (select * from (' + encQ_1 + ') enc1 ' \
+                   + ' union select * from (' + encQ_2 + ') enc2 ' \
+                   + ' union select * from (' + encQ_3 + ') enc3 ' \
+                   + ' union select * from (' + encQ_4 + ') enc4 ' \
+                   + ' union select * from (' + encQ_5 + ') enc5 ' \
+                   + ' union select * from (' + encQ_6 + ') enc6 ' \
+                   + ' union select * from (' + encQ_7 + ') enc7 ) enc on sex.patient_id=enc.patient_id ' \
+              + 'inner join (select * from (' + diagQ_1 + ') diag1 ' \
+                   + ' union select * from (' + diagQ_2 + ') diag2 ' \
+                   + ' union select * from (' + diagQ_3 + ') diag3 ' \
+                   + ' union select * from (' + diagQ_4 + ') diag4 ' \
+                   + ' union select * from (' + diagQ_5 + ') diag5 ' \
+                   + ' union select * from (' + diagQ_6 + ') diag6 ' \
+                   + ' union select * from (' + diagQ_7 + ') diag7 ' \
+                   + ' union select * from (' + diagQ_8 + ') diag8 ' \
+                   + ' union select * from (' + diagQ_9 + ') diag9 ' \
+                   + ' union select distinct lab1.patient_id from (' + labQ_1 + ') lab1 ' \
+                       + ' where not exists (select null from (' + exclQ_1 + ') excl1 where excl1.patient_id=lab1.patient_id and (excl1.date-lab1.date between 0 and 7) ) ' \
+                       + ' and not exists (select null from (' + exclQ_2 + ') excl1 where excl1.patient_id=lab1.patient_id and (excl1.date-lab1.date between 0 and 7) ) ' \
+                   + ' union select * from (' + labQ_2 + ') lab2 ' \
+                   + ' union select * from (' + labQ_3 + ') lab3 ' \
+                   + ' union select * from (' + labQ_4 + ') lab4 ' \
+                   + ' union select * from (' + procQ_1 + ') proc1 ' \
+                   + ' union select * from (' + procQ_2 + ') proc2 ' \
+                   + ' union select * from (' + procQ_3 + ') proc3 ' \
+                   + ' union select * from (' + procQ_4 + ') proc4 ' \
+                   + ' union select * from (' + medQ_1 + ') med1 ) diag on sex.patient_id=diag.patient_id '
+        labQ_5 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Result: Chlamydia Screening' and cmsname='" + self.cmsname \
+               + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
+
+        denomlist = Criteria.critpats.poploader(headrQ+denomQ)
+        dcounts = self.loadPop(denomlist,'denominator')
+        numQ = denomQ + ' inner join (' + labQ_5 + ') numr on sex.patient_id=numr.patient_id ' 
+        numlist = Criteria.critpats.poploader(headrQ+numQ)
+        ncounts = self.loadPop(numlist,'numerator')
+        return ncounts, dcounts
         

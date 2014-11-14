@@ -10,7 +10,7 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-from django.db import models
+from django.db import models, connection
 from ESP.emr.models import Patient, Provider
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
@@ -61,6 +61,14 @@ class Elementmapping(models.Model):
     
 #TODO: create a results model that will contain cube results for reporting
 
+class CritPats(models.Manager):
+    def poploader(self,query):
+        cursor = connection.cursor()
+        cursor.execute(query)
+        patlist=[]
+        for row in cursor.fetchall():
+            patlist.append(row[0])
+        return patlist
 
 class Criteria(models.Model):
     #will need a date and a name
@@ -72,6 +80,10 @@ class Criteria(models.Model):
     content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
+    # adding a custom manager to get criteria patients.  Since the CritPats manager does not override any models.Manager methods
+    #   we don't really need separate objects and critpats managers, but it seemed cleaner.
+    objects = models.Manager()
+    critpats = CritPats()
 
     class Meta:
         unique_together = [('cmsname', 'critname', 'content_type','object_id')]
@@ -79,7 +91,7 @@ class Criteria(models.Model):
 
 class Population(models.Model):
     '''
-    A medical event
+    A population event
     '''
     TYPE_CHOICES = [ ('numerator','Numerator'),
                      ('denominator','Denominator'),
@@ -103,7 +115,18 @@ class Population(models.Model):
         return 'Event # %s (%s %s)' % (self.pk, self.cmsname, self.date)
         
 
-    
+class Results(models.Model):
+    '''
+    A population event
+    '''
+    cmsname = models.CharField('CMSname for this result', max_length=20, blank=False, db_index=True)
+    numerator = models.IntegerField('Numerator')
+    denominator = models.IntegerField('Denominator')
+    rate = models.DecimalField('Rate',max_digits=4, decimal_places=3)
+    stratification = models.CharField('Stratification level', max_length=500, blank=False, null=False, db_index=True)
+    periodstartdate = models.DateField('start of measurement period', blank=False, db_index=True)
+    periodenddate = models.DateField('end of measurement period', blank=False, db_index=True)
+
     
     
 

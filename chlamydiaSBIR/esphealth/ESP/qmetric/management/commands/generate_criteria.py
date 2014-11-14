@@ -1,7 +1,7 @@
 '''
                               ESP Health Project
                             Quality Metrics module
-                  generate population events from hqmf document logic
+                  generate criteria events from hqmf document logic
 
 @authors: Bob Zambarano <bzambarano@commoninf.com>
 @organization: Commonwealth Informatics - http://www.commoninf.com
