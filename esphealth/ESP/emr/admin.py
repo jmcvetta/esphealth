@@ -80,20 +80,20 @@ class LabResultAdmin(admin.ModelAdmin):
     ordering = ['-date']
 
 class LabOrderAdmin(admin.ModelAdmin):
-    list_display = ['natural_key', 'procedure_code', 'procedure_modifier', 'procedure_name', 'order_type']
+    list_display = ['natural_key', 'procedure_code', 'patient', 'procedure_modifier', 'procedure_name', 'order_type']
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['procedure_name', 'procedure_code']
     ordering = ['-date']
     
 class Order_ExtensionAdmin(admin.ModelAdmin):
     ordering = ['order_natural_key']
-    list_display = ['order_natural_key', 'question']
+    list_display = ['order_natural_key', 'question', 'patient']
     search_fields = ['order_natural_key', 'question']
     
 
 class Order_idInfoAdmin(admin.ModelAdmin):
     ordering = ['order_natural_key']
-    list_display = ['order_natural_key', 'placer_ord_eid']
+    list_display = ['order_natural_key', 'placer_ord_eid', 'patient']
     search_fields = ['order_natural_key', 'placer_ord_eid']
     
 class EncounterAdmin(admin.ModelAdmin):
