@@ -13,7 +13,7 @@
 import urllib, urllib2, xmltodict
 from django.core.management.base import BaseCommand
 from optparse import make_option
-from ESP.qmetric.models import Element, ElementMapping
+from ESP.qmetric.models import Element, Elementmapping
 from django.db import transaction
 
 url='https://vsac.nlm.nih.gov/vsac/ws'
@@ -27,7 +27,7 @@ class vsac_loader(object):
     
     @transaction.autocommit
     def load(self):
-        mapping = ElementMapping(element=self.elem,
+        mapping = Elementmapping(element=self.elem,
                                  code=self.codeline['@code'],
                                  description=self.codeline['@displayName'],
                                  codesystem=self.codeline['@codeSystemName'])
@@ -55,7 +55,8 @@ class Command(BaseCommand):
         url2 = url1 + '/' + tgtvalue
         treq = urllib.urlencode({'service': 'http://umlsks.nlm.nih.gov'})
         for elem in Element.objects.filter(cmsname=options['cmsname'], source='VSAC'):
-            #TODO: add progress to log.  Also, add a filter to limit to a specific code type for each Value Set.
+            print 'now loading codes for element: ' + elem.ename
+            count=0
             vsa2 = urllib2.Request(url2,treq)
             ticket = urllib2.urlopen(vsa2)
             ticketval = ticket.read()
@@ -67,6 +68,9 @@ class Command(BaseCommand):
                 codestore = vsac_loader(codeline,elem)
                 try:
                     codestore.load()
+                    count+=1
+                    if not (count % 25): print str(count) + ' code records loaded'
                 except:
                     raise
+            print str(count) + ' code records loaded'
         return 

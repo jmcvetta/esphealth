@@ -69,7 +69,7 @@ class CritPats(models.Manager):
         for row in cursor.fetchall():
             patlist.append(row[0])
         return patlist
-
+        
 class Criteria(models.Model):
     #will need a date and a name
     cmsname = models.CharField('CMSname for this criteria event', max_length=20, blank=False, db_index=True)
@@ -120,9 +120,9 @@ class Results(models.Model):
     A population event
     '''
     cmsname = models.CharField('CMSname for this result', max_length=20, blank=False, db_index=True)
-    numerator = models.IntegerField('Numerator')
+    numerator = models.IntegerField('Numerator',null=True)
     denominator = models.IntegerField('Denominator')
-    rate = models.DecimalField('Rate',max_digits=4, decimal_places=3)
+    rate = models.FloatField('Rate',null=True)
     stratification = models.CharField('Stratification level', max_length=500, blank=False, null=False, db_index=True)
     periodstartdate = models.DateField('start of measurement period', blank=False, db_index=True)
     periodenddate = models.DateField('end of measurement period', blank=False, db_index=True)

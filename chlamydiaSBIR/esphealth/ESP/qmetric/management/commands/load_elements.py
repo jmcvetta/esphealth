@@ -68,5 +68,5 @@ class Command(BaseCommand):
             filepath = os.path.join(hqmf_datadir, item)
             l = hqmf_loader(filepath)
             valid = l.load()
-            print valid
+            print str(valid) + ' elements loaded from HQMF xml' 
         

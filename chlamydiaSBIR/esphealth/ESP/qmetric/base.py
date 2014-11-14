@@ -10,9 +10,10 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 import abc, xmltodict, ntpath, collections
-from ESP.qmetric.models import Element, Elementmapping, Criteria, Population
+from ESP.qmetric.models import Element, Elementmapping, Criteria, Population, Results
 from ESP.emr.models import Patient
 from dateutil.relativedelta import relativedelta
+from django.db import connection
 
 
 class ElementMapCollection:
@@ -179,7 +180,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                         #this excludes any patients who don't meet basic criteria required inclusion
                         #TODO: get this from the xml or element/elementmapping
                     elif modl=='encounter':
-                        for enc in patrec.encounter_set.all():
+                        for enc in patrec.encounter_set.distinct():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
                                             date=enc.date, content_type=elem.content_type,
                                             object_id=enc.id)
@@ -187,7 +188,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                             count+=1
                             if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='laborder':
-                        for ordr in patrec.laborder_set.all():
+                        for ordr in patrec.laborder_set.distinct():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
                                             date=ordr.date, content_type=elem.content_type,
                                             object_id=ordr.id)
@@ -195,7 +196,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                             count+=1
                             if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='labresult':
-                        for res in patrec.labresult_set.all():
+                        for res in patrec.labresult_set.distinct():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
                                             date=res.date, content_type=elem.content_type,
                                             object_id=res.id)
@@ -203,7 +204,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
                             count+=1
                             if (count % 1000)==0: print str(count) + " criteria records loaded"
                     elif modl=='prescription':
-                        for rx in patrec.prescription_set.all():
+                        for rx in patrec.prescription_set.distinct():
                             crec = Criteria(cmsname=self.cmsname,critname=key,patient=patrec,
                                             date=rx.date, content_type=elem.content_type,
                                             object_id=rx.id)
@@ -221,7 +222,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
     
     def get_qset(self,elems,elemname):
         '''
-        Returns a Q object based on values passed
+        Returns a queryset based on values passed
         '''
         # Doing some hand standing here because the HQMF document can prefix element titles 
         #   with additional descriptive info in the population criteria section so they don't match the
@@ -246,7 +247,7 @@ class DSTU2Qualifier(BasePopulationQualifier):
         else:
             leftside= modl + '__' + var + '__in'
         kwargs={leftside:codelist}
-        qset=Patient.objects.filter(**kwargs)
+        qset=Patient.objects.filter(**kwargs).distinct()
         return ename, qset
         
     
@@ -371,4 +372,89 @@ class ResultGenerator:
         numlist = Criteria.critpats.poploader(headrQ+numQ)
         ncounts = self.loadPop(numlist,'numerator')
         return ncounts, dcounts
-        
+    
+    def genres(self):
+        '''
+        Generate results and load to result table
+        '''
+        baseQ = ' select pat.ethnicity, pat.race, pop.etype, case ' \
+                 + " when pat.date_of_birth::date < '" + (self.pstart-relativedelta(years=21)).strftime('%Y-%m-%d') + "'::date then '16-20' " \
+                 + " when pat.date_of_birth::date >= '" + (self.pstart-relativedelta(years=21)).strftime('%Y-%m-%d') + "'::date then '21-24' end as age_groups " \
+                 + ' from qmetric_population pop join emr_patient pat on pat.id=pop.patient_id ' \
+                 + " where pop.cmsname ='" + self.cmsname + "' and pop.periodstartdate='" \
+                 + self.pstart.strftime('%Y-%m-%d') + "'::date and pop.periodenddate='" + self.pend.strftime('%Y-%m-%d') + "'::date "
+        denomQ = 'select count(*) as denominator, ' \
+                 + ' ethnicity, race, age_groups ' \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by ethnicity, race, age_groups ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " ethnicity, race, 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by ethnicity, race ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " ethnicity, 'all', age_groups " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by ethnicity, age_groups ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " 'all', race, age_groups " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by race, age_groups ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " ethnicity, 'all', 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by ethnicity ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " 'all', race, 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by race ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " 'all', 'all', age_groups " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' " \
+                 + ' group by age_groups ' \
+                 + ' union all select count(*) as denominator, ' \
+                 + " 'all', 'all', 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='denominator' "  
+        numerQ = 'select count(*) as numerator, ' \
+                 + ' ethnicity, race, age_groups ' \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by ethnicity, race, age_groups ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " ethnicity, race, 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by ethnicity, race ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " ethnicity, 'all', age_groups " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by ethnicity, age_groups ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " 'all', race, age_groups " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by race, age_groups ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " ethnicity, 'all', 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by ethnicity ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " 'all', race, 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by race ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " 'all', 'all', age_groups " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' " \
+                 + ' group by age_groups ' \
+                 + ' union all select count(*) as numerator, ' \
+                 + " 'all', 'all', 'all' " \
+                 + ' from (' + baseQ + ') t1 ' + " where etype='numerator' "  
+        cubeQ = "select '" + self.cmsname + "' as cmsname, d.denominator, n.numerator, n.numerator/d.denominator::float as rate, " \
+                 + " d.ethnicity || ' | ' || d.race || ' | ' || d.age_groups as stratification, '" \
+                 + self.pstart.strftime('%Y-%m-%d') + "'::date as periodstartdate, '" + self.pend.strftime('%Y-%m-%d') + "'::date as periodenddate " \
+                 + ' from (' + denomQ + ') as d left join (' + numerQ + ') as n on d.ethnicity=n.ethnicity and d.race=n.race and d.age_groups=n.age_groups'
+        rescurs = connection.cursor()
+        rescurs.execute(cubeQ)
+        count=0
+        for r in rescurs:
+            res = Results(cmsname=r[0], denominator=r[1], numerator=r[2],rate=r[3], stratification=r[4],
+                          periodstartdate=r[5], periodenddate=r[6]) 
+            res.save()
+            count+=1
+        return count

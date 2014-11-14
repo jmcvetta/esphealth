@@ -38,4 +38,6 @@ class Command(BaseCommand):
         rg = ResultGenerator(pstart,pend,cmsname)
         ncounts, dcounts = rg.genpop()
         print str(dcounts) + ' denominator records loaded, and ' + str(ncounts) + ' numerator records loaded'
+        rcount = rg.genres()
+        print str(rcount) + ' summary rows added to results table'
         return
