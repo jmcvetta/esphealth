@@ -143,7 +143,8 @@ ROWS_PER_PAGE = config['Web']['rows_per_page']
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = os.path.join(TOPDIR, 'media')
 MEDIA_URL = config['Web']['media_url']
-STATIC_URL = config['Web']['admin_media_prefix']
+STATIC_ROOT = os.path.join(MEDIA_ROOT,'static')
+STATIC_URL = config['Web']['static_url']
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader'
@@ -180,6 +181,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'ESP.static', 
     'ESP.conf', 
     'ESP.emr',
