@@ -11,8 +11,8 @@
 	ServerAdmin youremail@yourdomain.com
 	#DocumentRoot /var/www/html/
 
-	Alias /admin-media /opt/esp/src/django/contrib/admin/media
-	Alias /media /opt/esp/src/ESP/media
+	Alias /static/ /srv/esp/prod/ESP/media/static/
+	Alias /media /srv/esp/prod/ESP/media
 	
 	#
 	# WSGI 
