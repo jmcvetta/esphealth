@@ -229,7 +229,7 @@ class hl7Batch:
 
     
     ####################################
-    def addCase(self, case):
+    def addCase(self, case, elr):
         """Workhorse - maps cases into an xml document containing hl7
         should pass a mapping dict for each case here
         the obx records are all the case details so
@@ -237,17 +237,11 @@ class hl7Batch:
         appropriate segments
         """
         
-        '''
-                TODO pass in options.elr
-                add a header for the elr only cases in the hl7
-                    ability to send elr to staging and the others to production 
-                send feed to different sites.. change add case to add something in the header
-        '''
         self.currentCase=case.id
         patient = case.patient
         oru = self.casesDoc.createElement('ORU_R01')
         self.casesTopLevel.appendChild(oru)
-        mhs = self.makeMSH(case.patient.center_id,segcontents=None,processingFlag='T') # testing!
+        mhs = self.makeMSH(elr, case.patient.center_id, segcontents=None, processingFlag='T') 
         oru.appendChild(mhs)
         orus = self.casesDoc.createElement('ORU_R01.PIDPD1NK1NTEPV1PV2ORCOBRNTEOBXNTECTI_SUPPGRP')
         oru.appendChild(orus)
@@ -652,8 +646,33 @@ class hl7Batch:
                 # if the event is an encounter then use  self.addCaseOBX(demog=patient, orcs=orcs, dx_code=rep_dx_codes, lx=lx, rx=rx,
                 #encounters=rep_encounters, condition=case.condition, casenote=case.notes,
                 #caseid=case.pk)  
+            #send it as rx record
             return self.addLXOBX(case,lxRecList,orus, True)
     
+    def addSpecimenSource (self, reinf, lxRec):
+            #
+            # Specimen Source 
+            #
+            obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
+            sps = self.casesDoc.createElement('SPS.1')
+            specso = lxRec.specimen_source
+            snomed_spec_source_code = '261665006' # Local code for 'Unknown'
+            #TODO for fenway we need to process the specimen source from the lab name to pull out the specimen source. 
+            if specso:
+                if CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP.has_key(specso.lower()):
+                    snomed_spec_source_code = CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP[specso.lower()]
+                    log.debug('Mapped specimen source "%s" to snomed code %s' % (specso, snomed_spec_source_code))
+                else:
+                    log.warning('Lab record has specimen source "%s", but no SNOMED code is known for that source.  Using SNOMED code for "unknown".' % specso)
+            else:
+                log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
+            if reinf:
+                self.addSimple(sps, 'NA-286', 'CE.4')   
+            self.addSimple(sps, snomed_spec_source_code, 'CE.4')
+            self.addSimple(sps,'L','CE.6') #TODO loinc code , why L 
+            obr15.appendChild(sps)
+            return obr15
+            
     def addLXOBX(self,case,lxRecList=[],orus=None, reinf =None):
         if not lxRecList: return
         condition=case.condition
@@ -696,26 +715,8 @@ class hl7Batch:
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
             self.addSimple(obr7,lxRec.date.strftime(DATE_FORMAT),'TS.1') # lx date
-            #
-            # Specimen Source
-            #
-            obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
-            sps = self.casesDoc.createElement('SPS.1')
-            specso = lxRec.specimen_source
-            snomed_spec_source_code = '261665006' # Local code for 'Unknown'
-            #TODO for fenway we need to process the specimen source from the lab name to pull out the specimen source. 
-            if specso:
-                if CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP.has_key(specso.lower()):
-                    snomed_spec_source_code = CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP[specso.lower()]
-                    log.debug('Mapped specimen source "%s" to snomed code %s' % (specso, snomed_spec_source_code))
-                else:
-                    log.warning('Lab record has specimen source "%s", but no SNOMED code is known for that source.  Using SNOMED code for "unknown".' % specso)
-            else:
-                log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
-            self.addSimple(sps, snomed_spec_source_code, 'CE.4')
-            self.addSimple(sps,'L','CE.6') # TODO loinc code --- why??
-            obr15.appendChild(sps)
-            obr.appendChild(obr15)
+            # add specimen source 
+            obr.appendChild(self.addSpecimenSource ( False, lxRec))
             #
             #
             if lxRec.status in ('FINAL','F'):
@@ -758,19 +759,34 @@ class hl7Batch:
             
             if reinf:
                 reinf_output_code = lxRec.output_or_native_code 
-                reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.output_or_native_code).values_list('reinf_output_code', flat=True)
+                reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.native_code).values_list('reinf_output_code', flat=True)
                 if reinf_output_code:
                     reinf_output_code= reinf_output_code[0]
+                #find out if lab is positive or negative
+                case_lx = Case.objects.get(id=case.id, events__name__startswith='lx', events__object_id=lxRec.id)
+                if "positive" in str(case_lx.events.get(object_id=lxRec.id).name):
+                    resultsnomed = '10828004'
+                elif "negative" in str(case_lx.events.get(object_id=lxRec.id).name):
+                    resultsnomed = '260385009'
+
+                if snomed:
+                    obx5_type = 'CE.4'
+                    res  = snomed  
+                if snomed2:
+                    obx5_type = 'CE.4'
+                    res  = snomed2 
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
                     obx2  = [('', 'CE')],
-                    obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                    obx5  = [('CE.4',reinf_output_code)],  
+                    obx3  = [('CE.4',reinf_output_code),('CE.6','L')],
+                    obx5  = [('CE.4','NA-283'),('CE.4','373066001' ), ('CE.4','NA-285'),('CE.4', resultsnomed),(obx5_type, res) ],  
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
-                    obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1',clia), ('CE.3','CLIA')]
+                    obx14 = [('CE.4','NA-284'),('TS.1',lxTS.strftime(DATE_FORMAT))], 
+                    obx15 = [('CE.1',clia), ('CE.3','CLIA') ]
                     )
+                            
+                    
             elif not snomed: ##like ALT/AST and must be number
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
@@ -795,6 +811,9 @@ class hl7Batch:
                     obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     )
             orcs.appendChild(obx1)
+            if reinf:
+                orcs.appendChild(self.addSpecimenSource (reinf, lxRec))  
+            
             if not reinf and snomed2:
                 orcs.appendChild(self.makeOBX(
                     obx1  = [('','2')],
@@ -936,7 +955,14 @@ class hl7Batch:
                         question_map = exvRec.question
                         answer_map  = exvRec.answer  
                 if question_map:    
-                    obx1 = self.makeOBX(obx1=[],obx2=[],obx3=[('CE.4',question_map)], obx5=[('CE.4', answer_map)])
+                    #todo add loinc and snomed
+                    #obx3  = [('CE.4',reinf_output_code),('CE.6','L')],
+                    #obx5  = [(obx5_type, res)],  
+                    #obx 3 loinc, obx5 snomed 
+                    #whitin same order record add the repeating 
+                    obx1 = self.makeOBX(obx1=[],obx2=[],obx3=[('CE.4',question_map)], obx5=[('CE.4', answer_map), ])
+                    #two records. pair them 
+                    
                     orcs.appendChild(obx1)
         
     def addRXOBX(self,rxRecList=[],orus=None):
@@ -1078,7 +1104,7 @@ class hl7Batch:
         orc.appendChild(address)
         return orc
 
-    def makeMSH(self, center_id, segcontents = None, processingFlag='P', versionFlag='2.3.1'):
+    def makeMSH(self, elr, center_id, segcontents = None, processingFlag='P', versionFlag='2.3.1'):
         """MSH segment
         """
         # Create the elements
@@ -1089,6 +1115,7 @@ class hl7Batch:
         self.addSimple(e,SITE_HEADER,'HD.1')
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.4')
+        
         #TODO redmine 492 waiting to see where to put the center id.
         #TODO mayb find out a clia for mass leage to add here.. 
         #hd_name= INSTITUTION.name
@@ -1096,12 +1123,16 @@ class hl7Batch:
             #hd_name = center_id 
         #TODO for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3'), (center_id,'HD.4')]:
         # 
-        for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3')]:   
+        if elr:
+            self.addSimple(e,INSTITUTION.name+'ELR','HD.1')
+        else:
+            self.addSimple(e,INSTITUTION.name,'HD.1')
+        for (element,ename) in [(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3')]:   
             if element <> '':
                 self.addSimple(e,element,ename)    
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.5')         
-        self.addSimple(e,'MDPH-ELR','HD.1')
+        self.addSimple(e,'MDPH','HD.1')
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.6')         
         self.addSimple(e,'MDPH','HD.1')
@@ -1393,7 +1424,7 @@ class Command(BaseCommand):
             # Generate report message
             #
             if options.mdph:
-                report_str = self.mdph(options, batch_serial, batch_cases)
+                report_str = self.mdph(options.elr, batch_serial, batch_cases)
             else:
                 report_str = self.use_template(options, batch_serial, batch_cases)
             log.debug('Message to report:\n%s' % report_str)
@@ -1421,8 +1452,8 @@ class Command(BaseCommand):
                 # Transmission
                 #
                 if options.transmit: 
-                    #success = True #TODO for testing and comment out the line below
-                    success = self.transmit(options, filepath)
+                    success = True #TODO for testing and comment out the line below
+                    #success = self.transmit(options, filepath)
                     if success:
                         if options.mark_sent:
                             for case in batch_cases:
@@ -1476,18 +1507,12 @@ class Command(BaseCommand):
         case_report = '\n'.join([x for x in case_report.split("\n") if x.strip()!=''])
         return case_report
     
-    def mdph(self, options, batch_serial, cases):
+    def mdph(self, elr, batch_serial, cases):
         batch = hl7Batch(nmessages=len(cases))
         for case in cases:
             log.debug('Generating HL7 for %s' % case)
             try:
-                '''
-                TODO pass in options.elr
-                add a header for the elr only cases in the hl7
-                    ability to send elr to staging and the others to production 
-                send feed to different sites.. change add case to add something in the header
-                '''
-                batch.addCase(case)
+                batch.addCase(case, elr)
             except NoConditionConfigurationException, e:
                 log.critical('Could not generate HL7 message for case %s!' % case)
                 log.critical('    %s' % e)
