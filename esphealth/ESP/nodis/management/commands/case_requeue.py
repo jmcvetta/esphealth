@@ -41,7 +41,7 @@ from optparse import make_option
 from django.db.models import Q
 from django.core.management.base import BaseCommand
 
-from ESP.nodis.base import DiseaseDefinition
+from ESP.nodis.base import DiseaseDefinition, ReinfectionDiseaseDefinition
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.nodis.models import STATUS_CHOICES
@@ -170,8 +170,8 @@ class Command(BaseCommand):
                 It will add the events found to the existing cases as a followup_event 
                 and change the status to RQ if the status is S for the existing cases
                 '''
-                disease_definition = DiseaseDefinition.get_by_short_name(condition)                    
-                if disease_definition.reinfection >0:
+                disease_definition = DiseaseDefinition.get_by_short_name(condition)  
+                if isinstance(disease_definition, ReinfectionDiseaseDefinition) and disease_definition.reinfection  >0:
                     event_names = set()
                     for heuristic in disease_definition.event_heuristics:
                         for name in heuristic.event_names:
