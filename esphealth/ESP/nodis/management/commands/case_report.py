@@ -66,7 +66,7 @@ from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
 from ESP.static.models import Dx_code
-from ESP.conf.models import LabTestMap, ReportableMedication, ReportableExtended_Variables, Extended_VariablesMap, Extended_VariablesResultMap
+from ESP.conf.models import LabTestMap, ReportableMedication, ReportableExtended_Variables, Extended_VariablesMap
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider, Provenance
 from ESP.emr.models import LabResult, Order_Extension
@@ -647,7 +647,7 @@ class hl7Batch:
                 #encounters=rep_encounters, condition=case.condition, casenote=case.notes,
                 #caseid=case.pk)  
             #send it as rx record
-            return self.addLXOBX(case,lxRecList,orus, True)
+            return self.addReinfOBX(case,lxRecList,orus)
     
     def addSpecimenSource (self, reinf, lxRec):
             #
@@ -667,13 +667,114 @@ class hl7Batch:
             else:
                 log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
             if reinf:
-                self.addSimple(sps, 'NA-286', 'CE.4')   
+                obx = self.makeOBX(
+                    obx1  = [('','5')],
+                    obx2  = [('', 'CE')],
+                    obx3  = [('CE.4','NA-286'), ('CE.5','Reinfection test source')],
+                    obx5  = [('CE.4',snomed_spec_source_code)]
+                    )
+                return obx
             self.addSimple(sps, snomed_spec_source_code, 'CE.4')
             self.addSimple(sps,'L','CE.6') #TODO loinc code , why L 
             obr15.appendChild(sps)
             return obr15
             
-    def addLXOBX(self,case,lxRecList=[],orus=None, reinf =None):
+    def addReinfOBX(self,case,lxRecList=[],orus=None):
+        if not lxRecList: return
+        
+        m=1
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #
+        # PORTING NOTE:  This will need more detailed attention, since LOINC removal 
+        # means ConditionLOINC objects cannot be directly translated to new code base.
+        #
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        for lxRec in lxRecList:
+            n = 1        
+            # redmine to not create an object if the result is null?? is this valid for reinfection too?
+            if not lxRec.result_float and not lxRec.result_string:
+                continue
+            '''
+            orcs = self.casesDoc.createElement('')
+            obr = self.casesDoc.createElement('OBR') # need a special lx OBR
+            self.addSimple(obr,m,'OBR.1')
+            obr4 = self.casesDoc.createElement('OBR.4')
+            self.addSimple(obr4,'Additional Patient Demographics','CE.2') 
+            obr.appendChild(obr4)
+            
+            
+            obr31 = self.casesDoc.createElement('OBR.31')
+            self.addSimple(obr31,'icd code?','CE.1')
+            self.addSimple(obr31,lxRec.output_or_native_code,'CE.2')
+            self.addSimple(obr31,'I9?','CE.3')
+            obr.appendChild(obr31)
+            orcs.appendChild(obr)
+            '''
+
+            reinf_output_code = lxRec.output_or_native_code 
+            reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.native_code).values_list('reinf_output_code', flat=True)
+            if reinf_output_code:
+                reinf_output_code= reinf_output_code[0]
+        
+            orcs = self.casesDoc.createElement('ORU_R01.OBXNTE_SUPPGRP')
+            orus.appendChild(orcs)
+            obx1 = self.makeOBX(
+                    obx1  = [('',n)],
+                    obx2  = [('', 'NM')],
+                    obx3  = [('CE.4',reinf_output_code)],
+                    obx5  = [('','31?' )]
+                    )
+            orcs.appendChild(obx1)
+            
+            n+=1    
+                
+            orus.appendChild(orcs)
+            obx1 = self.makeOBX(
+                    obx1  = [('',n)],
+                    obx2  = [('', 'CE')],
+                    obx3  = [('CE.4','NA-283'), ('CE.5','Test of reinfection done')],
+                    obx5  = [('CE.4','373066001' )]
+                    )
+            orcs.appendChild(obx1)
+            
+            n+=1
+            orus.appendChild(orcs)
+            obx1 = self.makeOBX(
+                    obx1  = [('',n)],
+                    obx2  = [('', 'CE')],
+                    obx3  = [('CE.4','NA-284'), ('CE.5','Reinfection test date')],
+                    obx5  = [('TS.1',lxRec.date.strftime(DATE_FORMAT) )]
+                    )
+            orcs.appendChild(obx1)
+            
+            n+=1
+            #find out if lab is positive or negative or indetermined
+            case_lx = Case.objects.get(id=case.id, followup_events__name__startswith='lx', followup_events__object_id=lxRec.id)
+            if "positive" in str(case_lx.followup_events.get(object_id=lxRec.id).name):
+                resultsnomed = '10828004'
+            elif "negative" in str(case_lx.followup_events.get(object_id=lxRec.id).name):
+                resultsnomed = '260385009'
+            elif "indeterminate" in str(case_lx.followup_events.get(object_id=lxRec.id).name):
+                resultsnomed = '42425007'
+            
+            orus.appendChild(orcs)
+            obx1 = self.makeOBX(
+                    obx1  = [('',n)],
+                    obx2  = [('', 'TS')],
+                    obx3  = [('CE.4','NA-285'), ('CE.5','Reinfection test result')],
+                    obx5  = [('CE.4',resultsnomed )]
+                    )
+            orcs.appendChild(obx1)
+            
+            n+=1
+            # add specimen source 
+            
+            orus.appendChild(orcs)
+            obx1 = self.addSpecimenSource(True, lxRec)
+            orcs.appendChild(obx1)        
+               
+                
+    def addLXOBX(self,case,lxRecList=[],orus=None):
         if not lxRecList: return
         condition=case.condition
         n=1
@@ -757,37 +858,7 @@ class hl7Batch:
             if not clia:
                 clia = INSTITUTION.clia # it was hard coded to '22D0076229'    
             
-            if reinf:
-                reinf_output_code = lxRec.output_or_native_code 
-                reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.native_code).values_list('reinf_output_code', flat=True)
-                if reinf_output_code:
-                    reinf_output_code= reinf_output_code[0]
-                #find out if lab is positive or negative
-                case_lx = Case.objects.get(id=case.id, events__name__startswith='lx', events__object_id=lxRec.id)
-                if "positive" in str(case_lx.events.get(object_id=lxRec.id).name):
-                    resultsnomed = '10828004'
-                elif "negative" in str(case_lx.events.get(object_id=lxRec.id).name):
-                    resultsnomed = '260385009'
-
-                if snomed:
-                    obx5_type = 'CE.4'
-                    res  = snomed  
-                if snomed2:
-                    obx5_type = 'CE.4'
-                    res  = snomed2 
-                obx1 = self.makeOBX(
-                    obx1  = [('','1')],
-                    obx2  = [('', 'CE')],
-                    obx3  = [('CE.4',reinf_output_code),('CE.6','L')],
-                    obx5  = [('CE.4','NA-283'),('CE.4','373066001' ), ('CE.4','NA-285'),('CE.4', resultsnomed),(obx5_type, res) ],  
-                    obx7  = [('',lxRange)],
-                    obx11 = [('', lxRec.status)],
-                    obx14 = [('CE.4','NA-284'),('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1',clia), ('CE.3','CLIA') ]
-                    )
-                            
-                    
-            elif not snomed: ##like ALT/AST and must be number
+            if not snomed: ##like ALT/AST and must be number
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
                     obx2  = [('', obx2_type)],
@@ -811,10 +882,9 @@ class hl7Batch:
                     obx15 = [('CE.1',clia), ('CE.3','CLIA')]
                     )
             orcs.appendChild(obx1)
-            if reinf:
-                orcs.appendChild(self.addSpecimenSource (reinf, lxRec))  
             
-            if not reinf and snomed2:
+            
+            if snomed2:
                 orcs.appendChild(self.makeOBX(
                     obx1  = [('','2')],
                     obx2  = [('', 'CE')],
@@ -944,7 +1014,8 @@ class hl7Batch:
                     if  exvarmap[0].value_type:
                         answer_map  = exvRec.answer
                     else:
-                        answer_map = Extended_VariablesResultMap.objects.filter(abstract_ext_var = question_map, value = exvRec.answer)
+                        answer_map = exvRec.answer
+                        #Extended_VariablesResultMap.objects.filter(abstract_ext_var = question_map, value = exvRec.answer)
                         if answer_map:
                             answer_map = answer_map[0].output_code
                         else:
