@@ -665,7 +665,7 @@ class ReinfectionDiseaseDefinition (DiseaseDefinition):
                         if not case.followup_events.all() or event not in case.followup_events.all():
                             case.followup_events.add(event)
                             #change the status of all the cases in this query set
-                            if case.status == 'S' or case.status == 'RS' and not case.followup_sent :
+                            if (case.status == 'S' or case.status == 'RS') and not case.followup_sent :
                                 log.info('Requeing cases of %s with Reinfection' % self.short_name)
                                 case.status = 'RQ'
                                 case.followup_sent = True
