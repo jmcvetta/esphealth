@@ -590,4 +590,6 @@ CREATE INDEX nodis_case_followup_events_event_id
   USING btree
   (event_id );
 
-    
+--11/19/2014 follow up 
+ALTER TABLE	nodis_case
+	ADD COLUMN followup_sent boolean ;
