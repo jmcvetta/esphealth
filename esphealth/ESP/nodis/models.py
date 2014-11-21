@@ -112,6 +112,7 @@ class Case(models.Model):
     followup_events = models.ManyToManyField(Event, blank=False,related_name='followup')
     
     timespans = models.ManyToManyField(Timespan, blank=False)
+    followup_sent = models.BooleanField('Followup event sent?', default=False)
 
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]

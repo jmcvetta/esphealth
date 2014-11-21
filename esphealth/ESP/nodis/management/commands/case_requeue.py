@@ -178,7 +178,7 @@ class Command(BaseCommand):
                             event_names.add(name)
                      
                     start = case.date + datetime.timedelta(days=disease_definition.recurrence_interval) 
-                    end = case.date + datetime.timedelta(days=disease_definition.reinfection)  
+                    end = case.date + datetime.timedelta(days=disease_definition.recurrence_interval) + datetime.timedelta(days=disease_definition.reinfection)  
                     q_obj = Q(patient=case.patient)
                     q_obj &= Q(date__gte=start)
                     q_obj &= Q(date__lte=end)
@@ -190,12 +190,12 @@ class Command(BaseCommand):
                             if not case.followup_events.all() or event not in case.followup_events.all():
                                 case.followup_events.add(event)
                                 #change the status of all the cases in this query set
-                                if case.status == 'S' or case.status == 'RS':
+                                if case.status == 'S' or case.status == 'RS' and not case.followup_sent:
                                     log.info('Requeing cases of %s with Reinfection' % condition)
                                     case.status = 'RQ'
+                                    case.followup_sent = True
                     case.save()    
                     
-                log.debug('Requeuing case for %s' % case)
                 #
                 #case.date + window of time is in the future  
                 # 
@@ -208,6 +208,7 @@ class Command(BaseCommand):
                     # check reportables
                     reportables = case.create_reportables_list()
                     if case.reportables <> reportables:
+                        log.debug('Requeuing case for %s' % case)
                         counter += 1
                         case.status = 'RQ'
                         case.reportables = reportables
