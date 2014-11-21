@@ -407,18 +407,6 @@ class  Extended_VariablesMap(models.Model):
     def __str__(self):
         return '%s map: %s' % (self.native_string, self.abstract_ext_var)
 
-class Extended_VariablesResultMap(models.Model): 
-    #(answer mapping)
-    abstract_ext_var = models.ForeignKey(Extended_VariablesMap, blank=False)
-    native_string = models.CharField(blank=True, null=True, max_length=255) #(redundant)
-    value = models.CharField(blank=False, max_length=255)
-    output_code = models.CharField(blank=False, max_length=255)
-    
-    class Meta:
-        unique_together = ['abstract_ext_var', 'output_code', 'value']
-    
-    def __str__(self):
-        return '%s output code: %s' % (self.abstract_ext_var, self.output_code)
 
 class  ReportableExtended_Variables(models.Model): 
     condition = models.ForeignKey(ConditionConfig, blank=False)

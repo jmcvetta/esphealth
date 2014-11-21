@@ -6,7 +6,7 @@ from ESP.conf.models import ConditionConfig
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableDx_Code
 from ESP.conf.models import ReportableMedication
-from ESP.conf.models import ReportableExtended_Variables, Extended_VariablesMap, Extended_VariablesResultMap
+from ESP.conf.models import ReportableExtended_Variables, Extended_VariablesMap
 from ESP.conf.models import ResultString
 from ESP.conf.models import HL7Map
 from ESP.conf.models import ImmuExclusion
@@ -124,11 +124,6 @@ class Extended_VariablesMapAdmin(admin.ModelAdmin):
     ordering = ['abstract_ext_var', 'native_string']
     list_filter = ['abstract_ext_var']
     
-class Extended_VariablesResultMapAdmin(admin.ModelAdmin):
-    list_display = ['abstract_ext_var', 'value', 'output_code']
-    ordering = ['abstract_ext_var', 'output_code']
-    list_filter = ['abstract_ext_var']
-    raw_id_fields = ['abstract_ext_var']
 
 class ResultStringAdmin(admin.ModelAdmin):
     list_display = ['value', 'indicates', 'match_type', 'applies_to_all']
@@ -163,7 +158,6 @@ admin.site.register(ReportableMedication, ReportableMedicationAdmin)
 admin.site.register(ReportableDx_Code, ReportableDx_CodeAdmin)
 admin.site.register(ReportableExtended_Variables, ReportableExtended_VariablesAdmin)
 admin.site.register(Extended_VariablesMap, Extended_VariablesMapAdmin)
-admin.site.register(Extended_VariablesResultMap, Extended_VariablesResultMapAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(ResultString, ResultStringAdmin)
 admin.site.register(HL7Map, HL7MapAdmin)
