@@ -717,17 +717,7 @@ class hl7Batch:
                 reinf_output_code= reinf_output_code[0]
         
             orcs = self.casesDoc.createElement('ORU_R01.OBXNTE_SUPPGRP')
-            orus.appendChild(orcs)
-            obx1 = self.makeOBX(
-                    obx1  = [('',n)],
-                    obx2  = [('', 'NM')],
-                    obx3  = [('CE.4',reinf_output_code)],
-                    obx5  = [('','31?' )]
-                    )
-            orcs.appendChild(obx1)
-            
-            n+=1    
-                
+                            
             orus.appendChild(orcs)
             obx1 = self.makeOBX(
                     obx1  = [('',n)],
