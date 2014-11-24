@@ -694,22 +694,6 @@ class hl7Batch:
             # redmine to not create an object if the result is null?? is this valid for reinfection too?
             if not lxRec.result_float and not lxRec.result_string:
                 continue
-            '''
-            orcs = self.casesDoc.createElement('')
-            obr = self.casesDoc.createElement('OBR') # need a special lx OBR
-            self.addSimple(obr,m,'OBR.1')
-            obr4 = self.casesDoc.createElement('OBR.4')
-            self.addSimple(obr4,'Additional Patient Demographics','CE.2') 
-            obr.appendChild(obr4)
-            
-            
-            obr31 = self.casesDoc.createElement('OBR.31')
-            self.addSimple(obr31,'icd code?','CE.1')
-            self.addSimple(obr31,lxRec.output_or_native_code,'CE.2')
-            self.addSimple(obr31,'I9?','CE.3')
-            obr.appendChild(obr31)
-            orcs.appendChild(obr)
-            '''
 
             reinf_output_code = lxRec.output_or_native_code 
             reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.native_code).values_list('reinf_output_code', flat=True)
@@ -731,7 +715,7 @@ class hl7Batch:
             orus.appendChild(orcs)
             obx1 = self.makeOBX(
                     obx1  = [('',n)],
-                    obx2  = [('', 'CE')],
+                    obx2  = [('', 'TS')],
                     obx3  = [('CE.4','NA-284'), ('CE.5','Reinfection test date')],
                     obx5  = [('TS.1',lxRec.date.strftime(DATE_FORMAT) )]
                     )
@@ -750,7 +734,7 @@ class hl7Batch:
             orus.appendChild(orcs)
             obx1 = self.makeOBX(
                     obx1  = [('',n)],
-                    obx2  = [('', 'TS')],
+                    obx2  = [('', 'CE')],
                     obx3  = [('CE.4','NA-285'), ('CE.5','Reinfection test result')],
                     obx5  = [('CE.4',resultsnomed )]
                     )
