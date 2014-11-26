@@ -14,6 +14,7 @@
 # In most instances it is preferable to use relativedelta for date math.  
 # However when date math must be included inside an ORM query, and thus will
 # be converted into SQL, only timedelta is supported.
+import datetime
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from ESP.utils import log
@@ -105,7 +106,7 @@ class Asthma(DiseaseDefinition):
             name = 'beclomethasone',
             drugs =  DrugSynonym.generics_plus_synonyms(['Beclomethasone',]),
             ))
-        #TODO test that is not going to pick up when it has both aer and inh
+        # test that is not going to pick up when it has both aer and inh
         heuristic_list.append( PrescriptionHeuristic(
             name = 'budesonide-inh',
             drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide',]),
@@ -117,7 +118,7 @@ class Asthma(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Pulmicort',]),
             ))       
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'ciclesonide inh',
+            name = 'ciclesonide-inh',
             drugs =  DrugSynonym.generics_plus_synonyms(['Ciclesonide',]),
             qualifiers = ['INH',' NEB', 'AER'],
             exclude = ['Alvesco'],
@@ -287,28 +288,45 @@ class Asthma(DiseaseDefinition):
         counter_a = 0
         allrx_event_names =  rx_ev_names + rx_comb_ev_names
                
+        #TODO exclude all patients with asthma already 
+        # possibly split in two sections for new and added events to existing cases 
+        #or run two checks the dxs and rxs walk through the two lists.       
         dx_qs = BaseEventHeuristic.get_events_by_name(dx_ev_names)
         dx_qs = dx_qs.exclude(case__condition=self.conditions[0])
         dx_qs = dx_qs.order_by('patient', 'date')
+        #TODO get distincts
         new_patient = None
         prev_patient = None
         count_dx4 = 0
         dx_count = dx_qs.count()
-        for dx_event in dx_qs:    
+        
+        '''
+        for patient in dx_qs_patient:
+            dx4_event_qs = dx_qs.filter(patient = patient).count()
+            if dx4_event_qs>=4:
+                rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
+                rx_qs = rx_qs.exclude(case__condition=self.conditions[0]) 
+                rx_qs = rx_qs.filter(patient=prev_patient)
+                if rx_qs.count() >= 2: 
+                    create new case 
+         '''   
+        ifcdx4 = 0    
+        for dx_event in dx_qs:   
             new_patient = dx_event.patient
             # first time, change of patient or last event in qs.
             if not prev_patient or prev_patient != new_patient or  dx_event == dx_qs[dx_count-1]: 
-                if count_dx4 >= 4:              
+                if count_dx4 >= 4:
+                    #count how many times we get in here ? 
+                    log.info('def a Start of if countdx4: %s' % datetime.datetime.now())
+                    ifcdx4 +=1
                     rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
                     rx_qs = rx_qs.exclude(case__condition=self.conditions[0]) 
                     rx_qs = rx_qs.filter(patient=prev_patient)
-                        
-                    if rx_qs.count() >= 2:
+                    if rx_qs.count() >= 2: 
                         dx4_event_qs = dx_qs.filter(patient = prev_patient)
                         #
                         # Patient has Asthma
                         #
-                        
                         t, new_case = self._create_case_from_event_obj(
                             condition = self.conditions[0],
                             criteria = 'Criteria #1: Asthma diagnosis >=4 and >=2 prescriptions',
@@ -316,12 +334,13 @@ class Asthma(DiseaseDefinition):
                             event_obj = dx4_event,
                             relevant_event_qs = rx_qs | dx4_event_qs,
                             )
-                        
                         if t:
                             counter_a += 1
                             log.info('Created new asthma case def a: %s' % new_case)
+                    log.info('def a End of if countdx4: %s' % datetime.datetime.now())      
+                prev_patient = dx_event.patient 
+                log.info('def a if count times: %s' % ifcdx4)    
                 
-                prev_patient = dx_event.patient  
                 count_dx4 = 0  
                 dx4_event = dx_event
                 
@@ -332,7 +351,6 @@ class Asthma(DiseaseDefinition):
         # criteria 2
         # >=4 asthma drug dispensing events (any combination of multiple scripts
         # for the same med or scripts for different meds
-        
         log.info('Generating cases for Asthma Definition (b)')
         counter_b = 0
         allrx_event_names =  rx_ev_names + rx_comb_ev_names
@@ -343,11 +361,14 @@ class Asthma(DiseaseDefinition):
         prev_patient = None
         count_rx4 = 0
         rx_count = mainrx_qs.count()
+        ifcrx4 = 0  
         for rx_event in mainrx_qs:            
             new_patient = rx_event.patient    
             # TODO check for performance of mainrx_qs[rx_count-1]
             if not prev_patient or prev_patient != new_patient or rx_event == mainrx_qs[rx_count-1]: 
-                if count_rx4 >= 4:      
+                if count_rx4 >= 4:  
+                    log.info('def b Start of if countdx4: %s' % datetime.datetime.now())    
+                    ifcrx4 +=1
                     rx4_event_qs =  mainrx_qs.filter(patient =prev_patient )       
                     #
                     # Patient has Asthma
@@ -359,13 +380,14 @@ class Asthma(DiseaseDefinition):
                         event_obj = rx4_event,
                         relevant_event_qs =  rx4_event_qs,
                         )
-                    
                     if t: 
                         counter_b += 1
                         log.info('Created new asthma case def b: %s' % new_case)
-                
+                    log.info('def b End of if countdx4: %s' % datetime.datetime.now())  
                 prev_patient = rx_event.patient  
-                count_rx4 = 0  
+                count_rx4 = 0 
+                log.info('def b if count times: %s' % ifcrx4)    
+                
                 rx4_event = rx_event
                 
             count_rx4 +=1   
