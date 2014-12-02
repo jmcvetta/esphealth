@@ -644,32 +644,33 @@ class ReinfectionDiseaseDefinition (DiseaseDefinition):
             for heuristic in self.event_heuristics:
                 for name in heuristic.event_names:
                     all_event_names.add(name)   
-                 
-            q_obj = Q(patient=event_qs[0].patient, name__in=all_event_names)
-            case_start = event_qs[0].date - datetime.timedelta(days=self.recurrence_interval) - datetime.timedelta(days=self.reinfection) 
-            case_end = event_qs[0].date 
-            q_obj = Q(patient=event_qs[0].patient, condition = self.condition)
-            q_obj &= Q(date__gte = case_start )
-            q_obj &= Q(date__lte = case_end )
-            cases  = Case.objects.filter(q_obj)
-            for case in cases:
-                event_start = case.date + datetime.timedelta(days=self.recurrence_interval) 
-                event_end  = event_start + datetime.timedelta(days=self.reinfection)  
+            
+            if (event_qs):
                 q_obj = Q(patient=event_qs[0].patient, name__in=all_event_names)
-                q_obj &= Q(date__gte = event_start )
-                q_obj &= Q(date__lte = event_end )
-                followup_events = Event.objects.filter( q_obj).order_by('date')
-                #add events to follow up of these cases 
-                if followup_events:
-                    for event in followup_events:
-                        if not case.followup_events.all() or event not in case.followup_events.all():
-                            case.followup_events.add(event)
-                            #change the status of all the cases in this query set
-                            if (case.status == 'S' or case.status == 'RS') and not case.followup_sent :
-                                log.info('Requeing cases of %s with Reinfection' % self.short_name)
-                                case.status = 'RQ'
-                                case.followup_sent = True
-                        
-                case.save()
+                case_start = event_qs[0].date - datetime.timedelta(days=self.recurrence_interval) - datetime.timedelta(days=self.reinfection) 
+                case_end = event_qs[0].date 
+                q_obj = Q(patient=event_qs[0].patient, condition = self.condition)
+                q_obj &= Q(date__gte = case_start )
+                q_obj &= Q(date__lte = case_end )
+                cases  = Case.objects.filter(q_obj)
+                for case in cases:
+                    event_start = case.date + datetime.timedelta(days=self.recurrence_interval) 
+                    event_end  = event_start + datetime.timedelta(days=self.reinfection)  
+                    q_obj = Q(patient=event_qs[0].patient, name__in=all_event_names)
+                    q_obj &= Q(date__gte = event_start )
+                    q_obj &= Q(date__lte = event_end )
+                    followup_events = Event.objects.filter( q_obj).order_by('date')
+                    #add events to follow up of these cases 
+                    if followup_events:
+                        for event in followup_events:
+                            if not case.followup_events.all() or event not in case.followup_events.all():
+                                case.followup_events.add(event)
+                                #change the status of all the cases in this query set
+                                if (case.status == 'S' or case.status == 'RS') and not case.followup_sent :
+                                    log.info('Requeing cases of %s with Reinfection' % self.short_name)
+                                    case.status = 'RQ'
+                                    case.followup_sent = True
+                            
+                    case.save()
         return new_case_count
         
