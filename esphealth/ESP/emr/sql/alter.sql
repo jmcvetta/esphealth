@@ -593,3 +593,7 @@ CREATE INDEX nodis_case_followup_events_event_id
 --11/19/2014 follow up 
 ALTER TABLE	nodis_case
 	ADD COLUMN followup_sent boolean ;
+	
+-- 12/1/2014 client status is longer 
+ALTER TABLE emr_laborder
+	ALTER COLUMN test_status TYPE character varying(20);
