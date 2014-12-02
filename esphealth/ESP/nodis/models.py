@@ -17,7 +17,7 @@ from django.contrib.contenttypes import generic
 from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab, ReportableExtended_Variables, Extended_VariablesMap
 from ESP.conf.models import ReportableMedication
-from ESP.emr.models import LabResult, Order_Extension
+from ESP.emr.models import LabResult
 #from ESP.hef.base import TimespanHeuristic
 from ESP.hef.base import BaseLabResultHeuristic, LabResultPositiveHeuristic
 from ESP.hef.base import DiagnosisHeuristic
@@ -239,18 +239,18 @@ class Case(models.Model):
         if conf: 
             reportable_extended_variables = set(ReportableExtended_Variables.objects.filter(condition=self.condition).values_list('abstract_ext_var__native_string', flat=True))
             q_obj = Q(patient=self.patient)
-            q_obj &= Q(question__in = reportable_extended_variables)
+            q_obj &= Q(native_code__in = reportable_extended_variables)
        
             start = self.date - datetime.timedelta(days=conf.ext_var_days_before)
             end = self.date + datetime.timedelta(days=conf.ext_var_days_after)       
             q_obj &= Q(date__gte=start)
             q_obj &= Q(date__lte=end)
-            extended_variables = Order_Extension.objects.filter(q_obj).distinct()
+            extended_variables = LabResult.objects.filter(q_obj)
         
         if extended_variables:
             return extended_variables.distinct()
         else:
-            return Order_Extension.objects.none()
+            return LabResult.objects.none()
     reportable_extended_variables = property(__get_reportable_extended_variables)
     
     @property
