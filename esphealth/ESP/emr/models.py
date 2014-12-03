@@ -912,23 +912,6 @@ class LabOrder(BasePatientRecord):
         return lx 
     
     
-class Order_Extension(BaseMedicalRecord):
-    '''
-    Some orders are accompanied by one or more questions that provide information necessary for order
-    completion.
-    '''
-    order = models.ForeignKey(LabOrder)
-    order_natural_key = models.CharField(blank=True, null=True, max_length=128)
-    patient = models.ForeignKey(Patient, blank=True, null=True) 
-    provider = models.ForeignKey(Provider, blank=True, null=True) 
-    date = models.DateField(blank=False, db_index=True)
-    question =  models.CharField(max_length=1000, null=True)
-    answer = models.CharField(max_length=1000, blank=True, null=True)
-
-    class Meta:
-        verbose_name = 'Order Extension'
-        unique_together = (("order","question","answer"),)
-    
     
 class Order_idInfo(models.Model):
     '''
@@ -1417,6 +1400,23 @@ class Labresult_Details(models.Model):
         verbose_name = 'Lab result details'
     
     
+class Order_Extension(BaseMedicalRecord):
+    '''
+    Some orders are accompanied by one or more questions that provide information necessary for order
+    completion.
+    '''
+    order = models.ForeignKey(LabResult)
+    order_natural_key = models.CharField(blank=True, null=True, max_length=128)
+    patient = models.ForeignKey(Patient, blank=True, null=True) 
+    provider = models.ForeignKey(Provider, blank=True, null=True) 
+    date = models.DateField(blank=False, db_index=True)
+    question =  models.CharField(max_length=1000, null=True)
+    answer = models.CharField(max_length=1000, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Order Extension'
+        unique_together = (("order","question","answer"),)
+        
 class SpecObs(models.Model):
     '''
     Observations and comments regarding the specimen
