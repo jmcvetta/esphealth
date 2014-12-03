@@ -399,7 +399,6 @@ class  Extended_VariablesMap(models.Model):
     #(question mapping)
     native_string = models.CharField(blank=False, max_length=255)
     abstract_ext_var = models.CharField(blank=False, max_length=255, primary_key=True)
-    value_type = models.BooleanField('Variable sends value and not mapped code?', default=False) #(sending value not mapping) 
     
     class Meta:
         unique_together = ['abstract_ext_var', 'native_string']
