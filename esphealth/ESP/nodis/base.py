@@ -634,8 +634,8 @@ class ReinfectionDiseaseDefinition (DiseaseDefinition):
         
         '''
         reinfection logic
-        checks for events that happened within the window of reinfection days .
-        This window starts from the end of the reinfection window. 
+        checks for events that happened within the window of reinfection days.
+        This window starts from the end of the recurrence window. 
         It will add the events found to the existing cases as a followup_event 
         and change the status to RQ if the status is S for the existing cases
         '''
