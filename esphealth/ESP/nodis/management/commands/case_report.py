@@ -978,37 +978,85 @@ class hl7Batch:
         if exvRecList:
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
             orus.appendChild(orcs)
-            for exvRec in exvRecList:
-                question_map = None
-                answer_map  = None
-                exvarmap = Extended_VariablesMap.objects.filter (native_string =  exvRec.question)
-                if exvarmap:
-                    question_map = exvarmap[0].abstract_ext_var
-                    #show question and answer
-                    if  exvarmap[0].value_type:
-                        answer_map  = exvRec.answer
-                    else:
-                        answer_map = exvRec.answer
-                        #Extended_VariablesResultMap.objects.filter(abstract_ext_var = question_map, value = exvRec.answer)
-                        if answer_map:
-                            answer_map = answer_map[0].output_code
-                        else:
-                            log.info('There is no snomed mapped to the EPT answer') 
-                            answer_map  = exvRec.answer
-                else:
-                        log.info('There is no LOINC mapped to the EPT question')  
-                        question_map = exvRec.question
-                        answer_map  = exvRec.answer  
-                if question_map:    
-                    #todo add loinc and snomed
-                    #obx3  = [('CE.4',reinf_output_code),('CE.6','L')],
-                    #obx5  = [(obx5_type, res)],  
-                    #obx 3 loinc, obx5 snomed 
-                    #whitin same order record add the repeating 
-                    obx1 = self.makeOBX(obx1=[],obx2=[],obx3=[('CE.4',question_map)], obx5=[('CE.4', answer_map), ])
-                    #two records. pair them 
-                    
-                    orcs.appendChild(obx1)
+            notified = False
+            for lab in exvRecList:
+                extended_variables  = Order_Extension.objects.filter( order_natural_key = lab.natural_key)
+                
+                obr1 = self.casesDoc.createElement('OBR.1')
+                obx1 = self.makeOBX(
+                        obx1  = [('',1)],
+                        obx2  = [('', 'CE')],
+                        obx3  = [('CE.4',lab.native_code) ],
+                        obx5  = [('CE.4',lab.procedure_name )]
+                        )
+                obr1.appendChild(obx1)
+                
+                n=1
+                for exvRec in extended_variables:
+                    obx1 = None
+                    if exvRec.question == 'Number of partners that were provided EPT' :
+                        obx1 = self.makeOBX(
+                        obx1  = [('',n)],
+                        obx2  = [('', 'CE')],
+                        obx3  = [('CE.4','NA-352'), ('CE.5','EPT_NUMBER_CONTACTS')],
+                        obx5  = [('CE.4',exvRec.answer )]
+                        )
+                    elif lab.native_code == '355804--' and exvRec.answer.upper() == 'NO' and exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?' :                             
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
+                            obx5  = [('CE.4','373067005' ), ('CE.5',exvRec.answer)]     )
+                            # what if not yes or no ????
+                    elif lab.native_code == '355806--' and exvRec.answer.upper() == 'NO' and exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?': 
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
+                            obx5  = [('CE.4','NA-42' ), ('CE.5','YES-extra prescription provided')]     )
+                    elif lab.native_code == '355805--' and exvRec.answer.upper() == 'NO' and exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?':                           
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
+                            obx5  = [('CE.4','NA-43' ), ('CE.5','YES- extra medication provided')]    )
+                    elif (lab.native_code == '355806--' or lab.native_code == '355805--' or lab.native_code == '355804--' ) and  exvRec.answer.upper() == 'YES' and  exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?' :
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
+                            obx5  = [('CE.4','NA-44' ), ('CE.5',exvRec.answer)]    )
+                    elif exvRec.question == 'Were any of the patients sex partners notified of possible exposure to chlamydia?' and not notified:
+                        notified = True;
+                        if exvRec.answer.upper() == 'NO':  
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
+                            obx5  = [('CE.4','373067005' ), ('CE.5',exvRec.answer)]     )
+                        elif exvRec.answer == 'Yes - office notified':  #TODO Yes, our office notified the partner(s)??
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
+                            obx5  = [('CE.4','NAR-45' ), ('CE.5',exvRec.answer)]     )
+                        elif exvRec.answer == 'Yes - patient notified':   #TODO Yes, our office notified the partner(s)??
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
+                            obx5  = [('CE.4','NAR-46' ), ('CE.5',exvRec.answer)]     )
+                        elif exvRec.answer.upper() == 'UNKNOWN':  
+                            obx1 = self.makeOBX(
+                            obx1  = [('',n)],
+                            obx2  = [('', 'CE')],
+                            obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
+                            obx5  = [('CE.4','NAR-37' ), ('CE.5',exvRec.answer)]     )
+                            
+                    if obx1:
+                        obr1.appendChild(obx1)
+                        n+=1 
+                orcs.appendChild(obr1)
         
     def addRXOBX(self,rxRecList=[],orus=None):
         """
