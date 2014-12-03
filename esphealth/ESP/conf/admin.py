@@ -120,7 +120,7 @@ class ReportableExtended_VariablesAdmin(admin.ModelAdmin):
     raw_id_fields = ['abstract_ext_var']
 
 class Extended_VariablesMapAdmin(admin.ModelAdmin):
-    list_display = ['native_string', 'abstract_ext_var','value_type']
+    list_display = ['native_string', 'abstract_ext_var']
     ordering = ['abstract_ext_var', 'native_string']
     list_filter = ['abstract_ext_var']
     
