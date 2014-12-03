@@ -147,6 +147,7 @@ class BaseLoader(object):
     __patient_cache = {}  # {patient_id: Patient instance}
     __provider_cache = {} # {provider_id: Provider instance}
     __labOrd_cache = {}   # {order_natural_key: order instance}
+    __labRes_cache = {}   # {lab_natural_key: result instance}
     __labSpec_cache = {}  # {specimen_num: Specimen instance}
     __labCLIA_cache = {}  # {CLIA_id: LabInfo instance}
     
@@ -238,7 +239,7 @@ class BaseLoader(object):
     def get_laborder(self, natural_key):
         
         if not natural_key:
-            return UNKNOWN_PROVIDER
+            raise LoadException('Called get_laborder() with empty order_id')
         #truncate the key some keys were too long
         natural_key = truncate_str(natural_key, 'natural_key', 128)
             
@@ -250,6 +251,22 @@ class BaseLoader(object):
                 p.save()
             self.__labOrd_cache[natural_key] = p
         return self.__labOrd_cache[natural_key]
+    
+    def get_labresult(self, natural_key):
+        
+        if not natural_key:
+            raise LoadException('Called get_labresult() with empty order_id')
+        #truncate the key some keys were too long
+        natural_key = truncate_str(natural_key, 'natural_key', 128)
+            
+        if not natural_key in self.__labRes_cache:
+            try:
+                p = LabResult.objects.get(natural_key=natural_key)
+            except LabResult.DoesNotExist:
+                p = LabResult(natural_key=natural_key, date=date_from_filepath(self.filepath), provenance=self.provenance)
+                p.save()
+            self.__labRes_cache[natural_key] = p
+        return self.__labRes_cache[natural_key]
     
 
     def get_specid(self, specid, order_key):
@@ -1557,14 +1574,14 @@ class OrderExtLoader(BaseLoader):
     model = Order_Extension
     
     def load_row(self, row):
-        natural_key = self.generateNaturalkey('')
+        natural_key = self.generateNaturalkey(None)
                 
         values = {
             'provenance' : self.provenance,
             'natural_key' : natural_key,
             'patient' : self.get_patient(row['patient_id']),
             'provider' : self.get_provider(row['provider_id']),
-            'order': self.get_laborder(row['order_id']),
+            'order': self.get_labresult(row['order_id']),
             'order_natural_key': string_or_none(row['order_id']),
             'date': self.date_or_none(row['date']),
             'question': string_or_none(row['question']),
@@ -2285,12 +2302,12 @@ class Command(LoaderCommand):
             ('epicgrd', PatientGuardianLoader),
             ('epicmud', PatientExtraLoader),
             ('epicord', LabOrderLoader),
-            ('epicoex', OrderExtLoader),
             ('epicoid', OrderIdInfoLoader),
             ('epicspc', SpecimenLoader),
             ('epicsob', SpecObsLoader),
             ('epiclab', LabInfoLoader),
             ('epicres', LabResultLoader),
+            ('epicoex', OrderExtLoader),
             ('epiclnd', LabDetailLoader),
             ('epicvis', EncounterLoader),
             ('epicmed', PrescriptionLoader),
