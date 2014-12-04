@@ -548,6 +548,7 @@ ALTER TABLE conf_labtestmap
 	ADD COLUMN reinf_output_code  character varying(255);
 	 
 -- CCH 10/15/2014 FOR PLAN PARENTHOOD
+-- For some sites, emr_encounter is referenced as a view used by the MDPHNet schema.  This view must be dropped first
 ALTER TABLE emr_encounter
 	ALTER COLUMN site_natural_key TYPE character varying(50);
 	
