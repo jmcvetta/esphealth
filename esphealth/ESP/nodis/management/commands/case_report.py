@@ -980,7 +980,7 @@ class hl7Batch:
             orus.appendChild(orcs)
             notified = False
             for lab in exvRecList:
-                extended_variables  = Order_Extension.objects.filter( order_natural_key = lab.natural_key)
+                extended_variables  = Order_Extension.objects.filter( order_natural_key = lab.order_natural_key)
                 
                 obr1 = self.casesDoc.createElement('OBR.1')
                 obx1 = self.makeOBX(
