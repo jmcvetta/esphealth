@@ -668,7 +668,7 @@ class hl7Batch:
                 log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
             if reinf:
                 obx = self.makeOBX(
-                    obx1  = [('','5')],
+                    obx1  = [('','4')],
                     obx2  = [('', 'CE')],
                     obx3  = [('CE.4','NA-286'), ('CE.5','Reinfection test source')],
                     obx5  = [('CE.4',snomed_spec_source_code)]
