@@ -700,26 +700,32 @@ class hl7Batch:
             if reinf_output_code:
                 reinf_output_code= reinf_output_code[0]
         
-            orcs = self.casesDoc.createElement('ORU_R01.OBXNTE_SUPPGRP')
-                            
-            orus.appendChild(orcs)
+            top = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP ')
+            
+            obr = self.casesDoc.createElement('OBR')
+            self.addSimple(obr,'1','OBR.1')
+            obr4 = self.casesDoc.createElement('OBR.4')
+            self.addSimple(obr4,'Additional Patient Demographics','CE.2')
+            obr.appendChild(obr4)
+            top.appendChild(obr)
+            
             obx1 = self.makeOBX(
                     obx1  = [('',n)],
                     obx2  = [('', 'CE')],
                     obx3  = [('CE.4','NA-283'), ('CE.5','Test of reinfection done')],
                     obx5  = [('CE.4','373066001' )]
                     )
-            orcs.appendChild(obx1)
-            
+         
+            top.appendChild(obx1)
             n+=1
-            orus.appendChild(orcs)
+            
             obx1 = self.makeOBX(
                     obx1  = [('',n)],
                     obx2  = [('', 'TS')],
                     obx3  = [('CE.4','NA-284'), ('CE.5','Reinfection test date')],
                     obx5  = [('TS.1',lxRec.date.strftime(DATE_FORMAT) )]
                     )
-            orcs.appendChild(obx1)
+            top.appendChild(obx1)
             
             n+=1
             #find out if lab is positive or negative or indetermined
@@ -731,22 +737,20 @@ class hl7Batch:
             elif "indeterminate" in str(case_lx.followup_events.get(object_id=lxRec.id).name):
                 resultsnomed = '42425007'
             
-            orus.appendChild(orcs)
             obx1 = self.makeOBX(
                     obx1  = [('',n)],
                     obx2  = [('', 'CE')],
                     obx3  = [('CE.4','NA-285'), ('CE.5','Reinfection test result')],
                     obx5  = [('CE.4',resultsnomed )]
                     )
-            orcs.appendChild(obx1)
-            
+            top.appendChild(obx1)
             n+=1
             # add specimen source 
             
-            orus.appendChild(orcs)
             obx1 = self.addSpecimenSource(True, lxRec)
-            orcs.appendChild(obx1)        
-               
+            top.appendChild(obx1)   
+            orus.appendChild(top)     
+            
                 
     def addLXOBX(self,case,lxRecList=[],orus=None):
         if not lxRecList: return
