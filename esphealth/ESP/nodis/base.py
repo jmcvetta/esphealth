@@ -312,6 +312,9 @@ class DiseaseDefinition(object):
         # 
         # Check recurrence
         #
+        delta = None
+        max_date = None
+        min_date = None
         if recurrence_interval is None:
             # Non-recurring condition - once you have it, you've always 
             # got it.
@@ -369,18 +372,32 @@ class DiseaseDefinition(object):
         # Attach all relevant events, that are not already attached to a
         # case of this condition.
         #
+                
         if relevant_event_names:
-            all_relevant_events = Event.objects.filter(
+            
+            if recurrence_interval:
+                all_relevant_events = Event.objects.filter(
                 patient=event_obj.patient,
                 name__in=relevant_event_names,
-                ).exclude(
-                    case__condition=condition,
-                    )
+                date__gte = min_date,
+                date__lte = max_date,
+                ).exclude(  case__condition=condition, )
+            else: 
+                all_relevant_events = Event.objects.filter(
+                    patient=event_obj.patient,
+                    name__in=relevant_event_names,
+                    ).exclude(  case__condition=condition, )
+                
             for related_event in all_relevant_events:
                 new_case.events.add(related_event)
             new_case.save()
         if relevant_event_qs:
-            relevant_event_qs = relevant_event_qs.filter(patient=event_obj.patient)
+            if recurrence_interval:
+                relevant_event_qs = relevant_event_qs.filter(patient=event_obj.patient,
+                                                           date__gte = min_date,
+                                                           date__lte = max_date,  )
+            else:
+                relevant_event_qs = relevant_event_qs.filter(patient=event_obj.patient)
             for this_event in relevant_event_qs:
                 new_case.events.add(this_event)
         new_case.save()
