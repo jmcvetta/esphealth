@@ -300,6 +300,7 @@ chlamydiaSBIR/esphealth/ESP/templates/pages/vaers/report.html -text
 chlamydiaSBIR/esphealth/ESP/templates/pages/vaers/vaccine_index.html -text
 chlamydiaSBIR/esphealth/ESP/templates/pages/vaers/vaccines.html -text
 chlamydiaSBIR/esphealth/ESP/templates/pages/vaers/vaers.html -text
+chlamydiaSBIR/esphealth/ESP/templates/qmetric/qmetric_report.html -text svneol=unset#text/plain
 chlamydiaSBIR/esphealth/ESP/templates/ss/files/boston.geo -text
 chlamydiaSBIR/esphealth/ESP/templates/ss/files/satscan.conf -text
 chlamydiaSBIR/esphealth/ESP/templates/ui/case_list.html -text
