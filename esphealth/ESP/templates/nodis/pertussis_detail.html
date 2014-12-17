@@ -55,7 +55,7 @@
 	    <th>Street Address</th>	    
 	    <th>Unit #</th>	    
         <th>City</th>
-        <th>phone</th>
+        <th>Phone</th>
         <th>Parent/Guardian</th>
         <th>Physician</th>
         <th>Physician Phone</th>
@@ -91,11 +91,9 @@
         <th>Gender</th>
         <th>Race</th>
         <th>Ethnicity</th>
-        <th>home_language</th>
+        <th>Home Language</th>
         <th>Created Date</th>
         <th>Last Updated</th>
-        <th>Case Definition</th>
-        <th>Comment</th>
     </tr>
     <tr>
         <td>{{ dob }}</td>
@@ -106,8 +104,6 @@
         <td>{{ case.patient.home_language }}</td>        
         <td>{{ created }}</td>
         <td> {{ updated }}</td>
-        <td>{{ case.definition }}</td>
-        <td> {{ case.comments|default:"-" }}</td>
     </tr>
 </table>
 
@@ -225,7 +221,7 @@
 </table>
 
 <h3>
-    Prior history of asthma or bronchitis (Clinical Data)
+    Prior History of Asthma or Bronchitis (Clinical Data)
 </h3>
 
 <table id="rep_encounters">
@@ -508,6 +504,39 @@
     </tr>
     {% endfor %}
 </table>
+
+<h2>Case Status History</h2>
+
+{% if history %}
+<table id="status_history_table">
+	<tr>
+		<th>Timestamp</th>
+		<th>Old Status</th>
+		<th>New Status</th>
+		<th>Changed By</th>
+		<th>Comment</th>
+	</tr>
+{% for change in history %}
+	<tr>
+		<td>{{ change.timestamp }}</td>
+		<td>{{ change.get_old_status_display }}</td>
+		<td>{{ change.get_new_status_display }}</td>
+		<td>{{ change.changed_by }}</td>
+		<td>{{ change.comment }}</td>
+	</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<p>
+<form id="status_form" method="POST" action="{% url nodis_pertussis_update case.pk %}">
+	<table>
+	{{ status_form.as_table }}
+	</table>
+	<input type="submit" name="update_status" value="Save updates" />
+        {% csrf_token %}
+</form>
+</p>
 
 
 {% endblock %}
