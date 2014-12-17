@@ -181,6 +181,8 @@ chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/generate_results.py -tex
 chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/load_elements.py -text
 chlamydiaSBIR/esphealth/ESP/qmetric/management/commands/update_valuesets.py -text svneol=unset#text/plain
 chlamydiaSBIR/esphealth/ESP/qmetric/models.py -text
+chlamydiaSBIR/esphealth/ESP/qmetric/urls.py -text svneol=unset#text/plain
+chlamydiaSBIR/esphealth/ESP/qmetric/views.py -text svneol=unset#text/plain
 chlamydiaSBIR/esphealth/ESP/secrets.spec.ini -text
 chlamydiaSBIR/esphealth/ESP/sendMsgs/bcdc.jar -text
 chlamydiaSBIR/esphealth/ESP/settings.py -text

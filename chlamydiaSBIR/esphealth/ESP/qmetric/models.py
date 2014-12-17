@@ -22,6 +22,18 @@ from ESP.utils import log
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+class Measure(models.Model):
+    '''
+    QDM measures available
+    '''
+    cmsname = models.CharField('CMS HQMF document name (no extension)',max_length=50, blank=False, unique=True)
+    title = models.CharField('CMS HQMF document title',max_length=250, blank=False, unique=True)
+
+    def _get_uname(self):
+        name = u'%s: %s' % (self.cmsname, self.title)
+        return name
+    uname = property(_get_uname)
+
 class Element(models.Model):
     '''
     QDM Data Elements
@@ -29,6 +41,7 @@ class Element(models.Model):
     TYPE_CHOICES = [ ('VSAC','Value Set Authority'),
                      ('local','Not available at VSA'),
                     ]
+    #TODO: probably should use foreign key to Measures model here.
     cmsname = models.CharField('CMS HQMF document name (no extension)',max_length=50, blank=False, db_index=True)
     ename = models.CharField('QDM Data Element name',max_length=200, blank=False, db_index=True)
     oid = models.CharField('Value Set OID',max_length=100, blank=False, db_index=True)
@@ -59,10 +72,8 @@ class Elementmapping(models.Model):
     codesystem = models.CharField('code system name',max_length=50, blank=False, db_index=True)
     
     
-#TODO: create a results model that will contain cube results for reporting
-
-class CritPats(models.Manager):
-    def poploader(self,query):
+class QManager(models.Manager):
+    def getqdata(self,query):
         cursor = connection.cursor()
         cursor.execute(query)
         patlist=[]
@@ -71,7 +82,6 @@ class CritPats(models.Manager):
         return patlist
         
 class Criteria(models.Model):
-    #will need a date and a name
     cmsname = models.CharField('CMSname for this criteria event', max_length=20, blank=False, db_index=True)
     critname = models.CharField('Data criteria name',max_length=200, null=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
@@ -80,10 +90,10 @@ class Criteria(models.Model):
     content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
-    # adding a custom manager to get criteria patients.  Since the CritPats manager does not override any models.Manager methods
+    # adding a custom manager to get criteria patients.  Since the QManager manager does not override any models.Manager methods
     #   we don't really need separate objects and critpats managers, but it seemed cleaner.
     objects = models.Manager()
-    critpats = CritPats()
+    critpats = QManager()
 
     class Meta:
         unique_together = [('cmsname', 'critname', 'content_type','object_id')]
@@ -115,6 +125,15 @@ class Population(models.Model):
         return 'Event # %s (%s %s)' % (self.pk, self.cmsname, self.date)
         
 
+class RManager(models.Manager):
+    def getrdata(self,query):
+        '''
+        model manager that works with base.PivotQueryGen
+        '''
+        cursor = connection.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()
+        
 class Results(models.Model):
     '''
     A population event
@@ -126,6 +145,9 @@ class Results(models.Model):
     stratification = models.CharField('Stratification level', max_length=500, blank=False, null=False, db_index=True)
     periodstartdate = models.DateField('start of measurement period', blank=False, db_index=True)
     periodenddate = models.DateField('end of measurement period', blank=False, db_index=True)
+    #the RManager manager is a generic query manager
+    objects = models.Manager()
+    rmanager = RManager()
 
     
     

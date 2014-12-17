@@ -1,7 +1,7 @@
 '''
                               ESP Health Project
                             Quality Metrics module
-                           Update ValueSets from VSA
+                           Base classes and methods
 
 @authors: Bob Zambarano <bzambarano@commoninf.com>
 @organization: Commonwealth Informatics - http://www.commoninf.com
@@ -366,10 +366,10 @@ class ResultGenerator:
         labQ_5 = "select distinct patient_id from qmetric_criteria where critname='Laboratory Test, Result: Chlamydia Screening' and cmsname='" + self.cmsname \
                + "' and date between '" + self.pstart.strftime('%Y-%m-%d') + "'::date and '" + self.pend.strftime('%Y-%m-%d') + "'::date"
 
-        denomlist = Criteria.critpats.poploader(headrQ+denomQ)
+        denomlist = Criteria.critpats.getqdata(headrQ+denomQ)
         dcounts = self.loadPop(denomlist,'denominator')
         numQ = denomQ + ' inner join (' + labQ_5 + ') numr on sex.patient_id=numr.patient_id ' 
-        numlist = Criteria.critpats.poploader(headrQ+numQ)
+        numlist = Criteria.critpats.getqdata(headrQ+numQ)
         ncounts = self.loadPop(numlist,'numerator')
         return ncounts, dcounts
     
@@ -458,3 +458,54 @@ class ResultGenerator:
             res.save()
             count+=1
         return count
+    
+class PivotQueryGen:
+    '''
+    Methods for generating pivot query for results
+    '''
+    def __init__(self,tfield,cfield,rfield1,wcrit1,wcrit2):
+        '''
+        t field is the value field that get's transposed
+        c field is the field that defines new column names
+        r field1 is row fields that stays as is (anticipating later addition of more potential row fields)
+        wcrit1, wcrit2 are the where values for ethnicity (1) and race (2) -- this will need more work to be more data dynamic
+        '''
+        self.tfield=tfield
+        self.cfield=cfield
+        self.rfield1=rfield1
+        filterby = "split_part(stratification,' | ',1)='" + wcrit1 +"'" + " and split_part(stratification,' | ',2)='" + wcrit2 +"'"
+        self.basesql = ("select trim(to_char(numerator,'9999999'))||'/'||trim(to_char(denominator,'9999999'))||'='||trim(to_char(round(rate::numeric,2),'0D99')) rate, "
+                     + "split_part(stratification,' | ',1) ethnicity, "
+                     + "split_part(stratification,' | ',2) race, "
+                     + "split_part(stratification,' | ',3) age_group, "
+                     + "to_char(periodstartdate,'monddyy')||'_'||to_char(periodenddate,'monddyy') period "
+                     + "from qmetric_results " + filterby)
+    
+    def subsql(self, cval):
+        '''
+        builds the individual component to be joined
+        '''
+        sqltxt = ('select ' + self.tfield + ' ' + cval + ', ' + self.rfield1  
+                 + " from ('" + self.basesql + "') " + cval + " where period='" + cval +"'")
+        return sqltxt
+    
+    def rowsql(self):
+        sqltxt = 'select distinct ' + self.rfield1 + ' from (' + self.basesql +') rows '
+        return sqltxt
+    
+    def displayquery(self):
+        cval_qs = Results.objects.distinct('periodstartdate','periodenddate')
+        i=0
+        for row in cval_qs:
+            cval = row.periodstartdate.strftime('%b%d%y')+'_'+row.periodenddate.strftime('%b%d%y')
+            if i==0:
+                q0 = 'select '
+                q1 = ' from (' + self.cartesql() + ') t0'
+                i+=1
+            q0 = q0 + cval + ', '
+            q1 = q1 + ' left join (' + self.subsql(cval) + ') t' + i + ' on t0.' + self.rfield1 + '=t' + i + '.' + self.rfield1 
+            i+=1
+        q0 = q0 + 't0.' + self.rfield1 
+        q = q0 + q1
+        return q
+        
