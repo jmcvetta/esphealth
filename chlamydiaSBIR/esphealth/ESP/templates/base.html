@@ -97,6 +97,11 @@
                     <li><a href="{% url labtest_lookup %}">Lab Test Lookup</a></li>
                 </ul>
             </li>
+            <li>qMetrics &raquo;
+            	<ul>
+            		<li><a href="{% url qmetric_all %}">Results</a></li>
+             	</ul>
+            </li>
             <li><a href="{% url about %}">About</a></li>
             {% if user.is_authenticated %}
             <li><a href="{% url logout %}">Logout</a></li>

@@ -1,0 +1,12 @@
+<div id="tab_navigation">
+    <ul class="racetabs">
+        {% for tab in tabs %}
+            <li class="{{ tab.tab_classes|join:" " }}{% if tab.tab_id == current_tab_id %} active{% endif %}">
+                <a href="/qmetric/qmetric/{{ tab.tab_id }}/" {%if tab.tab_rel %}rel="{{ tab.tab_rel }}"{% endif %}>
+                {% if tab.tab_counter %}<em>{{ tab.tab_counter }}</em>{% endif %}
+                {{ tab.tab_label }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

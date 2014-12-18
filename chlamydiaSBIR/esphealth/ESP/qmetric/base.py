@@ -445,7 +445,8 @@ class ResultGenerator:
                  + ' union all select count(*) as numerator, ' \
                  + " 'all', 'all', 'all' " \
                  + ' from (' + baseQ + ') t1 ' + " where etype='numerator' "  
-        cubeQ = "select '" + self.cmsname + "' as cmsname, d.denominator, n.numerator, n.numerator/d.denominator::float as rate, " \
+        cubeQ = "select '" + self.cmsname + "' as cmsname, d.denominator, (case when n.numerator is not null then n.numerator when d.denominator is not null then 0 else null end) numerator, " \
+                 + " (case when n.numerator is not null then n.numerator when d.denominator is not null then 0 else null end)/d.denominator::float as rate, " \
                  + " d.ethnicity || ' | ' || d.race || ' | ' || d.age_groups as stratification, '" \
                  + self.pstart.strftime('%Y-%m-%d') + "'::date as periodstartdate, '" + self.pend.strftime('%Y-%m-%d') + "'::date as periodenddate " \
                  + ' from (' + denomQ + ') as d left join (' + numerQ + ') as n on d.ethnicity=n.ethnicity and d.race=n.race and d.age_groups=n.age_groups'
@@ -473,12 +474,12 @@ class PivotQueryGen:
         self.tfield=tfield
         self.cfield=cfield
         self.rfield1=rfield1
-        filterby = "split_part(stratification,' | ',1)='" + wcrit1 +"'" + " and split_part(stratification,' | ',2)='" + wcrit2 +"'"
+        filterby = "where split_part(stratification,' | ',1)='" + wcrit1 +"'" + " and split_part(stratification,' | ',2)='" + wcrit2 +"'"
         self.basesql = ("select trim(to_char(numerator,'9999999'))||'/'||trim(to_char(denominator,'9999999'))||'='||trim(to_char(round(rate::numeric,2),'0D99')) rate, "
                      + "split_part(stratification,' | ',1) ethnicity, "
                      + "split_part(stratification,' | ',2) race, "
                      + "split_part(stratification,' | ',3) age_group, "
-                     + "to_char(periodstartdate,'monddyy')||'_'||to_char(periodenddate,'monddyy') period "
+                     + "to_char(periodstartdate,'Monddyy')||'_'||to_char(periodenddate,'Monddyy') period "
                      + "from qmetric_results " + filterby)
     
     def subsql(self, cval):
@@ -486,7 +487,7 @@ class PivotQueryGen:
         builds the individual component to be joined
         '''
         sqltxt = ('select ' + self.tfield + ' ' + cval + ', ' + self.rfield1  
-                 + " from ('" + self.basesql + "') " + cval + " where period='" + cval +"'")
+                 + " from (" + self.basesql + ") " + cval + " where period='" + cval +"'")
         return sqltxt
     
     def rowsql(self):
@@ -496,16 +497,19 @@ class PivotQueryGen:
     def displayquery(self):
         cval_qs = Results.objects.distinct('periodstartdate','periodenddate')
         i=0
+        cols=[]
         for row in cval_qs:
             cval = row.periodstartdate.strftime('%b%d%y')+'_'+row.periodenddate.strftime('%b%d%y')
+            cols.append(cval)
             if i==0:
                 q0 = 'select '
-                q1 = ' from (' + self.cartesql() + ') t0'
+                q1 = ' from (' + self.rowsql() + ') t0'
                 i+=1
-            q0 = q0 + cval + ', '
-            q1 = q1 + ' left join (' + self.subsql(cval) + ') t' + i + ' on t0.' + self.rfield1 + '=t' + i + '.' + self.rfield1 
+            q0 = q0 + 't' + str(i) + '.' + cval + ', '
+            q1 = q1 + ' left join (' + self.subsql(cval) + ') t' + str(i) + ' on t0.' + self.rfield1 + '=t' + str(i) + '.' + self.rfield1 
             i+=1
+        cols.append(self.rfield1)
         q0 = q0 + 't0.' + self.rfield1 
         q = q0 + q1
-        return q
+        return q, cols
         

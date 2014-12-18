@@ -8,14 +8,16 @@
 @copyright: (c) 2014 Commonwealth Informatics, Inc.
 @license: LGPL
 '''
-
+import io
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseRedirect
+from django.http import HttpResponse
 from django.conf.urls import url, patterns
 from ESP.qmetric.models import Measure, Results
 from ESP.qmetric.base import PivotQueryGen
 from tabination.views import TabView
+from xlsxwriter.workbook import Workbook
 
 class TabFormMixin(object):
     """
@@ -75,17 +77,18 @@ class TabFormMixin(object):
 class ResultsFilterForm(forms.Form):
     __metric = Measure.objects.all().values_list('cmsname', 'title')
     __period = Results.objects.all().distinct('periodstartdate','periodenddate').values_list('periodstartdate','periodenddate')
-    __period.insert(0,('','...select a measure first'))
     metric = forms.ChoiceField(choices=__metric, widget=forms.Select(attrs={'onchange':'get_periods();'}))
     period = forms.MultipleChoiceField(choices=__period, widget=forms.SelectMultiple(attrs={'onchange':'gettables()'}))
 
 #class FilteredTabView(TabFormMixin, TabView):
 class FilteredTabView(TabView):
     dataobjdict = []
+    cols = None
     
     def get_context_data(self, **kwargs):
         context = super(FilteredTabView, self).get_context_data(**kwargs)
         context['dataobjdict']=self.dataobjdict
+        context['cols']=self.cols
         return context
     
 #    def get_object(self, queryset=None):
@@ -108,7 +111,7 @@ def create_racetab_views():
     views = []
     races = []
     ethnicities = []
-    stratifiers = Results.objects.all().distinct('stratification').values_list('stratification')
+    stratifiers = Results.objects.all().distinct('stratification').values_list('stratification', flat=True)
     for strat in stratifiers:
         if strat.strip().split(' | ')[1] not in races:
             races.append(strat.strip().split(' | ')[1])
@@ -116,19 +119,25 @@ def create_racetab_views():
             ethnicities.append(strat.strip().split(' | ')[0])
     for race in races:
         url = r'^qmetric/%s/$' % race
-        dataobjdict = {}
+        dodict = {}
         for ethnic in ethnicities:
-            pqg = PivotQueryGen('rate', 'period', 'age_group', wcrit1, wcrit2)
-            
-        view_class = type ( "%s%s" % (race.capitalize(), 'View'),
-                            FilteredTabView,
-                            dict(_is_tab = True,
-                                 tab_id = race,
-                                 tab_group = 'Race',
-                                 tab_label = race.capitalize(),
-                                 template_name = 'qmetric/qmetric_report.html',
-                                 dataobj = 
-                                 ))
+            pqg = PivotQueryGen('rate', 'period', 'age_group', ethnic, race)
+            pq, columns = pqg.displayquery()
+            dataobj = Results.rmanager.getrdata(pq)
+            dodict[ethnic] = dataobj  
+        view_class = type ( str("%s%s" % (race.capitalize(), 'View')),
+                        (FilteredTabView,),
+                        dict(_is_tab = True,
+                             tab_id = race,
+                             tab_group = 'Race',
+                             tab_classes = ['racetabs'],
+                             tab_label = race.capitalize(),
+                             template_name = 'qmetric/qmetric_report.html',
+                             url = url,
+                             view_name = 'qmetric_' + race,
+                             dataobjdict = dodict,
+                             cols=columns
+                             ))
         views.append(view_class)
     return views
 
@@ -136,5 +145,56 @@ def create_urls():
     urls=[]
     for view in create_racetab_views():
         urls.append(url(view.url, view.as_view(), name=view.view_name))
+    urls.append(url(r'^qmetric/download/$','ESP.qmetric.views.results_xlsx',name='results_xlsx'))
     return patterns('', *urls)
+
+def results_xlsx(request):
+    '''
+    Returns an excel workbook of results
+    '''
+    header = [
+        'Numerator',
+        'Denominator',
+        'Rate', 
+        'Ethnicity', 
+        'Age_Group', 
+        'PeriodStartDate', 
+        'PeriodEndDate',
+        ]
+    qry0 = ('select numerator, denominator, round(rate::numeric,2) rate, '
+          + "split_part(stratification,' | ',1) ethnicity, "
+          + "split_part(stratification,' | ',3) age_group, " 
+          + 'periodstartdate, periodenddate '
+          + "from qmetric_results where split_part(stratification,' | ',2)='")
+    races = []
+    stratifiers = Results.objects.all().distinct('stratification').values_list('stratification', flat=True)
+    for strat in stratifiers:
+        if strat.strip().split(' | ')[1] not in races:
+            races.append(strat.strip().split(' | ')[1])
+    output = io.BytesIO()
+    workbook = Workbook(output, {'in memory': True})
+    date_format = workbook.add_format({'num_format': 'yyyy-mmm-dd'})
+    for race in races:
+        qry = qry0 + race + "'"
+        dataobj = Results.rmanager.getrdata(qry)
+        worksheet = workbook.add_worksheet(race)
+        h=0
+        for name in header:
+            worksheet.write(0,h,name)
+            h+=1
+        r=1
+        for row in dataobj:
+            c=0
+            for col in row:
+                if c<=4:
+                    worksheet.write(r,c,col)
+                else:
+                    worksheet.write_datetime(r, c, col, date_format)
+                c+=1
+            r+=1
+    workbook.close()
+    output.seek(0)
+    response = HttpResponse(output.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = 'attachment; filename=quality_metrics.xlsx'
+    return response
         

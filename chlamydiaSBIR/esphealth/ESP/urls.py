@@ -63,6 +63,9 @@ urlpatterns = patterns('',
     # Nodis
     url(r'^util/', include('ESP.ui.urls')),
     
+    # qmetric
+    url(r'^qmetric/', include('ESP.qmetric.urls')),
+    
     #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #

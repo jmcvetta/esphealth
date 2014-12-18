@@ -14,7 +14,7 @@ import os
 from optparse import make_option
 from datetime import datetime
 from ESP.qmetric.base import HQMF_Parser
-from ESP.qmetric.models import Element
+from ESP.qmetric.models import Element, Measure
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from ESP.utils import log
@@ -30,17 +30,23 @@ class hqmf_loader(object):
     
     @transaction.autocommit
     def load(self):
+        cmsnm = os.path.basename(os.path.splitext(self.filepath)[0])
         log.info('Loading hqmf file "%s" with %s' % (self.filepath, self.__class__))
         cur_row = 0 # Row counter
         hqmf = HQMF_Parser(self.filepath)
         hqmfdict = hqmf.hqmfdict 
-        #mostly this won't work from here
         element_titles = ['Data criteria (QDM Data Elements)','Supplemental Data Elements']
+        meas = Measure(cmsname = cmsnm,
+                       title = hqmfdict['QualityMeasureDocument']['title'])
+        try:
+            meas.save()
+        except:
+            print 'eMeasure already loaded'
         for comp in hqmfdict['QualityMeasureDocument']['component']:
             if any(comp['section']['title'] in s for s in element_titles):
                 sectionTitle=comp['section']['title']
                 for item in comp['section']['text']['list']['item']:
-                    element = Element(cmsname = os.path.basename(os.path.splitext(self.filepath)[0]),
+                    element = Element(cmsname = cmsnm,
                                       ename = item['content'].replace('"',''),
                                       oid = item['#text'][item['#text'].find('(2')+1:item['#text'].find(')',item['#text'].find('(2'))],
                                       use = sectionTitle[0:sectionTitle.find('(')-1],

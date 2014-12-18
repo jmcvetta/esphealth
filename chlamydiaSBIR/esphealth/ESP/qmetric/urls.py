@@ -10,9 +10,6 @@
 '''
 
 
-from django.conf.urls.defaults import patterns
-from django.conf.urls.defaults import url
+from ESP.qmetric.views import create_urls
 
-urlpatterns = patterns('ESP.qmetric.views',
-    url(r'^qmetric/results/$', 'qmetric_results', name='qmetric_results'),
-)
+urlpatterns = create_urls()
