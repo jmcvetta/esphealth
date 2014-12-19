@@ -29,7 +29,7 @@ class Gonorrhea(ReinfectionDiseaseDefinition):
     
     test_names = ['gonorrhea']
     
-    recurrence_interval = 28
+    recurrence_interval = 14
     
     criteria = 'Criteria #1:'
     
