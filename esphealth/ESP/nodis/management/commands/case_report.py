@@ -580,14 +580,10 @@ class hl7Batch:
         ##NA_TRMT
         if rx and lx:
             rxdate = rx.date
-            lxorderd = lx.date
-            dur = rxdate - lxorderd
+            trmt = '373066001' #YES
         else:
             dur=None
             rxdate =None
-        if dur and dur.days < 15:
-            trmt = '373066001' #YES
-        else:
             trmt = '373067005' #NO
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','NA-TRMT')], obx5=[('CE.4',trmt)])
         indx += 1
