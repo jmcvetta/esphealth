@@ -1021,7 +1021,7 @@ class hl7Batch:
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
                             obx5  = [('CE.4','NA-44' ), ('CE.5',exvRec.answer)]    )
-                    elif exvRec.question == 'Were any of the patients sex partners notified of possible exposure to chlamydia?' and not notified:
+                    elif exvRec.question == 'Were any of the patient\'s sex partners notified of possible exposure to chlamydia?' and not notified:
                         notified = True;
                         if exvRec.answer.upper() == 'NO':  
                             obx1 = self.makeOBX(
