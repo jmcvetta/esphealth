@@ -65,15 +65,11 @@ from django.template.loader import render_to_string
 from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
-from ESP.static.models import Dx_code
-from ESP.conf.models import LabTestMap, ReportableMedication, ReportableExtended_Variables, Extended_VariablesMap
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider, Provenance
+from ESP.conf.models import LabTestMap
+from ESP.emr.models import Provider
 from ESP.emr.models import LabResult, Order_Extension
 from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.conf.models import LabTestMap, ResultString
+from ESP.conf.models import ResultString
 from ESP.conf.models import ConditionConfig
 
 from ESP.hef.base import BaseLabResultHeuristic, TITER_DILUTION_CHOICES
@@ -477,7 +473,6 @@ class hl7Batch:
         self.addSimple(x1,'FCP','CE.4')
         section.appendChild(x1)
         outerElement='NK1.4'
-        country='USA'
         addressType='O'
         address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city,
             INSTITUTION.state, INSTITUTION.zip, INSTITUTION.country ,outerElement, addressType)
@@ -539,13 +534,13 @@ class hl7Batch:
             preg_encounters = Encounter.objects.filter(patient=case.patient, pregnant=True, date__gte=start_date,
                 date__lte=end_date)
             if not preg_encounters:
-                return ('261665006', None)
+                return (obx5, None)
             edd_encs = preg_encounters.filter(edd__isnull=False).order_by('date')
             if not edd_encs:
                 raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDD.')
             edd = edd_encs[0].edd
             return ('77386006', edd)
-        return ('261665006', None)
+        return (obx5, None)
 
     def addCaseOBX(self, demog=None, orcs=None,dx_code=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
         """
@@ -1034,13 +1029,13 @@ class hl7Batch:
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
                             obx5  = [('CE.4','373067005' ), ('CE.5',exvRec.answer)]     )
-                        elif exvRec.answer == 'Yes - office notified':  #TODO Yes, our office notified the partner(s)??
+                        elif exvRec.answer == 'Yes, our office notified the partner(s)':
                             obx1 = self.makeOBX(
                             obx1  = [('',n)],
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
                             obx5  = [('CE.4','NAR-45' ), ('CE.5',exvRec.answer)]     )
-                        elif exvRec.answer == 'Yes - patient notified':   #TODO Yes, our office notified the partner(s)??
+                        elif exvRec.answer == 'Yes, our office notified the partner(s)':
                             obx1 = self.makeOBX(
                             obx1  = [('',n)],
                             obx2  = [('', 'CE')],
@@ -1331,13 +1326,13 @@ class hl7Batch:
                 self.addSimple(outer,evar,ename)
         return outer
                  
-    def makeAddress(self, address, addressOther, city, state, zip, country ,outerElement, addressType):
+    def makeAddress(self, address, addressOther, city, state, zipcode, country ,outerElement, addressType):
         """reusable component = xad.1-7 pass the field names
         from the right record!
         """
         outer = self.casesDoc.createElement(outerElement)
         worklist = [(address,'XAD.1'),(addressOther,'XAD.2'),(city,'XAD.3'),(state,'XAD.4'),
-                    (zip,'XAD.5'),(country,'XAD.6')]
+                    (zipcode,'XAD.5'),(country,'XAD.6')]
         for (evar,ename) in worklist:
             if evar:
                 self.addSimple(outer,evar,ename)
@@ -1537,9 +1532,9 @@ class Command(BaseCommand):
                 report_obj.filename = filename
                 filepath = os.path.join(options.output_folder, filename)
                 output_file_paths.append(filepath)
-                file = open(filepath, 'w')
-                file.write(report_str)
-                file.close()
+                casefile = open(filepath, 'w')
+                casefile.write(report_str)
+                casefile.close()
                 log.info('Wrote case report to file: %s' % filepath)
                 #
                 # Transmission
