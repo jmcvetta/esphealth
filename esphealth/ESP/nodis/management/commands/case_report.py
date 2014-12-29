@@ -1035,7 +1035,7 @@ class hl7Batch:
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-354'), ('CE.5','CRF_CONTACTS_NOTIFIED')],
                             obx5  = [('CE.4','NAR-45' ), ('CE.5',exvRec.answer)]     )
-                        elif exvRec.answer == 'Yes, our office notified the partner(s)':
+                        elif exvRec.answer == 'Yes, the patient was asked to notify the partner(s)':
                             obx1 = self.makeOBX(
                             obx1  = [('',n)],
                             obx2  = [('', 'CE')],
