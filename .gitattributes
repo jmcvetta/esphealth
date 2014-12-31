@@ -712,6 +712,9 @@ modules/disease-hepatitis-combined/tests.py -text
 modules/disease-hepatitis-new/__init__.py -text
 modules/disease-hepatitis-new/hepatitis_new.py -text
 modules/disease-hepatitis-new/setup.py -text
+modules/disease-hepatitis-new2/__init__.py -text svneol=unset#text/plain
+modules/disease-hepatitis-new2/hepatitis_new2.py -text svneol=unset#text/plain
+modules/disease-hepatitis-new2/setup.py -text svneol=unset#text/plain
 modules/disease-ili/__init__.py -text
 modules/disease-ili/ili.py -text
 modules/disease-ili/setup.py -text
