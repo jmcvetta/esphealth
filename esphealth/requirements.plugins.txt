@@ -46,5 +46,13 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma#egg=disease-asthma
 # Hepatitis C New
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new#egg=disease-hepatitis-new
+# Asthma-new improved performance
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma-new#egg=disease-asthma-new
+# Smoking
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-smoking#egg=disease-smoking
+# Depression
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-depression#egg=disease-depression
+# Hep c New 2
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new2#egg=disease-hepatitis-new2
 
 
