@@ -699,6 +699,9 @@ modules/disease-asthma/setup.py -text
 modules/disease-chlamydia/__init__.py -text
 modules/disease-chlamydia/chlamydia.py -text
 modules/disease-chlamydia/setup.py -text
+modules/disease-depression/__init__.py -text svneol=unset#text/plain
+modules/disease-depression/depression.py -text svneol=unset#text/plain
+modules/disease-depression/setup.py -text svneol=unset#text/plain
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/diabetes.py -text
 modules/disease-diabetes/setup.py -text
