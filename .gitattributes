@@ -733,6 +733,9 @@ modules/disease-pelvic-inflammatory-disease/setup.py -text
 modules/disease-pertussis/__init__.py -text
 modules/disease-pertussis/pertussis.py -text
 modules/disease-pertussis/setup.py -text
+modules/disease-smoking/__init__.py -text svneol=unset#text/plain
+modules/disease-smoking/setup.py -text svneol=unset#text/plain
+modules/disease-smoking/smoking.py -text svneol=unset#text/plain
 modules/disease-syphilis/__init__.py -text
 modules/disease-syphilis/setup.py -text
 modules/disease-syphilis/syphilis.py -text
