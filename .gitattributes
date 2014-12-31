@@ -690,6 +690,9 @@ esphealth/unit-test/vaers/epicpro.esp.02292012 -text
 esphealth/unit-test/vaers/epicres.esp.04122012 -text
 esphealth/unit-test/vaers/epicvis.esp.04122012 -text
 espnet/ESP-MDPHNetDataModelV1.0.docx -text
+modules/disease-asthma-new/__init__.py -text svneol=unset#text/plain
+modules/disease-asthma-new/asthma-new.py -text svneol=unset#text/plain
+modules/disease-asthma-new/setup.py -text svneol=unset#text/plain
 modules/disease-asthma/__init__.py -text
 modules/disease-asthma/asthma.py -text
 modules/disease-asthma/setup.py -text
