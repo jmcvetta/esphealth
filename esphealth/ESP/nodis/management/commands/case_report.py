@@ -974,17 +974,22 @@ class hl7Batch:
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
             orus.appendChild(orcs)
             notified = False
+            obr = self.casesDoc.createElement('OBR')
+            self.addSimple(obr,'1','OBR.1')
+            obr4 = self.casesDoc.createElement('OBR.4')
+            self.addSimple(obr4,'Additional Patient Demographics','CE.2')
+            obr.appendChild(obr4)
+            orcs.appendChild(obr)
+            
             for lab in exvRecList:
                 extended_variables  = Order_Extension.objects.filter( order_natural_key = lab.order_natural_key)
-                
-                obr1 = self.casesDoc.createElement('OBR.1')
                 obx1 = self.makeOBX(
                         obx1  = [('',1)],
                         obx2  = [('', 'CE')],
                         obx3  = [('CE.4',lab.native_code) ],
                         obx5  = [('CE.4',lab.procedure_name )]
                         )
-                obr1.appendChild(obx1)
+                orcs.appendChild(obx1)
                 
                 n=1
                 for exvRec in extended_variables:
@@ -1049,9 +1054,8 @@ class hl7Batch:
                             obx5  = [('CE.4','NAR-37' ), ('CE.5',exvRec.answer)]     )
                             
                     if obx1:
-                        obr1.appendChild(obx1)
+                        orcs.appendChild(obx1)
                         n+=1 
-                orcs.appendChild(obr1)
         
     def addRXOBX(self,rxRecList=[],orus=None):
         """
