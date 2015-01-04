@@ -983,13 +983,6 @@ class hl7Batch:
             
             for lab in exvRecList:
                 extended_variables  = Order_Extension.objects.filter( order_natural_key = lab.order_natural_key)
-                obx1 = self.makeOBX(
-                        obx1  = [('',1)],
-                        obx2  = [('', 'CE')],
-                        obx3  = [('CE.4',lab.native_code) ],
-                        obx5  = [('CE.4',lab.procedure_name )]
-                        )
-                orcs.appendChild(obx1)
                 
                 n=1
                 for exvRec in extended_variables:
@@ -997,9 +990,9 @@ class hl7Batch:
                     if exvRec.question == 'Number of partners that were provided EPT' :
                         obx1 = self.makeOBX(
                         obx1  = [('',n)],
-                        obx2  = [('', 'CE')],
+                        obx2  = [('', 'ST')],
                         obx3  = [('CE.4','NA-352'), ('CE.5','EPT_NUMBER_CONTACTS')],
-                        obx5  = [('CE.4',exvRec.answer )]
+                        obx5  = [('',exvRec.answer )]
                         )
                     elif lab.native_code == '355804--' and exvRec.answer.upper() == 'NO' and exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?' :                             
                             obx1 = self.makeOBX(
@@ -1013,19 +1006,19 @@ class hl7Batch:
                             obx1  = [('',n)],
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
-                            obx5  = [('CE.4','NA-42' ), ('CE.5','YES-extra prescription provided')]     )
+                            obx5  = [('CE.4','NAR-42' ), ('CE.5','YES-extra prescription provided')]     )
                     elif lab.native_code == '355805--' and exvRec.answer.upper() == 'NO' and exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?':                           
                             obx1 = self.makeOBX(
                             obx1  = [('',n)],
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
-                            obx5  = [('CE.4','NA-43' ), ('CE.5','YES- extra medication provided')]    )
+                            obx5  = [('CE.4','NAR-43' ), ('CE.5','YES- extra medication provided')]    )
                     elif (lab.native_code == '355806--' or lab.native_code == '355805--' or lab.native_code == '355804--' ) and  exvRec.answer.upper() == 'YES' and  exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?' :
                             obx1 = self.makeOBX(
                             obx1  = [('',n)],
                             obx2  = [('', 'CE')],
                             obx3  = [('CE.4','NA-351'), ('CE.5','EPT_CONTACTS_TREATED')],
-                            obx5  = [('CE.4','NA-44' ), ('CE.5',exvRec.answer)]    )
+                            obx5  = [('CE.4','NAR-44' ), ('CE.5',exvRec.answer)]    )
                     elif exvRec.question == 'Were any of the patient\'s sex partners notified of possible exposure to chlamydia?' and not notified:
                         notified = True;
                         if exvRec.answer.upper() == 'NO':  
