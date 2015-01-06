@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load templatefilters %}
 
 {% block extrastyle %}
     <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
@@ -91,7 +92,7 @@
         <th>Gender</th>
         <th>Race</th>
         <th>Ethnicity</th>
-        <th>home_language</th>
+        <th>Home Language</th>
         <th>Created Date</th>
         <th>Last Updated</th>
         <th>Case Definition</th>
@@ -509,6 +510,33 @@
     {% endfor %}
 </table>
 
+<h3>
+    Notes (Any physican notes for this patient, +-2 weeks from case date)
+</h3>
+
+<table id="notes">
+    <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Purpose</th>
+        <th>Provider</th>
+        <th>Note</th>
+    </tr>
+    {% for note in notes %}
+    <tr>
+        <td>{{ note.date }}</td>
+        <td>{{ note.type }}</td>
+        <td>{{ note.purpose }}</td>
+        <td>
+            <a href="{% url provider_detail note.provider.pk %}">
+                {{ note.provider.name }}
+            </a>
+        </td>
+        <td>{{ note.provider_note|format_note|safe }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Case Status History</h2>
 
 {% endblock %}
-
