@@ -1,0 +1,28 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#                    Electronic Support for Public Health
+#                              PIP Requirements
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+#-------------------------------------------------------------------------------
+#
+# Packages from PyPI
+#
+#-------------------------------------------------------------------------------
+
+psycopg2 >= 2.4.1  # Database Adapter (newer versions have bug with Django test runner -JM 1 Feb 2012)
+django == 1.4.15      # Web application framework with ORM
+south              # Database migration framework
+python-dateutil    # Date-math utilities
+simplejson         # JSON data formatting
+sqlparse           # SQL pretty-printer
+hl7                # Utilities for working with HL7 message
+django_tables      # Utilities for working with HTML tables in Django
+configobj          # Advanced configuration file support
+futures            # Python implementation of "futures" threading paradigm
+ipython            # Interactive Python shell
+django-nose        # Nose test framework plugin for Django
+coverage           # Test coverage plugin for Nose
+paramiko           # SSH2 protocol library

@@ -1,0 +1,1 @@
+[{"pk": 2, "model": "conf.reportablelab", "fields": {"output_code": "87081--87081", "snomed_ind": "", "snomed_neg": "gontestneg", "notes": "testing for reporting ", "snomed_pos": "gontestpos", "native_name": "gonorrhea", "native_code": "87081--87081", "condition": "chlamydia"}}]

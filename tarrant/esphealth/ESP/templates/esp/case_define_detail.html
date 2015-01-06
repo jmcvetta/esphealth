@@ -1,0 +1,56 @@
+
+{% extends "espbase.html" %}
+{% load esplib %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+<br>
+
+
+<center>
+
+<h2>
+<font color="RED">*Warning*: Up to 10K records can be downloaded to Excel, if you need more records, Please email</font>
+<br><br><br>
+<font color="#800000">Information for your selection</font></h2>
+</center>
+<br>
+
+
+{% if lxs %}
+
+<table border=1 cellspacing = "2" cellpadding = "3">
+<tr>
+
+  <th> Component Name <br><font color="BLUE">(Click to download all patients to Excel)</font></th>
+  <th> CPT</th>
+  <th> Component</th>
+  <th> Non Numeric Results</th>
+  <th> Min Numeric Result</th>
+  <th> Max Numeric Result</th>
+  <th> Reference Low || High</th>
+  <th> Total # of Lx </th>
+</tr>
+   {% for lx in lxs %}
+     <tr class="{% cycle row1,row2 %}">
+       <td ><b><a href="{{SITEROOT}}/cases/define/download/{{lx.1}}/{{lx.2}}/">{{lx.0}}</a></b></td>
+       <td><b>{{lx.1}}</b></td>
+       <td><b>{{lx.2}}</b></td>
+       <td><b><pre>{{lx.3}}</pre></b></td>
+       <td><b><pre>{{lx.4}}</pre></b></td>
+       <td><b><pre>{{lx.5}}</pre></b></td>
+       <td><b><pre>{{lx.6}}</pre></b></td>
+       <td align="right"><b>{{lx.7}}</b></td>
+     </tr>
+
+      {% endfor %}
+
+    </table>
+{% else %}
+     <p>
+      <h1>No matched records to show</h1>
+     </p>
+</div>
+{% endif %}
+{% endblock%}

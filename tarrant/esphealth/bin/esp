@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+#===============================================================================
+#
+#                             ESP Health Project
+#
+#                         './bin/esp' Wrapper Script
+#
+#
+# Wrapper script for running ESP commands.  Sets PYTHONPATH to ESP 'src' folder
+# and calls 'manage.py'.  
+#
+#===============================================================================
+#
+#
+# @author: Jason McVetta <jason.mcvetta@gmail.com>
+# @organization: Channing Laboratory http://www.channing.harvard.edu
+# @contact: http://esphealth.org
+# @copyright: (c) 2009-2010 Channing Laboratory
+# @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
+#
+#===============================================================================
+
+# IF path to Python executable has not been specified, use system default
+if [ -z "$PYTHON" ]; then
+    PYTHON=`which python`
+fi
+
+# Calculate path to ESP installation based on location of this script
+_script_path=$(readlink -f $0)
+_bin_dir=$(dirname $_script_path)
+ESP_HOME=$(dirname $_bin_dir)
+
+# Activate virtualenv
+. $ESP_HOME/bin/activate
+
+# Call manage.py
+export DJANGO_SETTINGS_MODULE=ESP.settings
+PYTHONPATH=$ESP_HOME $ESP_HOME/bin/python $ESP_HOME/ESP/manage.py $@

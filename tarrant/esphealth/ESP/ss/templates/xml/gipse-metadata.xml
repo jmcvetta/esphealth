@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MetadataQueryResponse>
+  <MetaDataRecord>
+    <TimePeriodSupported>
+      <start>{{ result.start_date }}</start>
+      <end>{{ result.end_date }}</end>
+    </TimePeriodSupported>
+    <DataSourceOID>{{ data_source }}</DataSourceOID>
+    {% if result.has_supressed_values %}
+    <SuppressValues smallestValueReported="{{result.lower_report_threshold }}" />
+    {% endif %}
+    
+    <IndicatorsSupported>TODO: Some random comment about results?</IndicatorsSupported>
+    
+    {% for indicator in result.indicators %}
+    <Indicator classifier="{{ indicator.classifier }}" name="{{indicator.name}}"/>
+    {% endfor %}
+    
+    <IntervalsSupported>
+      {% for interval in results.intervals %}
+      <Interval name="{{ interval.name }}"> {{result.interval.value}}</Interval>
+      {$ endfor %}
+    </IntervalsSupported>
+  </MetaDataRecord>
+</MetadataQueryResponse>

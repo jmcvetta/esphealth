@@ -1,0 +1,291 @@
+{% extends "espbase.html" %}
+
+{% load esplib %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+<br>
+
+{% if wfmsg %}
+     <br>
+     {% ifequal nextcaseid "" %}All cases have been reviewed
+     {%else%} <a href="{{SITEROOT}}/cases/{{inprod}}/{{nextcaseid }}/R/">Next case for Review</a>
+     {% endifequal %}
+     <br>
+     <center>
+     <h3><font color="blue"> {{wfmsg}}</font></h3>
+      </center>
+
+
+
+{%else%}
+{% if cobject %}
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+{% ifequal restrict "F" %}<a href="{{SITEROOT}}/cases/{{inprod}}/{{ cobject.id }}/R/"> Restricted View</a>
+{%else%} <a href="{{SITEROOT}}/cases/{{inprod}}/{{ cobject.id }}/F/"> Full View</a>
+{% endifequal %}
+<br>
+<br><center>
+{% ifequal inprod "1" %}
+<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/Q/" method="post">
+ <br><input type="submit" name="submit" value="Confirmed Case, Transmit to Health Department" >
+</form>
+{% endifequal %}
+</center>
+
+<BR>
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<tr><td colspan = "11" align = "center" bgcolor="white">
+<font size="+1" color="#800000">Suspected Condition: {{ cobject.getCondition.ruleName }}</font></td></tr>
+
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+ <th>CaseID</th>
+ <th>Patient Name <br> MRN</th>
+<th>Gender</th>
+<th>Age & DOB</th>
+<th>Pregnancy</th>
+<th>Workflow State</th><th>Comments</th>
+<th>Last Updated</th><th>Created Date</th><th>Case Definition</th><th>Query ID</th></tr>
+
+ <tr class="{% cycle rowcolors %}">
+  <td>{{ caseid }}</td>
+  <td>{{ cobject.showPatient }}</td> 
+  <td>{{cobject.getPatient.DemogGender}}</td>
+<td>Age: {{cobject.getPatient.getAge}}<br>DOB:{{cobject.getPatient.DemogDate_of_Birth}}</td>
+  <td>{{ cobject.getPregnant.0}}</td>
+ <td>{{ cobject.get_caseWorkflow_display }}</td>
+ <td> {{ cobject.caseComments }}</td>
+ <td> {{ cobject.caseLastUpDate }}
+ <td>{{ cobject.casecreatedDate }}
+ <td><a href="{{SITEROOT}}/rules/{{ cobject.caseRule.id }}/">{{ cobject.caseRule.ruleName }}</a></td>
+ <td>{{ cobject.caseQueryID }}</td></tr>  
+</table>
+
+<br><br>
+
+<hr size="6"  width="75%" align="center">
+<br>
+
+
+{% if labs %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+
+<td colspan = "11" align = "left" bgcolor="white"><font  color="#800000"><b>Laboratory Results</b></font></td></tr>
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+<th>Pertinent to Condition</th>
+<th>Date Ordered</th>
+<th>Result Date</th>
+<th>CPT / Component</th>
+<th>Component</th>
+<th>Test Results</th>
+<th>Abnormal Flag</th>
+<th>Normal Range</th>
+<th>Comment</th>
+<th>OrderID</th>
+<th>Clinician</th>
+</tr>
+
+  {% for lab in labs %}
+
+<tr class="{% cycle rowcolors %}">
+  {% colorcurrow %}{{cobject.caseLxID}}:{{lab.id}}{%endcolorcurrow%}
+  <td align="right">
+    {% ifequal "RED"  currowcolor%}
+       <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+    {% endifequal %}
+   </td>
+ <td>{{ lab.LxOrderDate }}</td>
+ <td>{{ lab.LxDate_of_result }}</td>
+
+   {% ifequal "RED"  currowcolor%}
+             <td><font color="red"><b>{{lab.LxTest_Code_CPT }} / {{lab.LxComponent}} ({{lab.LxLoinc}})</b></font></td>
+             <td><font color="red"><b>{{lab.LxComponentName}}</b></font></td>
+	     <td><font color="red"><b>{{ lab.LxTest_results }}</b></font></td>
+   {%else%}
+      <td>{{lab.LxTest_Code_CPT}} / {{lab.LxComponent}}</td>
+      <td>{{lab.LxComponentName}}</td>
+      <td>{{ lab.LxTest_results }}</td>
+
+   {% endifequal %}
+
+
+ <td>{{ lab.LxNormalAbnormal_Flag }} </td>
+ <td>{{ lab.LxReference_Low}}  -  {{ lab.LxReference_High}}</td>
+ <td>{% if lab.LxComment %}
+   <a href="{{SITEROOT}}/lx/{{ lab.id }}/"> {{lab.getPartNote}}...</a> {% endif %}</td>
+ <td>{{ lab.LxOrder_Id_Num }}</td>
+ <td><a href="{{SITEROOT}}/pcps/{{ lab.LxOrdering_Provider.id }}/">{{ lab.getcliname }}</a></td>
+</tr>
+  {% endfor %}
+</table >
+{% endif %}
+
+<br><br>
+
+{% if encounters %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<td colspan = "7" align = "left" bgcolor="white">
+<font color="#800000"><b>Encounter data</b></font></td></tr>
+
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+ <th>Pertinent to Condition</th>
+ <th>Date</th>
+ <th>Dx Codes</td>
+ <th>Site</td>
+ <th>Pregnancy</th>
+ <th>Temperature</th>
+ <th>Clinician</th>
+
+ </tr>
+ 
+
+{% for e in encounters %}
+<tr class="{% cycle rowcolors %}">
+
+  {% colorcurrow %}{{cobject.caseEncID}}:{{e.id}}{%endcolorcurrow%}
+  <td align="right">
+    {% ifequal "RED"  currowcolor%}
+       <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+    {% endifequal %}
+   </td>
+
+<td>{{ e.EncEncounter_Date }} </td>
+
+ <td>
+   {% for onerec in e.getdx_codes %}
+         {%coloricd%}{{cobject.caseEncID}}:{{cobject.casedx_code}}:{{e.id }}:{{onerec.0}}{%endcoloricd%}
+         {% ifequal "RED"  curicdcolor%}
+            <font color="red"><b>{{onerec.0}}{{onerec.1}}</b></font>
+         {%else%}
+            {{onerec.0}}{{onerec.1}}
+         {% endifequal %}
+   {% endfor %}
+ </td>
+
+<td>{{ e.EncEncounter_SiteName }}</td>
+<td>{{ e.EncPregnancy_Status }}<br>EDC: {{e.EncEDC}}</td>
+<td> {{ e.EncTemperature }} </td>
+<td><a href="{{SITEROOT}}/pcps/{{ e.EncEncounter_Provider.id }}/"> {{e.getcliname}}</a></td>
+</tr>
+
+  {% endfor %}
+
+</table>
+{% endif %}
+
+
+
+<br>
+<br>
+{% if prescriptions %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+
+<td colspan = "10" align = "left" bgcolor="white">
+<font color="#800000"><b>Prescription data</b></font></td></tr>
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+<th>Pertinent to Condition</th>
+<th>Date Ordered</th>
+<th>Name</th>
+<th>Description</th>
+<th>Route</th>
+<th>Dose</th>
+<th>Frequency</th>
+<th>Quantity</th>
+<th>NDC</th>
+<th>Clinician</th>
+</tr>
+ 
+{% for rx in prescriptions %}
+
+<tr class="{% cycle rowcolors %}">
+  {% colorcurrow %}{{cobject.caseRxID}}:{{rx.id}}{%endcolorcurrow%}
+  <td align="right">
+    {% ifequal "RED"  currowcolor%}
+       <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+    {% endifequal %}
+   </td>
+
+<td>{{ rx.RxOrderDate }}</td>
+<td>
+   {% ifequal "RED"  currowcolor%}
+      <font color="red"><b>{{ rx.RxDrugName }}</b></font>
+   {%else%}
+       {{ rx.RxDrugName }}
+   {% endifequal %}
+</td>
+
+
+<td>{{ rx.RxDrugDesc }}</td>
+<td>{{ rx.RxRoute }}</td>
+<td>{{ rx.RxDose }}</td>
+<td>{{ rx.RxFrequency }}
+<td>{{ rx.RxQuantity }}</td>
+<td>{{rx.getNDC}}</td>
+<td><a href="{{SITEROOT}}/pcps/{{ rx.RxProvider.id }}/">{{ rx.getcliname }}</a></td>
+</tr>
+
+  {% endfor %}
+</table >
+{% endif %}
+
+{% else %}
+    <p>No case is available.</p>
+{% endif %}
+
+
+<br><br>
+
+<hr size="6"  width="75%" align="center">
+<br>
+
+
+{% if wf %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<tr class="{% cycle rowcolors %}">
+<td colspan = "5" align = "center" bgcolor="white">
+<font size="+1" color="#800000">Case Workflow History & Update</font></td></tr>
+ <tr><th>Edit Comment Link</th><th>Last Updated</th><th>Workflow State</th><th>Changed By</th><th>Comment</th></tr>
+     {% for w in wf %}
+
+   <tr class="{% cycle row1,row2 %}" valign="center"><td valign=middle align="center">
+        <font size="+1"><a href="{{SITEROOT}}/workflows/{{ w.id }}/">{{ w.id }}</a></font></td>
+      <td valign=middle> {{ w.workflowDate }}</td>
+      <td valign=middle> {{ w.workflowState}}</td>
+      <td valign=middle> {{ w.workflowChangedBy}}</td>
+      <td valign=middle><pre> {{w.workflowComment}}</pre></td>
+   </tr>
+
+     {% endfor %}
+ </table>
+{% endif %}
+<br>
+
+{% ifequal inprod "1" %}
+<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/" method="post">
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+ <tr bgcolor="#800000">
+ <td  valign="middle"> <b><font color=white> 1. Change workflow to:</font></td>
+ <td  valign="middle"> <SELECT NAME="NewWorkflow" size=4>
+              {% for thiswf in wfstate %}
+              {% ifnotequal cobject.caseWorkflow thiswf.0 %} <OPTION value={{thiswf.0}}> {{thiswf.1}}</OPTION> {% endifnotequal %}           {% endfor %} </SELECT>
+ </td>
+ </tr>
+ <tr bgcolor="#800000">
+  <td valign="middle"> <b><font color=white> 2. Add Comments:</font></td>
+  <td  valign="middle"> <textarea name="Comment" rows=4 cols=50 > </textarea></td>
+ </tr>
+  <tr bgcolor="#800000">
+  <td align="center" colspan=2>
+    <br><input type="submit" name="submit" value="Update workflow, add comment" >
+ </td>
+</tr>
+ </table>
+</form>
+{% endifequal %}
+{% endif %}
+
+{% endblock %}
+

@@ -1,0 +1,553 @@
+<?xml version="1.0"?>
+<!--
+   PHGrid GIPSE Schema edited by Brian Alexander Lee (brianalee@gmail.com),
+   2009.06.22 1500EDT)
+  -->
+
+<xs:schema id="GIPSE" targetNamespace="http://ncphi.phgrid.net:8080/schemas/gipse/20090630"
+	   xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="qualified"
+	   elementFormDefault="qualified" version="1.0" xml:lang="EN">
+  
+  <!-- MetadataQueryRequest -->
+  <xs:element name="MetadataQuery">
+    <xs:complexType />
+  </xs:element>
+  
+  <!-- MetadataQueryResponse -->
+  <xs:element name="MetadataQueryResponse">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="1">
+	<xs:element name="MetadataRecord">
+	  <xs:complexType>
+	    <xs:sequence>
+	      <xs:element name="TimePeriodSupported" minOccurs="1" maxOccurs="1">
+		<xs:complexType>
+		  <xs:attribute name="start" type="xs:dateTime" use="required"></xs:attribute>
+		  <xs:attribute name="end" type="xs:dateTime" use="required"></xs:attribute>
+		</xs:complexType>
+	      </xs:element>
+	      <xs:element name="DataSourceOID" type="xs:string" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="SuppressValues" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="smallestValueReported" type="xs:integer" use="required"></xs:attribute>
+                </xs:complexType>
+	      </xs:element>
+              <xs:element name="PagingSupported" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="maxPageSize" type="xs:integer" use="required"/>
+                </xs:complexType>
+	      </xs:element>
+	      <xs:element name="IndicatorsSupported" minOccurs="1" maxOccurs="1">
+		<xs:annotation>
+		  <xs:documentation>
+		    These would correspond to entries
+		    in a wiki or registry describing the classification
+		    rules (count vs. ratio, measures to derive
+		    indicators, etc)
+		  </xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="Indicator" minOccurs="1" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="classifier" type="xs:string" use="required"></xs:attribute>
+                        <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      
+	      <xs:element name="IntervalsSupported" minOccurs="1" maxOccurs="1">
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="Interval" minOccurs="1" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="isDefault" type="xs:boolean" use="optional"></xs:attribute>
+                        <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      
+	      <xs:element name="GeoRegionsSupported" minOccurs="0" maxOccurs="1">
+		<xs:annotation><xs:documentation>Optional Element. If not present then service cannot be stratified by Geographic Area</xs:documentation></xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="GeoRegion" minOccurs="0" maxOccurs="unbounded">
+		      <xs:complexType>    
+			<xs:sequence>
+			  <xs:element name="SpecificLocations" minOccurs="0" maxOccurs="1">
+			    <xs:complexType>
+			      <xs:sequence>
+				<xs:element name="GeoLocation" minOccurs="1" maxOccurs="unbounded">
+				  <xs:complexType>
+				    <xs:attribute name="type" use="required">
+				      <xs:simpleType>
+					<xs:restriction base="xs:string">
+					  <xs:enumeration value="state"></xs:enumeration>
+					  <xs:enumeration value="zip5"></xs:enumeration>
+					  <xs:enumeration value="zip3"></xs:enumeration>
+					  <xs:enumeration value="county"></xs:enumeration>
+					  <xs:enumeration value="country"></xs:enumeration>
+					</xs:restriction>
+				      </xs:simpleType>
+				    </xs:attribute>
+				    <xs:attribute name="value" type="xs:string" use="required"/>
+				  </xs:complexType>    
+				</xs:element>
+			      </xs:sequence>
+			    </xs:complexType>    
+			  </xs:element>
+			</xs:sequence>
+			<xs:attribute name="type" use="required">
+			  <xs:simpleType>
+			    <xs:restriction base="xs:string">
+			      <xs:enumeration value="state"></xs:enumeration>
+			      <xs:enumeration value="zip5"></xs:enumeration>
+			      <xs:enumeration value="zip3"></xs:enumeration>
+			      <xs:enumeration value="county"></xs:enumeration>
+			      <xs:enumeration value="country"></xs:enumeration>
+			    </xs:restriction>
+			  </xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="value" type="xs:string" use="required"/>
+		      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      
+	      <xs:element name="AgeCodingsSupported" minOccurs="0" maxOccurs="1">
+		<xs:annotation><xs:documentation>Optional Element. If not present then service cannot be stratified by Age</xs:documentation></xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="Age" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="classifier" type="xs:string" use="required"></xs:attribute>
+                        <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      
+	      <xs:element name="FacilitiesSupported" minOccurs="0" maxOccurs="1">
+		<xs:annotation><xs:documentation>Optional Element. If not present then service cannot be stratified by Facility.</xs:documentation></xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="Facility" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="codeset" type="xs:string" use="required"></xs:attribute>
+                        <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	      
+	      <xs:element name="ServiceAreasSupported" minOccurs="0" maxOccurs="1">
+		<xs:annotation><xs:documentation>Optional Element. If not present then service cannot be stratified by Service Area.</xs:documentation></xs:annotation>
+		<xs:complexType>
+		  <xs:sequence>
+		    <xs:element name="ServiceArea" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="codeset" type="xs:string" use="required"></xs:attribute>
+                        <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+		    </xs:element>
+		  </xs:sequence>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- GIPSEQueryRequest -->
+  <xs:element name="GIPSEQueryRequest">
+    <xs:complexType>
+      <xs:sequence>
+	<xs:element name="RequestCharacteristics" minOccurs="1" maxOccurs="1">
+	  <xs:complexType>
+	    <xs:sequence>
+	      <xs:element name="RequestDateTime" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="RequestingUser" type="xs:string" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="RequestingOrganization" type="xs:string" minOccurs="1" maxOccurs="1" />
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+        <xs:element name="QueryCharacteristics" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>The query request cannot override the settings of the service in regards to supported functionality. 
+              No characteristics of query cannot can override the configuration of the service. 
+              If the query is in conflict with the service capability then an exception is raised. 
+              For example, if a suppression value less than the service suppression is set in the query, the service will respond with an exception.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Dates" minOccurs="1" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="start" type="xs:date" use="required" />
+                  <xs:attribute name="end" type="xs:date" use="required" />
+		  <xs:attribute name="interval"type="xs:string" use="optional"/>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="SuppressValues" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                  <xs:documentation> Optional Element. If not present then service cannot be stratified by Geographic Area</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="smallestValueReported" type="xs:integer" use="required" />
+                  <xs:attribute name="reportAs" type="xs:string" use="optional" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Indicators" minOccurs="1" maxOccurs="1">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Indicator" minOccurs="1" maxOccurs="unbounded">
+                      <xs:complexType>
+			<xs:attribute name="classifier" type="xs:string" use="required"></xs:attribute>
+			<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+	      
+              <xs:element name="GeoRegions" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                  <xs:documentation>
+                    Optional Element. If not present
+                    then response is not stratified
+                    by Geographic Area
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="GeoRegion" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+			<xs:sequence>
+			  <xs:element name="SpecificLocations" minOccurs="0" maxOccurs="1">
+			    <xs:complexType>
+			      <xs:sequence>
+				<xs:element name="GeoLocation" minOccurs="1" maxOccurs="unbounded">
+				  <xs:complexType>
+				    <xs:attribute name="type" use="required">
+				      <xs:simpleType>
+					<xs:restriction base="xs:string">
+					  <xs:enumeration value="state"></xs:enumeration>
+					  <xs:enumeration value="zip5"></xs:enumeration>
+					  <xs:enumeration value="zip3"></xs:enumeration>
+					  <xs:enumeration value="county"></xs:enumeration>
+					  <xs:enumeration value="country"></xs:enumeration>
+					</xs:restriction>
+				      </xs:simpleType>
+				    </xs:attribute>
+				    <xs:attribute name="value" type="xs:string" use="required" />
+				  </xs:complexType>
+				</xs:element>
+			      </xs:sequence>
+			    </xs:complexType>
+			  </xs:element>
+			</xs:sequence>
+			<xs:attribute name="type" use="required">
+			  <xs:simpleType>
+			    <xs:restriction base="xs:string">
+			      <xs:enumeration value="state"></xs:enumeration>
+			      <xs:enumeration value="zip5"></xs:enumeration>
+			      <xs:enumeration value="zip3"></xs:enumeration>
+			      <xs:enumeration value="county"></xs:enumeration>
+			      <xs:enumeration value="country"></xs:enumeration>
+			    </xs:restriction>
+			  </xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="value" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="Ages" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                  <xs:documentation> Optional Element. If not present then response is not stratified by Age</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Age" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+			<xs:attribute name="classifier" type="xs:string" use="required"></xs:attribute>
+			<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="Facilities" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                  <xs:documentation> Optional Element. If not present then response is not stratified by Facility.</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Facility" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+			<xs:attribute name="codeset" type="xs:string" use="required"></xs:attribute>
+			<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+	      
+              <xs:element name="ServiceAreas" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                  <xs:documentation>Optional Element. If not present then response is not stratified by Service Area.</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="ServiceArea" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+			<xs:attribute name="codeset" type="xs:string" use="required"></xs:attribute>
+			<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="PageData" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                  <xs:documentation> Optional Element. If not present then maximum observations are returned.</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="pageNumber" type="xs:integer" use="required" />
+		  <xs:attribute name="pageSize" type="xs:integer" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="queryID" type="xs:string" use="optional">
+              <xs:annotation>
+                <xs:documentation>If specified, then the Response does not contain the details of the query characteristics, just this query ID for reference by the client.</xs:documentation>
+              </xs:annotation>
+            </xs:attribute>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- GIPSEQueryResponse -->
+  <xs:element name="GIPSEQueryResponse">
+    <xs:complexType>
+      <xs:sequence>
+	<xs:element name="ResponseCharacteristics" minOccurs="1" maxOccurs="1">
+	  <xs:complexType>
+	    <xs:sequence>
+	      <xs:element name="RequestDateTime" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="ResponseDateTime" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="RequestingUser" type="xs:string" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="RequestingOrganization" type="xs:string" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="DataSourceOID" type="xs:string" minOccurs="1" maxOccurs="1" />
+	      <xs:element name="DataSourceTimeZone" type="xs:string" minOccurs="0" maxOccurs="1" />
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+	<xs:element name="QueryCharacteristics" minOccurs="1" maxOccurs="1">
+	  <xs:annotation>
+	    <xs:documentation>Query submitted, echoed back and modified to reflect all the explicit and implicit characteristics. Explicit criteria should never be overwritten,generate an error if conflicts exist.</xs:documentation>
+	  </xs:annotation>
+	  <xs:complexType>
+	    <xs:sequence>
+	      <xs:choice>
+		<xs:element name="QueryID" type="xs:string" minOccurs="1" maxOccurs="1">
+		  <xs:annotation>
+		    <xs:documentation>If the queryID attribute is specified in the request, then is is provided in the response instead of echoing the Query Characteristics</xs:documentation>
+		  </xs:annotation>
+		</xs:element>
+		<xs:sequence>
+		  <xs:element name="Dates" minOccurs="1" maxOccurs="1">
+		    <xs:complexType>
+		      <xs:attribute name="start" type="xs:date" use="required" />
+		      <xs:attribute name="end" type="xs:date" use="required" />
+		      <xs:attribute name="interval" type="xs:string" use="optional"/>
+		    </xs:complexType>
+		  </xs:element>
+		  <xs:element name="SuppressValues" minOccurs="0" maxOccurs="1">
+		    <xs:annotation>
+		      <xs:documentation>Optional Element. If not present then service cannot be stratified by Geographic Area</xs:documentation>
+		    </xs:annotation>
+		    <xs:complexType>
+		      <xs:attribute name="smallestValueReported" type="xs:integer" use="required" />
+		      <xs:attribute name="reportAs" type="xs:string" use="optional">
+			<xs:annotation>
+			  <xs:documentation>Whatever string value specified will be returned as the indicator value for any value suppressed observations.</xs:documentation>
+			</xs:annotation>
+		      </xs:attribute>
+		    </xs:complexType>
+		  </xs:element>
+		  <xs:element name="Indicators" minOccurs="1" maxOccurs="1">
+		    <xs:complexType>
+		      <xs:sequence>
+			<xs:element name="Indicator" minOccurs="1" maxOccurs="unbounded">
+			  <xs:complexType>
+			    <xs:attribute name="classifier" type="xs:string" use="required"></xs:attribute>
+			    <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+			  </xs:complexType>
+			</xs:element>
+		      </xs:sequence>
+		    </xs:complexType>
+		  </xs:element>
+
+		  <xs:element name="GeoRegions" minOccurs="0" maxOccurs="1">
+		    <xs:annotation>
+		      <xs:documentation>Optional Element. If not present then response is not stratified by Geographic Area</xs:documentation>
+		    </xs:annotation>
+		    <xs:complexType>
+		      <xs:sequence>
+			<xs:element name="GeoRegion" minOccurs="0" maxOccurs="unbounded"><xs:complexType>
+			    <xs:sequence>
+			      <xs:element name="SpecificLocations" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+				  <xs:sequence>
+				    <xs:element name="GeoLocation" minOccurs="1" maxOccurs="unbounded">
+				      <xs:complexType>
+					<xs:attribute name="type" use="required">
+					  <xs:simpleType>
+					    <xs:restriction base="xs:string">
+					      <xs:enumeration value="state"></xs:enumeration>
+					      <xs:enumeration value="zip5"></xs:enumeration>
+					      <xs:enumeration value="zip3"></xs:enumeration>
+					      <xs:enumeration value="county"></xs:enumeration>
+					      <xs:enumeration value="country"></xs:enumeration>
+					    </xs:restriction>
+					  </xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="value" type="xs:string" use="required" />
+				      </xs:complexType>
+				    </xs:element>
+				  </xs:sequence>
+				</xs:complexType>
+			      </xs:element>
+			    </xs:sequence>
+			    <xs:attribute name="type" use="required">
+			      <xs:simpleType>
+				<xs:restriction base="xs:string">
+				  <xs:enumeration value="state"></xs:enumeration>
+				  <xs:enumeration value="zip5"></xs:enumeration>
+				  <xs:enumeration value="zip3"></xs:enumeration>
+				  <xs:enumeration value="county"></xs:enumeration>
+				  <xs:enumeration value="country"></xs:enumeration>
+				</xs:restriction>
+			      </xs:simpleType>
+			    </xs:attribute>
+			    <xs:attribute name="value" type="xs:string" use="required" />
+			  </xs:complexType>
+			</xs:element>
+		      </xs:sequence>
+		    </xs:complexType>
+		  </xs:element>
+
+		  <xs:element name="Ages" minOccurs="0" maxOccurs="1">
+		    <xs:annotation>
+		      <xs:documentation>Optional Element. If not present then response is not stratified by Age</xs:documentation>
+		    </xs:annotation>
+		    <xs:complexType>
+		      <xs:sequence>
+			<xs:element name="Age" minOccurs="0" maxOccurs="unbounded">
+			  <xs:complexType>
+			    <xs:attribute name="classifier" type="xs:string" use="required"></xs:attribute>
+			    <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+			  </xs:complexType>
+			</xs:element>
+		      </xs:sequence>
+		    </xs:complexType>
+		  </xs:element>
+
+		  <xs:element name="Facilities" minOccurs="0" maxOccurs="1">
+		    <xs:annotation>
+		      <xs:documentation>Optional Element. If not present then response is not stratified by Facility.</xs:documentation>
+		    </xs:annotation>
+		    <xs:complexType>
+		      <xs:sequence>
+			<xs:element name="Facility" minOccurs="0" maxOccurs="unbounded">
+			  <xs:complexType>
+			    <xs:attribute name="codeset" type="xs:string" use="required"></xs:attribute>
+			    <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+			  </xs:complexType>
+			</xs:element>
+		      </xs:sequence>
+		    </xs:complexType>
+		  </xs:element>
+
+		  <xs:element name="ServiceAreas" minOccurs="0" maxOccurs="1">
+		    <xs:annotation>
+		      <xs:documentation> Optional Element. If not present then response is not stratified by Service Area.</xs:documentation>
+		    </xs:annotation>
+		    <xs:complexType>
+		      <xs:sequence>
+			<xs:element name="ServiceArea" minOccurs="0" maxOccurs="unbounded">
+			  <xs:complexType>
+			    <xs:attribute name="codeset" type="xs:string" use="required"></xs:attribute>
+			    <xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+			  </xs:complexType>
+			</xs:element>
+		      </xs:sequence>
+		    </xs:complexType>
+		  </xs:element>
+		</xs:sequence>
+	      </xs:choice>
+
+	      <xs:element name="PageData" minOccurs="0" maxOccurs="1">
+		<xs:annotation>
+		  <xs:documentation>Optional Element. If not present then maximum observations are returned. Current record numbers can be derived from pageNumber*pageSize.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+		  <xs:attribute name="pageNumber" type="xs:integer" use="required" />
+		  <xs:attribute name="pageSize" type="xs:integer" use="required" />
+		  <xs:attribute name="totalRecords" type="xs:integer" use="required" />
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+
+	<xs:element name="ObservationSet" minOccurs="0" maxOccurs="1">
+	  <xs:annotation><xs:documentation>Optional Element. If not present then you got zero records back (no matches, not even indicator values of zero).</xs:documentation></xs:annotation>
+	  <xs:complexType>
+	    <xs:sequence>
+	      <xs:element name="Observation" minOccurs="1" maxOccurs="unbounded">
+		<xs:complexType>
+		  <xs:attribute name="start" type="xs:date" use="required">
+		    <xs:annotation>
+		      <xs:documentation>
+			Time period can be determined by this date * Interval.Initially, only day is supported, but eventually time is supported to allow intervals of hour, minute, second, millisecond, whatever
+		      </xs:documentation>
+		    </xs:annotation>
+		  </xs:attribute>
+		  <xs:attribute name="indicator" type="xs:string" use="required"/>
+		  <xs:attribute name="value" type="xs:string" use="required">
+		    <xs:annotation>
+		      <xs:documentation>
+			This is a string because some indicators may return ratios, alpha values. It depends on the classifier of the indicator and the rules of that indicator.
+		      </xs:documentation>
+		    </xs:annotation>
+		  </xs:attribute>
+		  <xs:attribute name="location" type="xs:string" use="optional"/>
+		  <xs:attribute name="age" type="xs:string" use="optional"/>
+		  <xs:attribute name="facility" type="xs:string" use="optional"/>
+		  <xs:attribute name="serviceArea" type="xs:string" use="optional"/>
+		</xs:complexType>
+	      </xs:element>
+	    </xs:sequence>
+	  </xs:complexType>
+	</xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

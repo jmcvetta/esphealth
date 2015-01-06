@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+{% block content %}
+
+<p>
+    <em>Click test code to download CSV file.</em>
+</p>
+
+<table>
+    <tr>
+        <th>Native Code
+        <th>Native Name(s)
+        <th>Non-Numeric Results
+        <th>Min Numeric Result
+        <th>Max Numeric Result
+        <th>Reference Low(s)
+        <th>Reference High(s)
+        <th>Result Count
+    </tr>
+    {% for test in details %}
+    <tr>
+        <td><a href="{% url labtest_csv test.native_code %}">{{ test.native_code }}</a>
+        <td>{{ test.native_names|join:"<br>" }}
+        <td>{{ test.result_strings|join:"<br>" }}
+        <td>{{ test.min_result_float }}
+        <td>{{ test.max_result_float }}
+        <td>{{ test.ref_low_values|join:"<br>" }}
+        <td>{{ test.ref_high_values|join:"<br>" }}
+        <td>{{ test.count }}
+    </tr>
+    {% endfor %}
+</table>
+
+<p>
+    <a href="{% url labtest_lookup %}">Back to Lab Test Lookup form</a>
+</p>
+
+
+{% endblock%}

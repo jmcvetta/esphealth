@@ -1,0 +1,1 @@
+[{"pk": 2, "model": "conf.reportablemedication", "fields": {"drug_name": "Metformin", "notes": "", "condition": "chlamydia"}}]
