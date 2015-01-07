@@ -1,9 +1,10 @@
+{% load url from future %} {# https://docs.djangoproject.com/en/dev/releases/1.3/#changes-to-url-and-ssi #}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
 
 <head>
     <title>
-        {% if title %}{{ title }} -{% endif %} Electronic medical record Support for Public Health (ESPnet)
+        {% if title %}{{ title }} -{% endif %} ESP Test Site: Not For Production Use! 
     </title>
 
     <link href="{{ site_css_folder }}base.css" rel="stylesheet" type="text/css" />
@@ -55,15 +56,15 @@
     {% if user.is_authenticated %}
     <div id="navigation">
         <ul class='jd_menu'>
-            <li><a href="{% url status %}">Status</a></li>
+            <li><a href="{% url 'status' %}">Status</a></li>
              {% if show_surveys %}
             <li>Surveys &raquo;
             	<ul>
-            		<li><a href="{% url survey_import %}">Import Responses</a></li>
+            		<li><a href="{% url 'survey_import' %}">Import Responses</a></li>
             		<li>Survey Results &raquo;
             		<ul>
-            		    <li><a href="{% url view_survey_report %}">View Last BRFSS Demo</a></li>
-            			<li><a href="{% url generate_survey_report %}">Generate BRFSS Demo</a></li>
+            		    <li><a href="{% url 'view_survey_report' %}">View Last BRFSS Demo</a></li>
+            			<li><a href="{% url 'generate_survey_report' %}">Generate BRFSS Demo</a></li>
             		</ul>
             		</li>
              	</ul>
@@ -71,36 +72,34 @@
                {% endif %}	
             <li>Nodis &raquo;
                 <ul>
-                    <li><a href="{% url nodis_cases_all %}">Cases - All</a></li>
-                    <li><a href="{% url nodis_cases_awaiting_review %}">Cases - Awaiting Review</a></li>
-                    <li><a href="{% url nodis_cases_under_review %}">Cases - Under Review</a></li>
-                    <li><a href="{% url nodis_cases_queued %}">Cases - Queued</a></li>
-                    <li><a href="{% url nodis_cases_sent %}">Cases - Sent</a></li>
+                {% for k,v in nodismenu.items %}
+                    <li><a href="{% url v %}">{{ k }}</a></li>
+                {% endfor %}
                 </ul>
             </li>
-            <li><a href="{% url vaers.views.index %}">Vaers &raquo;</a>
+            <li><a href="{% url 'vaers.views.index' %}">Vaers &raquo;</a>
 	      <ul>
-            <li><a href="{% url vaers.vaccine.views.index %}">Vaccine Mapping</a></li>
-			<li><a href="{% url vaers.vaccine.views.manufacturers %}">Manufacturers Mapping</a></li>
-			<li><a href="{% url vaers.views.report %}">Satscan Clustering Report</a></li>
-			<li><a href="{% url vaers.views.download_vae_listing %}">Download VAERS Line Listing</a></li>
+            <li><a href="{% url 'vaers.vaccine.views.index' %}">Vaccine Mapping</a></li>
+			<li><a href="{% url 'vaers.vaccine.views.manufacturers' %}">Manufacturers Mapping</a></li>
+			<li><a href="{% url 'vaers.views.report' %}">Satscan Clustering Report</a></li>
+			<li><a href="{% url 'vaers.views.download_vae_listing' %}">Download VAERS Line Listing</a></li>
 			 </ul>
 	    </li>
             <li>Administration &raquo;
                 <ul>
 		    {% if user.is_staff %}
-                    <li><a href="{% url admin:index %}">Site Administration</a></li>
+                    <li><a href="{% url 'admin:index' %}">Site Administration</a></li>
 		    {% endif %}
-                    <li><a href="{% url heuristic_mapping_report %}">Lab Mapping Summary</a></li>
-                    <li><a href="{% url unmapped_labs_report %}">Unmapped Lab Tests Report</a></li>
-                    <li><a href="{% url heuristic_reportables %}">Heuristic Reportables Summary</a></li>
-                    <li><a href="{% url validator_summary %}">Case Validator</a></li>
-                    <li><a href="{% url labtest_lookup %}">Lab Test Lookup</a></li>
+                    <li><a href="{% url 'heuristic_mapping_report' %}">Lab Mapping Summary</a></li>
+                    <li><a href="{% url 'unmapped_labs_report' %}">Unmapped Lab Tests Report</a></li>
+                    <li><a href="{% url 'heuristic_reportables' %}">Heuristic Reportables Summary</a></li>
+                    <li><a href="{% url 'validator_summary' %}">Case Validator</a></li>
+                    <li><a href="{% url 'labtest_lookup' %}">Lab Test Lookup</a></li>
                 </ul>
             </li>
-            <li><a href="{% url about %}">About</a></li>
+            <li><a href="{% url 'about' %}">About</a></li>
             {% if user.is_authenticated %}
-            <li><a href="{% url logout %}">Logout</a></li>
+            <li><a href="{% url 'logout' %}">Logout</a></li>
             {% endif %}
         </ul>
     </div>

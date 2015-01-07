@@ -29,6 +29,7 @@ from ESP.emr.models import Patient_ExtraData
 from ESP.emr.models import Patient_Guardian
 from ESP.emr.models import Provider_idInfo
 from ESP.emr.models import Provider_phones
+from ESP.emr.models import Providernote
 from ESP.emr.models import Order_idInfo, Order_Extension
 from ESP.emr.models import LabInfo
 from ESP.emr.models import Specimen
@@ -171,8 +172,14 @@ class ProvenanceAdmin(admin.ModelAdmin):
     ordering = ['-timestamp']
     search_fields = ['source']
     list_filter = ['status']
+    
+class ProvidernoteAdmin(admin.ModelAdmin):
+    ordering = ['patient','date','natural_key']
+    list_display = ['provenance','natural_key','patient','provider','date','mrn','encounter_natural_key','encounter_date','type','purpose','provider_note']
+    search_fields = ['patient']
 
 
+admin.site.register(Providernote, ProvidernoteAdmin)
 admin.site.register(Provider, ProviderAdmin)
 admin.site.register(Patient, PatientAdmin)
 admin.site.register(LabResult, LabResultAdmin)

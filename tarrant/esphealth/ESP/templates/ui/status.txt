@@ -28,6 +28,16 @@ Case ID     Condition        Date          Department
 No new cases today.</em>
 {% endif %}
 
+UPDATED CASE DETAILS:
+{% if updated_cases.count %}
+Case ID     Condition        Date          Department
+--------------------------------------------------------------------------------
+{% for case in updated_cases %}{{ case.id|stringformat:"-10s" }}  {{ case.condition|stringformat:"-15s" }}  {{ case.date|stringformat:"-12s" }}  {{ case.provider.dept }}
+{% endfor %}
+{% else %}
+No cases updated today.</em>
+{% endif %}
+
 ALL CASES:
 {% if all_case_summary.count %}
 Condition            Count    

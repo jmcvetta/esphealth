@@ -163,7 +163,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
-    'ESP.conf.context_processors.path_definitions' 
+    'ESP.conf.context_processors.path_definitions', 
+    'ESP.conf.context_processors.menu' 
     )
 TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.

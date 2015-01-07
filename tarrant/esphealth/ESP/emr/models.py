@@ -1600,6 +1600,25 @@ class Prescription(BasePatientRecord):
             }
     
 
+class Providernote(BasePatientRecord):
+    '''
+    A provider note
+    '''
+    
+    encounter_natural_key = models.CharField('Encounter identifier in source EMR system', max_length=128, db_index=True)
+    encounter_date = models.DateField(blank=True, null=True)
+    type = models.CharField(max_length=200, blank=True, null=True)
+    purpose = models.CharField(max_length=200, blank=True, null=True)
+    provider_note = models.TextField(blank=False, db_index=False)
+    
+    class Meta:
+        ordering = ['date']
+    
+    def __str__(self):
+        return 'Provider note'
+
+    
+
 ENCOUNTER_TYPES = [('VISIT','VISIT'), ('ER','ER'), ('HOSPITALIZATION','HOSPITALIZATION')]
 # smaller number is higher priority
 PRIORITY_TYPES  = [('3','3'),('2','2'),('1','1')]

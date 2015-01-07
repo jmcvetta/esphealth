@@ -319,8 +319,9 @@ STATUS_CHOICES = [
     ('RM', 'RM - Review by MD'),
     ('FP', 'FP - False Positive - Do NOT Process'),
     # Only fields before this point will be included in on-screen case status menu
-    ('Q',  'Q - Confirmed Case, Transmit to Health Department'), 
-    ('S',  'S - Transmitted to Health Department'),
+    ('Q',  'Q - Confirmed Case, Queued for Snapshot'), 
+    ('S',  'S - Snapshot taken'),
+    ('U',  'U - Updated with new data'),
     ('NO', 'NO - Do NOT send cases'),
     ('RQ', 'RQ - Re-queued for transmission. Updated after prior transmission'),
     ('RS', 'RS - Re-sent after update subsequent to prior transmission'),
@@ -481,5 +482,35 @@ class HL7Map(models.Model):
 
     def __unicode__(self):
         return u'%s:%s:%s:%s' % (self.model, self.variable, self.value, self.hl7)
+    
+class Menu(models.Model):
+    '''
+    configurable menus for base.html
+    '''
+    menuname = models.CharField(max_length=100, null=False, blank=False)
+    url = models.CharField(max_length=300, null=False, blank=False)
+    menu_text = models.CharField(max_length=100, null=False, blank=False)
+
+class Status(models.Model):
+    '''
+    Configurable case status values (initially for pertussis details html template)
+    '''
+    code = models.CharField(primary_key=True, max_length=3, blank=False)
+    name = models.CharField(max_length=100, null=False, blank=False)
+
+    def __unicode__(self):
+        return u'%s' % (self.name)
 
 
+
+class Statustransitions(models.Model):
+    '''
+    Configurable case status transition values (initially for pertussis details html template)
+    For every potential starting status state code, provide the set of ending state codes you wish to allow a user 
+    to transition to in the case detail page. 
+    '''
+    startcode = models.ForeignKey(Status, related_name='startcode')
+    endcode = models.ForeignKey(Status, related_name='endcode')
+
+    def __unicode__(self):
+        return u'%s>>%s' % (self.startcode, self.endcode)

@@ -23,7 +23,22 @@ from ESP.nodis.base import DiseaseDefinition #Condition
 from ESP.hef.base import AbstractLabTest
 from ESP.static.models import Loinc
 from ESP.vaers.heuristics import VaersLxHeuristic
+from ESP.conf.models import Status
 
+
+class GenericStatusForm(forms.Form):
+    '''
+    Form for pertussis details (initially)
+    '''
+    def __init__(self, curstat, *args, **kwargs):
+        super(GenericStatusForm,self).__init__(*args, **kwargs)
+        self.fields['comment'] = forms.CharField(widget=forms.Textarea, required=False)
+        try:
+            status_choice_codes=Status.objects.get(code__exact=curstat).startcode.all().values_list('endcode',flat=True)
+        except:
+            status_choice_codes=STATUS_CHOICES
+        #status_choices = Status.objects.filter(code__in=status_choice_codes).values_list('name',flat=True)
+        self.fields['status'] = forms.ModelChoiceField(queryset=Status.objects.filter(code__in=status_choice_codes), required=False, )
 
 
 

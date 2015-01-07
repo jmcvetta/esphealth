@@ -33,6 +33,7 @@ from django.views.generic.simple import redirect_to
 from django.http import HttpResponse
 
 from dateutil.relativedelta import relativedelta
+from datetime import timedelta
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import PY_DATE_FORMAT
 from ESP.settings import SITE_NAME
@@ -40,10 +41,11 @@ from ESP.settings import STATUS_REPORT_TYPE
 
 from ESP.conf.models import LabTestMap 
 from ESP.conf.models import IgnoredCode
-from ESP.conf.models import STATUS_CHOICES
+from ESP.conf.models import STATUS_CHOICES, Status
 from ESP.emr.models import Provenance
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
+from ESP.emr.models import Providernote
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
@@ -58,7 +60,7 @@ from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
 from ESP.vaers.heuristics import VaersLxHeuristic
-from ESP.ui.forms import CaseStatusForm
+from ESP.ui.forms import CaseStatusForm, GenericStatusForm
 from ESP.ui.forms import CodeMapForm
 from ESP.ui.forms import ConditionForm
 from ESP.ui.forms import ReferenceCaseForm
@@ -99,11 +101,13 @@ def _populate_status_values():
             }
     if STATUS_REPORT_TYPE in ['NODIS','BOTH']:
         new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
+        updated_cases = Case.objects.filter(status='U',updated_timestamp__gte=yesterday)
         reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
         this_calendar_year = datetime.datetime.now().year
         date_365_days_ago = datetime.datetime.now() - relativedelta(days=+365)
         values1 = {
             'new_cases': new_cases,
+            'updated_cases': updated_cases,
             'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
             'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
             'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
@@ -428,8 +432,8 @@ class CaseTableNoPHI(tables.ModelTable):
     collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
     result_date = tables.Column(verbose_name='Result Date', sortable=False)
     #
-    status = tables.Column()
-    sent_timestamp = tables.Column(verbose_name='Sent Date')
+    #status = tables.Column()
+    sent_timestamp = tables.Column(verbose_name='Snapshot Date')
     
 class CaseTablePHI(tables.ModelTable):
     '''
@@ -448,8 +452,8 @@ class CaseTablePHI(tables.ModelTable):
     collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
     result_date = tables.Column(verbose_name='Result Date', sortable=False)
     #
-    status = tables.Column()
-    sent_timestamp = tables.Column(verbose_name='Sent Date')
+    #status = tables.Column()
+    sent_timestamp = tables.Column(verbose_name='Snapshot Date')
     
 
 
@@ -491,6 +495,14 @@ def case_list(request, status):
         qs = qs.filter(status='Q')
     elif status == 'sent':
         qs = qs.filter(status='S')
+    elif status == 'reviewed':
+        qs = qs.filter(status__in=['S','Q'])
+    elif status == 'updated':
+        qs = qs.filter(status='U')
+    elif status == 'all':
+        qs = qs.exclude(status='C')
+    elif status == 'closed':
+        qs = qs.filter(status='C')
     search_form = CaseFilterForm(request.GET)
     if search_form.is_valid():
         log.debug(search_form.cleaned_data)
@@ -642,7 +654,7 @@ def pertussis_detail(request, case_id):
     Detailed case view with asthma/bronchitis/vaccine history
     '''
     case = get_object_or_404(Case, pk=case_id)
-    #history = case.casestatushistory_set.all().order_by('-timestamp')
+    history = case.casestatushistory_set.all().order_by('-timestamp')
     patient = case.patient
     pid = patient.pk
     vax = Immunization.objects.filter(patient=pid).order_by('date')
@@ -672,18 +684,10 @@ def pertussis_detail(request, case_id):
                          'icd10:J45.42','icd10:J45.5','icd10:J45.50','icd10:J45.51','icd10:J45.52','icd10:J45.9',
                          'icd10:J45.90','icd10:J45.901','icd10:J45.902','icd10:J45.909','icd10:J45.99','icd10:J45.991',
                          'icd10:J45.998','icd10:J68.0','icd10:Z82.5']
-    ab_enc_hist = Encounter.objects.filter(patient=pid,dx_codes__in=asthma_bronchitis,date__lte=case.date)
-    #
-    # Reportable Info
-    #
-    #
-    # Non-Reportable Info
-    #
-    #other_enc = set(Encounter.objects.filter(patient=patient)) - set(case.encounters.all())
-    #other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
-    #other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
+    ab_enc_hist = Encounter.objects.filter(patient=pid,dx_codes__in=asthma_bronchitis,date__lte=case.date).distinct()
+    notes = Providernote.objects.filter(patient=pid,date__gte=case.date-timedelta(days=14),date__lte=case.date+timedelta(days=14))
     data = {'status': case.status}
-    status_form = CaseStatusForm(initial=data)
+    status_form = GenericStatusForm(curstat=case.status,initial=data)
     values = {
         'title': 'Detail Report: Case #%s' % case.pk,
         "request":request,
@@ -698,10 +702,12 @@ def pertussis_detail(request, case_id):
         'created': created,
         'updated': updated,
         'status_form': status_form,
+        'history': history,
+        'notes': notes,
         }
     return render_to_response('nodis/pertussis_detail.html', values, context_instance=RequestContext(request))
 
-def case_status_update(request, case_id):
+def case_status_update(request, case_id, urlname='nodis_case_detail'):
     '''
     Update the case status and comments.  This method should only ever be 
     called from a form POST.
@@ -709,32 +715,39 @@ def case_status_update(request, case_id):
     if not request.method == 'POST':
         msg = 'case_status_update() can only be called from a form POST'
         messages.add_message(request,messages.INFO,msg)
-        return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
-    form = CaseStatusForm(request.POST)
+        return redirect_to(request, reverse(urlname, args=[case_id]))
+    case = get_object_or_404(Case, pk=case_id)
+    if urlname=='nodis_case_detail':
+        form = CaseStatusForm(request.POST)
+    else:
+        form = GenericStatusForm(case.status, request.POST)
+        form.full_clean()
     if not form.is_valid():
         msg = 'Invalid form -- no action taken'
         messages.add_message(request,messages.INFO,msg)
-        return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
-    case = get_object_or_404(Case, pk=case_id)
-    new_status = form.cleaned_data['status']
+        return redirect_to(request, reverse(urlname, args=[case_id]))
+    if form.cleaned_data['status']:
+        new_status = form.cleaned_data['status']
+    else:
+        new_status = case.status
     comment = form.cleaned_data['comment']
     if not comment: # I'd rather save a Null than a blank string in the DB
         comment = None 
         if new_status == case.status:
             msg = 'You must either change the change the case status, make a comment, or both.'
             messages.add_message(request,messages.INFO,msg)
-            return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+            return redirect_to(request, reverse(urlname, args=[case_id]))
     old_status = case.status
     case.status = new_status
     case.save()
-    log.debug('Updated status of case #%s: %s' % (case.pk, case.status))
+    log.debug('Updated case #%s: %s' % (case.pk, case.status))
     hist = CaseStatusHistory(case=case, old_status=old_status, new_status=new_status, 
         changed_by=request.user.username, comment=comment)
     hist.save() # Add a history object
     log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
-    msg = 'Case status updated.'
+    msg = 'Case updated.'
     messages.add_message(request,messages.INFO,msg)
-    return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+    return redirect_to(request, reverse(urlname, args=[case_id]))
 
 
 def case_queue_for_transmit(request, case_id):

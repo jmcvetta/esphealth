@@ -38,11 +38,15 @@ urlpatterns = patterns('ESP.ui.views',
     url(r'^cases/list/under_review/$', 'case_list', {'status': 'under'}, name='nodis_cases_under_review'),
     url(r'^cases/list/queued/$', 'case_list', {'status': 'queued'}, name='nodis_cases_queued'),
     url(r'^cases/list/sent/$', 'case_list', {'status': 'sent'}, name='nodis_cases_sent'),
+    url(r'^cases/list/reviewed/$', 'case_list', {'status': 'reviewed'}, name='nodis_cases_reviewed'),
+    url(r'^cases/list/updated/$', 'case_list', {'status': 'updated'}, name='nodis_cases_updated'),
+    url(r'^cases/list/closed/$', 'case_list', {'status': 'closed'}, name='nodis_cases_closed'),
     #
     # Case Detail
     #
     url(r'^cases/view/(?P<case_id>\d+)/$', 'case_detail', name='nodis_case_detail'),
     url(r'^cases/viewpert/(?P<case_id>\d+)/$', 'pertussis_detail', name='nodis_pertussis_detail'),
+    url(r'^cases/update/(?P<case_id>\d+)/$', view='case_status_update', kwargs={'urlname':'nodis_pertussis_detail'}, name='nodis_pertussis_update' ),
     url(r'^cases/update/(?P<case_id>\d+)/$', 'case_status_update', name='nodis_case_update'),
     url(r'^cases/transmit/(?P<case_id>\d+)/$', 'case_queue_for_transmit', name='nodis_case_transmit'),
     url(r'^provider/(?P<provider_id>\w+)/$', 'provider_detail', name='provider_detail'),
