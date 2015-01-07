@@ -284,7 +284,7 @@ class AsthmaNew(DiseaseDefinition):
              'rx:mometasone-formeterol:trade',
              'rx:budesonide-formeterol:trade',
             ]
-        log.info('Generating cases for Asthma Definition (a)')
+        log.info('Generating cases for Asthma new Definition (a)')
         counter_a = 0
         allrx_event_names =  rx_ev_names + rx_comb_ev_names
                
@@ -306,14 +306,14 @@ class AsthmaNew(DiseaseDefinition):
                     #
                     t, new_case = self._create_case_from_event_obj(
                             condition = self.conditions[0],
-                            criteria = 'Criteria #1: Asthma diagnosis >=4 and >=2 prescriptions',
+                            criteria = 'Criteria #1: Asthma new diagnosis >=4 and >=2 prescriptions',
                             recurrence_interval = None, # Does not recur
                             event_obj = dx4_event_qs[0],
                             relevant_event_qs = rx_qs | dx4_event_qs,
                             )
                     if t:
                         counter_a += 1
-                        log.info('Created new asthma case def a: %s' % new_case)
+                        log.info('Created new asthma new case def a: %s' % new_case)
             if (counter_a % 100)==0:
                 transaction.commit() 
          
@@ -321,7 +321,7 @@ class AsthmaNew(DiseaseDefinition):
         # criteria 2
         # >=4 asthma drug dispensing events (any combination of multiple scripts
         # for the same med or scripts for different meds
-        log.info('Generating cases for Asthma Definition (b)')
+        log.info('Generating cases for Asthma new Definition (b)')
         counter_b = 0
         allrx_event_names =  rx_ev_names + rx_comb_ev_names
                
@@ -343,7 +343,7 @@ class AsthmaNew(DiseaseDefinition):
                             )
             if t:
                 counter_b += 1
-                log.info('Created new asthma case def b: %s' % new_case)
+                log.info('Created new asthma new case def b: %s' % new_case)
             if (counter_b % 100)==0:
                     transaction.commit()   
          
@@ -356,7 +356,7 @@ class AsthmaNew(DiseaseDefinition):
         counter = 0
         counter += self.generate_def_ab()
         transaction.commit()
-        log.debug('Generated %s new cases of asthma' % counter)
+        log.debug('Generated %s new cases of asthma new' % counter)
         
         return counter # Count of new cases
     
