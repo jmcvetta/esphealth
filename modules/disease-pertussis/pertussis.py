@@ -145,7 +145,7 @@ class Pertussis(DiseaseDefinition):
             )
       
         self.criteria = ''
-        if  dxrx_event_qs or lxrx_event_qs:
+        if  dxrx_event_qs.exists() or lxrx_event_qs.exists():
             self.criteria = 'Criteria #1: (Pertusis dx or lab order(any pertussis test)) AND pertussis antibiotic Rx w/in 7 days'
         #
         # Criteria Set #2 positive of pertussis culture or pcr
@@ -155,7 +155,7 @@ class Pertussis(DiseaseDefinition):
         lx_event_qs = Event.objects.filter(
             name__in = lx_ev_names,  
             )
-        if lx_event_qs:
+        if lx_event_qs.exists():
             self.criteria += ' Criteria #2: pertussis_culture_pos culture or pertussis_pcr_pos'
         #
         # Combined Criteria
@@ -173,6 +173,7 @@ class Pertussis(DiseaseDefinition):
             existing_cases = existing_cases.order_by('date')
             if existing_cases:
                 old_case = existing_cases[0]
+                old_case.criteria=self.criteria
                 old_case.events.add(this_event)
                 old_case.save()
                 log.debug('Added %s to %s' % (this_event, old_case))
