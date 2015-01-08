@@ -4,3 +4,26 @@ FAKE-a1qtzir7^2^1320087185198^20110515^20110515^FAKE-47589^ ^123^123^chlam^pos^^
 FAKE-a1qtzir7^2^1320087185204^20110516^20110516^FAKE-70202^ ^123^123^chlam^neg^^^^^Final^Final Report^^^^20110516^^1320087185204
 FAKE-a1qtzir7^2^1320011185198^20110530^20110530^FAKE-47589^ ^123^123^chlam^8^^^^^Final^Final Report^^^^20110530^^1320011185198
 FAKE-a1qtzir7^2^1320141414145198^20110630^20110530^FAKE-47589^ ^123^123^chlam^2^^^3^^Final^Final Report^^^^20110630^^1320141414145198
+FAKE-a1qtzir7^2^999983838388^20110610^20110610^FAKE-47589^ ^87081--87081^87081--87081^gc^pos^^^^^Final^^^^^20110610^^999983838388
+FAKE-chlamrep^999^report87185198^20110515^20110515^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20110515^^report87185198
+FAKE-chlamrep^999^report1115198^20110515^20110515^FAKE-47589^ ^87591--2902^87591--290^gon^neg^^^^^Final^Final Report^^^^20110515^^report1115198
+FAKE-chlamrep^999^report2225198^20110515^20110515^FAKE-47589^ ^123^123^chlam^neg^^^^^Final^Final Report^^^^20110515^^report2225198
+FAKE-chlamrep^999^repor2after5198^20110517^20110517^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20110517^^repor2after5198
+FAKE-chlamrep^999^repo4after5198^20110614^20110614^FAKE-47589^ ^87591--2902^87591--2902^gon^pos^^^^^Final^Final Report^^^^20110614^^repo4after5198
+FAKE-chlamrep^999^reporneg40dchlam5198^20110625^20110625^FAKE-47589^ ^123^123^chlam^neg^^^^^Final^Final Report^^^^20110625^^reporneg40dchlam5198
+FAKE-chlamrep^999^reporneg40dgc5198^20110625^20110625^FAKE-47589^ ^87591--2902^87591--2902^gon^neg^^^^^Final^Final Report^^^^20110625^^reporneg40dgc5198
+FAKE-chlamrep^999^reporpos40dchlam5198^20110625^20110625^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20110625^^reporpos40dchlam5198
+FAKE-chlamrep^999^reporpos40dgc5198^20110625^20110625^FAKE-47589^ ^87591--2902^87591--2902^gon^pos^^^^^Final^Final Report^^^^20110625^^reporpos40dgc5198
+FAKE-chlamrep^999^reporreinfection98^20110825^20110825^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20110825^^reporreinfection98
+FAKE-chlamrep^999^reporeinfneg98^20110825^20110825^FAKE-47589^ ^123^123^chlam^neg^^^^^Final^Final Report^^^^20110825^^reporeinfneg98
+testchlam^922^testchlamept^20110825^20110825^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20110825^^testchlamept
+karen^923^testthursday^20140101^20140101^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20140101^^testthursday
+karen^923^testthursdaypos^20140110^20140110^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20140110^^testthursdaypos
+karen^923^testthursdaypos2^20140310^20140310^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20140310^^testthursdaypos2
+karen^923^labep1^20140120^20140120^FAKE-47589^ ^355806^^^^^^^^Final^Final Report^^^^20140120^EPT TREATMENT FOR PARTNER: DECLINED^labep1
+karen^923^labep2^20140120^20140120^FAKE-47589^ ^355805^^^^^^^^Final^Final Report^^^^20140120^EPT TREATMENT FOR PARTNER: FLOOR MEDS DISPENSED^labep2
+karen^923^labep3^20140120^20140120^FAKE-47589^ ^355804^^^^^^^^Final^Final Report^^^^20140120^EPT TREATMENT FOR PARTNER: PRINT RX MANUAL FAX^labep3
+karen^923^labep4^20140120^20140120^FAKE-47589^ ^355804^^^^^^^^Final^Final Report^^^^20140120^EPT TREATMENT FOR PARTNER: PRINT RX MANUAL FAX^labep4
+karen^923^tes123pos2^20140905^20140905^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20140905^^tes123pos2
+karen^923^tes456ursdaypos2^20141006^20141006^FAKE-47589^ ^123^123^chlam^neg^^^^^Final^Final Report^^^^20141006^^tes456ursdaypos2
+karen^923^tes678rsdaypos2^20141106^20141106^FAKE-47589^ ^123^123^chlam^pos^^^^^Final^Final Report^^^^20141106^^tes678rsdaypos2
