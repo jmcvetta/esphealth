@@ -571,6 +571,10 @@ esphealth/unit-test/acute_hep_c/epicmem.esp.02032012 -text
 esphealth/unit-test/acute_hep_c/epicpro.esp.02292012 -text
 esphealth/unit-test/acute_hep_c/epicres.esp.02032012 -text
 esphealth/unit-test/acute_hep_c/epicvis.esp.02032012 -text
+esphealth/unit-test/acute_hep_c_sandbox/epicmem.esp.02032012 -text
+esphealth/unit-test/acute_hep_c_sandbox/epicpro.esp.02292012 -text
+esphealth/unit-test/acute_hep_c_sandbox/epicres.esp.02032012 -text
+esphealth/unit-test/acute_hep_c_sandbox/epicvis.esp.02032012 -text
 esphealth/unit-test/acute_hep_c_sandbox2/epicmem.esp.02032012 -text
 esphealth/unit-test/acute_hep_c_sandbox2/epicpro.esp.02292012 -text
 esphealth/unit-test/acute_hep_c_sandbox2/epicres.esp.02032012 -text
