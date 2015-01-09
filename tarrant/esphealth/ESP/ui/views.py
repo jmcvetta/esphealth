@@ -745,7 +745,7 @@ def case_status_update(request, case_id, urlname='nodis_case_detail'):
         changed_by=request.user.username, comment=comment)
     hist.save() # Add a history object
     log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
-    msg = 'Case updated.'
+    msg = 'Case changes saved.'
     messages.add_message(request,messages.INFO,msg)
     return redirect_to(request, reverse(urlname, args=[case_id]))
 
