@@ -415,7 +415,10 @@ class hl7Batch:
             if ext == None: ext = ''
             self.addSimple(pid13,tac,'XTN.6')
             self.addSimple(pid13,tel,'XTN.7')
-            self.addSimple(pid13,demog.tel_ext,'XTN.8')
+            if demog.tel_ext:
+                self.addSimple(pid13,demog.tel_ext,'XTN.8') 
+            else:
+                self.addSimple(pid13,'','XTN.8') 
             section.appendChild(pid13)
         for elem, sec in [(demog.home_language,'PID.15'),(demog.marital_stat,'PID.16')]:
             if elem:
