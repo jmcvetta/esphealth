@@ -1543,7 +1543,7 @@ class Command(BaseCommand):
                 #
                 if options.transmit: 
                     success = True #TODO for testing and comment out the line below
-                    #success = self.transmit(options, filepath)
+                    success = self.transmit(options, filepath)
                     if success:
                         if options.mark_sent:
                             for case in batch_cases:
