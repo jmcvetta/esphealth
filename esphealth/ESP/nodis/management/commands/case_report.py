@@ -1353,6 +1353,8 @@ class hl7Batch:
         s = '%s%s%s%s' % (email,tac,tel,ext)
         if len(s) > 0: # something there...
             outer = self.casesDoc.createElement(outerElement)
+            if not ext:
+                ext = ''
             worklist = [(email,'XTN.4'),(tac,'XTN.6'),(tel,'XTN.7'),(ext,'XTN.8')]
             for (element,ename) in worklist:
                 if element:
