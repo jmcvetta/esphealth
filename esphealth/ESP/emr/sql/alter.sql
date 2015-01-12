@@ -598,3 +598,6 @@ ALTER TABLE	nodis_case
 -- 12/1/2014 client status is longer 
 ALTER TABLE emr_laborder
 	ALTER COLUMN test_status TYPE character varying(20);
+
+-- ppml adjustment 1/12/2015 
+ALTER TABLE emr_labresult ALTER COLUMN abnormal_flag TYPE character varying(100);
