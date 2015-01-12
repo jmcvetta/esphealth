@@ -11,7 +11,7 @@
 '''
 
 import os
-import shutil
+import shutil, time
 from optparse import make_option
 from optparse import Values
 
@@ -64,10 +64,15 @@ class LoaderCommand(BaseCommand):
         log.info('Moving file "%s" to %s' % (filepath, folder))
         try:
             shutil.move(filepath, folder)
-        except shutil.Error, e:
-            msg = 'shutil Error:  %s' % e
-            log.warning(msg)
-            print msg
+        except:
+            try:
+                #one more try -- file most likely a copy of existing archive file so move won't overwrite
+                shutil.move(filepath, filepath+time.strftime("_%Y%m%d%H%M%S"))
+                shutil.move(filepath+time.strftime("_%Y%m%d%H%M%S"), folder)
+            except  shutil.Error, e:
+                msg = 'shutil Error:  %s' % e
+                log.warning(msg)
+                print msg
     
     def folder_check(self):
         '''

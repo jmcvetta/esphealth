@@ -50,7 +50,7 @@ from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult, LabOrder, LabInfo
 from ESP.emr.models import Encounter, EncounterTypeMap
-from ESP.emr.models import Prescription
+from ESP.emr.models import Prescription, Providernote
 from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
 from ESP.emr.models import Patient_Guardian, Patient_Addr, Patient_ExtraData, Order_idInfo, Provider_idInfo, Provider_phones, Labresult_Details
@@ -69,6 +69,8 @@ UPDATED_BY = 'load_epic'
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(natural_key='UNKNOWN')
 ETL_FILE_REGEX = re.compile(r'^epic\D\D\D\.esp\.(\d\d)(\d\d)(\d\d\d\d)$')
+ICD9_REGEX = re.compile('icd.*9.*', re.IGNORECASE)
+ICD10_REGEX = re.compile('icd.*10.*', re.IGNORECASE)
 DXPAT_REGEX = re.compile(r'''
 ((icd9\:) (E|V)? \d+ (\.\d+)?)  | ((icd10\:[A-Z]) (\d){2} (\.\d+)? ([A-Z])?) | (\w*)
 ''',
@@ -861,7 +863,7 @@ class PatientLoader(BaseLoader):
         'areacode' : row['areacode'],
         'tel' : row['tel'],
         'tel_ext' : row['tel_ext'],
-        'date_of_birth' : self.date_or_none(row['date_of_birth']),
+        'date_of_birth' : self.date_or_none((row['date_of_birth'])[:14]),
         'cdate_of_birth' : row['date_of_birth'],
         'date_of_death' : self.date_or_none(row['date_of_death']),
         'cdate_of_death' : row['date_of_death'],
@@ -1887,6 +1889,47 @@ class PrescriptionLoader(BaseLoader):
         except:
             raise
 
+class NoteLoader(BaseLoader):
+
+    fields = [
+        'patient_id',
+        'mrn',
+        'provider_id',
+        'encounter_natural_key',
+        'encounter_date',
+        'natural_key',
+        'date',
+        'type',
+        'purpose',
+        'note',
+    ]
+    
+    model = Providernote
+
+    def load_row(self, row, ):
+        
+
+        values = {
+        'provenance' : self.provenance,
+        #'updated_by' : UPDATED_BY,
+        'patient' : self.get_patient(row['patient_id']),
+        'mrn' : row['mrn'],
+        'provider' : self.get_provider(row['provider_id']),
+        'encounter_natural_key' : row['encounter_natural_key'],
+        'encounter_date' : self.date_or_none(row['encounter_date']),
+        'natural_key' : row['natural_key'],
+        'date' : self.date_or_none(row['date']),
+        'type' : row['type'],
+        'purpose' : row['purpose'],
+        'provider_note' : row['note'],
+        
+        }
+        try:
+            p, created = self.insert_or_update(Providernote, values, ['natural_key'])
+            log.debug('Saved Note object: %s' % p)
+        except:
+            raise
+
 # this object was added for version 3 of esp
 class PregnancyLoader(BaseLoader):
     
@@ -2163,6 +2206,10 @@ class ProblemLoader(BaseLoader):
         code_type = row['type']
         if not code_type or code_type =='':
             code_type = 'icd9'
+        elif ICD9_REGEX.search(code_type):
+            code_type = 'icd9'
+        elif ICD10_REGEX.search(code_type):
+            code_type = 'icd10'
         dx_code = self.get_dx_code(code, code_type, '', {})
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
@@ -2209,6 +2256,10 @@ class HospProblemLoader(BaseLoader):
         code_type = row['type']
         if not code_type or code_type =='':
             code_type = 'icd9'
+        elif ICD9_REGEX.search(code_type):
+            code_type = 'icd9'
+        elif ICD10_REGEX.search(code_type):
+            code_type = 'icd10'
         dx_code = self.get_dx_code(code, code_type, '', {})
                 
         natural_key = self.generateNaturalkey(row['natural_key'])
@@ -2224,7 +2275,7 @@ class HospProblemLoader(BaseLoader):
             'present_on_adm_code' : string_or_none(row['present_on_adm_code']),
             'priority_code' : string_or_none(row['priority_code']),
             'overview' : string_or_none(row['overview']),
-            'provider' : self.get_provider(row['provider_id'])
+            'provider' : self.get_provider(row['provider_id']),
             }
         
         try:
@@ -2293,6 +2344,7 @@ class Command(LoaderCommand):
             ('epicres', LabResultLoader),
             ('epiclnd', LabDetailLoader),
             ('epicvis', EncounterLoader),
+            ('epicnts', NoteLoader),
             ('epicmed', PrescriptionLoader),
             ('epicimm', ImmunizationLoader),
             ('epicall', AllergyLoader),
