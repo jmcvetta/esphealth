@@ -1626,6 +1626,8 @@ class Command(BaseCommand):
             return self.transmit_java(options, report_file)
         elif str(CASE_REPORT_TRANSMIT).lower() == 'ftp':
             return self.transmit_ftp(options, report_file)
+        elif str(CASE_REPORT_TRANSMIT).lower() == 'testing':
+            return True # spoofs successful transmission for case report file generation testing
         else:
             raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSMIT)
     
