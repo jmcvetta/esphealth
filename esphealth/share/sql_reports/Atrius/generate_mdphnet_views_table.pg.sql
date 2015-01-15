@@ -114,19 +114,19 @@ SELECT '1'::varchar(1) centerid,
        enc.date - ('1960-01-01'::date) a_date,
        prov.natural_key provider,
        'AV'::varchar(10) enc_type, --this is initial value for Mass League data
-       diag.dx_code_id dx,
+       substr(diag.dx_code_id,6) dx,
        icd9_prefix(diag.dx_code_id, 3)::varchar(4) dx_code_3dig,
        icd9_prefix(diag.dx_code_id, 4)::varchar(5) dx_code_4dig,
        case 
          when length(icd9_prefix(diag.dx_code_id, 4))=5
-	   then substr(diag.dx_code_id,1,6)
-         else substr(diag.dx_code_id,1,5)
+	   then substr(diag.dx_code_id,6,6)
+         else substr(diag.dx_code_id,6,5)
        end as dx_code_4dig_with_dec,
        icd9_prefix(diag.dx_code_id, 5)::varchar(6) dx_code_5dig,
        case 
          when length(icd9_prefix(diag.dx_code_id, 4))=6
-	   then substr(diag.dx_code_id,1,7)
-         else substr(diag.dx_code_id,1,6)
+	   then substr(diag.dx_code_id,6,7)
+         else substr(diag.dx_code_id,6,6)
        end as dx_code_5dig_with_dec,
        enc.site_name facility_location,
        enc.site_natural_key facility_code,
@@ -563,7 +563,8 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              diag.dx item_code,
              icd9.name item_text
         FROM esp_diagnosis diag
-               INNER JOIN public.static_dx_code icd9 ON diag.dx = icd9.code;
+               INNER JOIN public.static_dx_code icd9 ON diag.dx = icd9.code
+        where icd9.type='icd9';
         ALTER TABLE UVT_DX ADD PRIMARY KEY (item_code);
 
 --    UVT_DX_3DIG
@@ -575,7 +576,8 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
         FROM esp_diagnosis diag
                LEFT OUTER JOIN  (select * from public.static_dx_code
                     where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9 
+                       and length(trim(code))>=3 
+                       and type='icd9') icd9 
                ON diag.dx_code_3dig = REPLACE(icd9.code, '.', '')
         WHERE diag.dx_code_3dig is not null;
         ALTER TABLE UVT_DX_3DIG ADD PRIMARY KEY (item_code);
@@ -590,7 +592,7 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
         FROM esp_diagnosis diag
                LEFT OUTER JOIN  public.static_dx_code icd9
                ON diag.dx_code_4dig_with_dec = icd9.code
-        WHERE diag.dx_code_4dig is not null;
+        WHERE diag.dx_code_4dig is not null and icd9.type='icd9';
         ALTER TABLE UVT_DX_4DIG ADD PRIMARY KEY (item_code_with_dec);
         create index uvt_dx_code_4dig_idx on uvt_dx_4dig (item_code);
 
@@ -604,7 +606,7 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
         FROM esp_diagnosis diag
                LEFT OUTER JOIN  public.static_dx_code icd9
                ON diag.dx_code_5dig_with_dec = icd9.code
-        WHERE diag.dx_code_5dig is not null;
+        WHERE diag.dx_code_5dig is not null and icd9.type='icd9';
         ALTER TABLE UVT_DX_5DIG ADD PRIMARY KEY (item_code_with_dec);
         create index uvt_dx_code_5dig_idx on uvt_dx_5dig (item_code);
 

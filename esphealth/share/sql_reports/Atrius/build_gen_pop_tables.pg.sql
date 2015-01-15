@@ -20,7 +20,7 @@
 drop table if exists gpr_pat;
 create table gpr_pat as
 SELECT 
-  pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth)) as age, pat.gender, pat.race, 
+  pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth::date)) as age, pat.gender, pat.race, 
   case
     when substring(pat.zip,6,1)='-' then substring(pat.zip,1,5)
     else pat.zip
@@ -33,11 +33,10 @@ join
 	FROM emr_encounter
 	GROUP BY patient_id) lastenc
 on pat.id=lastenc.patient_id 
-join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
 --
 -- WHERE criteria 
 --
-WHERE  prvn.source ilike 'epicmem%' and pat.date_of_death IS NULL;
+WHERE pat.date_of_death IS NULL;
 --
 -- Max blood pressure between two and three years
 --  using most recent max mean aterial pressure for the period
@@ -50,20 +49,20 @@ create table gpr_bp3 as
 	 , t0.bp_systolic AS max_bp_systolic
 	, t0.bp_diastolic AS max_bp_diastolic
         , t1.max_mean_arterial as map
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar) as syspct
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
@@ -93,20 +92,20 @@ create table gpr_bp2 as
 	, t0.bp_systolic AS max_bp_systolic
 	, t0.bp_diastolic AS max_bp_diastolic
         , t1.max_mean_arterial as map
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar) as syspct
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
@@ -136,20 +135,20 @@ create table gpr_bp1 as
 	, t0.bp_systolic AS max_bp_systolic
 	, t0.bp_diastolic AS max_bp_diastolic
         , t1.max_mean_arterial as map
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar) as syspct
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
@@ -176,20 +175,20 @@ create table gpr_recbp as
 	  t0.patient_id
 	, max(t0.bp_systolic) as bp_systolic
 	, max(t0.bp_diastolic) as bp_diastolic
-        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar)) as syspct
-        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
                      pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
@@ -214,8 +213,8 @@ create table gpr_recbp as
 drop table if exists gpr_bmi;
 create table gpr_bmi as
         select t0.*
-        , gen_pop_tools.cdc_bmi((extract(year from age(t0.date, pat.date_of_birth))*12 
-                               + extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+        , gen_pop_tools.cdc_bmi((extract(year from age(t0.date, pat.date_of_birth::date))*12 
+                               + extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
 		(case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
 		null::numeric, 
 		null::numeric, 
@@ -738,5 +737,15 @@ create table gpr_asthma as
 from nodis_case
 where condition='asthma'
 group by patient_id;
-        
+--
+-- Number of encounters last year
+--
+drop table if exists gpr_enc;
+create table gpr_enc as
+  select case when count(*) >= 2 then 2
+              else count(*) end as nvis,
+  patient_id
+  from emr_encounter
+  where date>=current_date - interval '1 year'
+  group by patient_id;        
 
