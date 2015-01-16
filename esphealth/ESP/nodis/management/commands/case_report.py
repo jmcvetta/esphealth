@@ -412,13 +412,10 @@ class hl7Batch:
             ext = demog.tel_ext
             if tac == None: tac = ''
             if tel == None: tel = ''
-            if ext == None: ext = ''
+            if ext == None or ext =='None': ext = ''
             self.addSimple(pid13,tac,'XTN.6')
             self.addSimple(pid13,tel,'XTN.7')
-            if demog.tel_ext:
-                self.addSimple(pid13,demog.tel_ext,'XTN.8') 
-            else:
-                self.addSimple(pid13,'','XTN.8') 
+            self.addSimple(pid13,ext,'XTN.8') 
             section.appendChild(pid13)
         for elem, sec in [(demog.home_language,'PID.15'),(demog.marital_stat,'PID.16')]:
             if elem:
@@ -1348,13 +1345,11 @@ class hl7Batch:
         if email==None: email=''
         if tac == None: tac = ''
         if tel == None: tel = ''
-        if ext == None: ext=''
+        if ext == None or ext =='None': ext=''
         (email,tac,tel,ext) = (email.strip(),tac.strip(),tel.strip(),ext.strip())
         s = '%s%s%s%s' % (email,tac,tel,ext)
         if len(s) > 0: # something there...
             outer = self.casesDoc.createElement(outerElement)
-            if not ext:
-                ext = ''
             worklist = [(email,'XTN.4'),(tac,'XTN.6'),(tel,'XTN.7'),(ext,'XTN.8')]
             for (element,ename) in worklist:
                 if element:
