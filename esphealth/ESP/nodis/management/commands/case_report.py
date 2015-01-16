@@ -573,7 +573,7 @@ class hl7Batch:
             indx += 1
             orcs.appendChild(obx)
         ##NA_TRMT
-        if rx and lx:
+        if rx:
             rxdate = rx.date
             trmt = '373066001' #YES
         else:
