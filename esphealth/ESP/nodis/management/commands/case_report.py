@@ -673,7 +673,7 @@ class hl7Batch:
     def addReinfOBX(self,case,lxRecList=[],orus=None):
         if not lxRecList: return
         
-        m=1
+        n=1
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
         # PORTING NOTE:  This will need more detailed attention, since LOINC removal 
@@ -1102,7 +1102,7 @@ class hl7Batch:
                 #
                 rxDur = rxRec.end_date - rxRec.start_date
                 rxDur = rxDur.days+1
-            rxTS = rxRec.date #TODO time stamp is not sent should it?
+            #rxTS = rxRec.date #commented out because time stamp is not sent should it?
             #<OBX.5>NDC_Number; Drug Name; Dose; Frequency; Duration</OBX.5>
             drugstr = '%s;%s;%s;%s;%s day(s)' % (rxRec.code, rxRec.name, rxRec.dose, rxRec.frequency, rxDur)
             obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'ST')],obx3=[('CE.4','NA-56')],
