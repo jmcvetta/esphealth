@@ -517,7 +517,7 @@ class hl7Batch:
                 #TODO add support for Icd10
                 self.addSimple(obr31,'I9','CE.3')
                 obr.appendChild(obr31)
-                orcs.appendChild(obr)
+        orcs.appendChild(obr)
 
     def getPregnancyStatus(self, caseid):
         ##Email on 8/22/2007: Report patient as being pregnant if pregnancy flag active anytime between (test order date) and (test result date + 30 days inclusive).
