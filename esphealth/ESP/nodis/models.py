@@ -198,21 +198,21 @@ class Case(models.Model):
 
     def __get_reportable_labs(self):
         #redmine 516 use abstract labs in reportables instead of native codes.
+        labs = None
         conf = self.condition_config
         if conf: 
             reportable_labnames = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_name', flat=True))
-            reportable_codes = set()
-            for labname in reportable_labnames:
-                reportable_codes |=set(LabTestMap.objects.filter(test_name =labname, reportable=True).values_list('native_code', flat=True))
-        
-            q_obj = Q(patient=self.patient)
-            q_obj &= Q(native_code__in=reportable_codes)
-       
-            start = self.date - datetime.timedelta(days=conf.lab_days_before)
-            end = self.date + datetime.timedelta(days=conf.lab_days_after)       
-            q_obj &= Q(date__gte=start)
-            q_obj &= Q(date__lte=end)
-            labs = LabResult.objects.filter(q_obj).distinct()
+            if reportable_labnames:
+                reportable_codes = set()
+                for labname in reportable_labnames:
+                    reportable_codes |=set(LabTestMap.objects.filter(test_name =labname, reportable=True).values_list('native_code', flat=True))
+                q_obj = Q(patient=self.patient)
+                q_obj &= Q(native_code__in=reportable_codes)
+                start = self.date - datetime.timedelta(days=conf.lab_days_before)
+                end = self.date + datetime.timedelta(days=conf.lab_days_after)       
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+                labs = LabResult.objects.filter(q_obj).distinct()
         # log_query('Reportable labs for %s' % self, labs)
         # this will affect case reports and 
         if not labs and not self.lab_results:
@@ -234,18 +234,18 @@ class Case(models.Model):
     reportable_labs = property(__get_reportable_labs)
 
     def __get_reportable_extended_variables(self):
-        
+        extended_variables =None
         conf = self.condition_config
         if conf: 
             reportable_extended_variables = set(ReportableExtended_Variables.objects.filter(condition=self.condition).values_list('abstract_ext_var__native_string', flat=True))
-            q_obj = Q(patient=self.patient)
-            q_obj &= Q(native_code__in = reportable_extended_variables)
-       
-            start = self.date - datetime.timedelta(days=conf.ext_var_days_before)
-            end = self.date + datetime.timedelta(days=conf.ext_var_days_after)       
-            q_obj &= Q(date__gte=start)
-            q_obj &= Q(date__lte=end)
-            extended_variables = LabResult.objects.filter(q_obj)
+            if reportable_extended_variables:
+                q_obj = Q(patient=self.patient)
+                q_obj &= Q(native_code__in = reportable_extended_variables)
+                start = self.date - datetime.timedelta(days=conf.ext_var_days_before)
+                end = self.date + datetime.timedelta(days=conf.ext_var_days_after)       
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+                extended_variables = LabResult.objects.filter(q_obj)
         
         if extended_variables:
             return extended_variables.distinct()
@@ -259,19 +259,19 @@ class Case(models.Model):
 
     #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
     def __get_reportable_encounters(self):
-             
+        encs = None     
         q_obj = Q(patient=self.patient)
         conf = self.condition_config
         rep_dx_codes = Dx_code.objects.none()
-        if conf:
+        if conf :
             rep_dx_codes = Dx_code.objects.filter(reportabledx_code__condition=conf).distinct()
             if rep_dx_codes:
                 q_obj &= Q(dx_codes__in=rep_dx_codes)
-            start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
-            end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
-            q_obj &= Q(date__gte=start)
-            q_obj &= Q(date__lte=end)
-            encs = Encounter.objects.filter(q_obj)
+                start = self.date - datetime.timedelta(days=conf.dx_code_days_before)
+                end = self.date + datetime.timedelta(days=conf.dx_code_days_after)
+                q_obj &= Q(date__gte=start)
+                q_obj &= Q(date__lte=end)
+                encs = Encounter.objects.filter(q_obj)
         #########################################################################
         from ESP.nodis.base import DiseaseDefinition  
         disease_definition = DiseaseDefinition.get_by_short_name(self.condition)
