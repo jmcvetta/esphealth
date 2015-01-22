@@ -412,7 +412,7 @@ class hl7Batch:
             ext = demog.tel_ext
             if tac == None: tac = ''
             if tel == None: tel = ''
-            if ext == None or ext =='None': ext = ''
+            if ext == None or ext.lower() =='none': ext = ''
             self.addSimple(pid13,tac,'XTN.6')
             self.addSimple(pid13,tel,'XTN.7')
             self.addSimple(pid13,ext,'XTN.8') 
@@ -1351,7 +1351,7 @@ class hl7Batch:
         if email==None: email=''
         if tac == None: tac = ''
         if tel == None: tel = ''
-        if ext == None or ext =='None': ext=''
+        if ext == None or ext.lower() =='none': ext=''
         (email,tac,tel,ext) = (email.strip(),tac.strip(),tel.strip(),ext.strip())
         s = '%s%s%s%s' % (email,tac,tel,ext)
         if len(s) > 0: # something there...
