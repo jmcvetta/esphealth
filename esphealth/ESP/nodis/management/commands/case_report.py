@@ -647,17 +647,23 @@ class hl7Batch:
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
             specso = lxRec.specimen_source
-            snomed_spec_source_code = '261665006' # Local code for 'Unknown'
-            #TODO for fenway we need to process the specimen source from the lab name to pull out the specimen source. 
+            snomed_spec_source_code = 'NAR-37'#'261665006' # Local code for 'Unknown'
+             
             if specso:
                 if CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP.has_key(specso.lower()):
                     snomed_spec_source_code = CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP[specso.lower()]
                     log.debug('Mapped specimen source "%s" to snomed code %s' % (specso, snomed_spec_source_code))
                 else:
+                    if reinf:
+                        if specso.lower() =='other':
+                            snomed_spec_source_code = 'NAR-11'
+                        if specso.lower() =='unknown' :
+                            snomed_spec_source_code = 'NAR-37'
                     log.warning('Lab record has specimen source "%s", but no SNOMED code is known for that source.  Using SNOMED code for "unknown".' % specso)
-            else:
-                log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
+            else:               
+                log.debug('No specimen source in lab record -- using SNOMED code for "unknown" or "other"')
             if reinf:
+                
                 obx = self.makeOBX(
                     obx1  = [('','4')],
                     obx2  = [('', 'CE')],
