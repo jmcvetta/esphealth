@@ -22,12 +22,13 @@ EXIT CODES
 
 import sys
 import datetime
+import socket
 
 from django.db.models import Q
 from django.core.management.base import BaseCommand
 
 from ESP.nodis.base import DiseaseDefinition
-from ESP.nodis.models import Case, CaseStatusHistory
+from ESP.nodis.models import Case, CaseStatusHistory, ReportRun
 
 
 from ESP.utils.utils import log
@@ -56,6 +57,10 @@ class Command(BaseCommand):
         q_obj = Q(status='Q')
         cases = Case.objects.filter(q_obj).order_by('pk')
         log_query('Filtered cases', cases)
+        #For Tarrant Cnty, case_snapshot represents the start of a detection run
+        run = ReportRun(hostname=socket.gethostname()+': case_snapshot run')
+        run.save()
+
         
         if not cases:
             msg = 'No cases found matching your specifications.  Empty output generated.'

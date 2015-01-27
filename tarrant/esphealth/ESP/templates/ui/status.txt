@@ -11,7 +11,7 @@ Site:  {{ site_name }}
                                      Nodis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NEW CASE SUMMARY:
+NEW CASE SUMMARY FOR MOST RECENT RUN:
 {% if new_case_summary.count %}
 Condition            Count    
 --------------------------------------------------------------------------------
