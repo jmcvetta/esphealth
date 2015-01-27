@@ -28,7 +28,6 @@ from django.db.models import Min
 from django.shortcuts import render_to_response
 from django.shortcuts import get_object_or_404
 from django.template import RequestContext
-from django.utils.translation import ugettext_lazy as _
 from django.views.generic.simple import redirect_to
 from django.http import HttpResponse
 
@@ -55,7 +54,7 @@ from ESP.emr.models import LabTestConcordance
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import Report
+from ESP.nodis.models import ReportRun, Report
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
@@ -91,6 +90,7 @@ def _populate_status_values():
     '''
     today_string = datetime.datetime.now().strftime(PY_DATE_FORMAT)
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    lastrun = ReportRun.objects.all().aggregate(Max('timestamp'))
     values1 = {}
     values2 = {}
     values = {
@@ -100,8 +100,8 @@ def _populate_status_values():
             'site_name': SITE_NAME,
             }
     if STATUS_REPORT_TYPE in ['NODIS','BOTH']:
-        new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
-        updated_cases = Case.objects.filter(status='U',updated_timestamp__gte=yesterday)
+        new_cases = Case.objects.filter(created_timestamp__gte=lastrun)
+        updated_cases = Case.objects.filter(status='U',updated_timestamp__gte=lastrun)
         reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
         this_calendar_year = datetime.datetime.now().year
         date_365_days_ago = datetime.datetime.now() - relativedelta(days=+365)
