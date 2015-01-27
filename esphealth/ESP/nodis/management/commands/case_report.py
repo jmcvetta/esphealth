@@ -988,10 +988,18 @@ class hl7Batch:
                 for exvRec in extended_variables:
                     obx1 = None
                     if exvRec.question == 'Number of partners that were provided EPT' :
+                        loinc = 'NA-352'
+                        loincdesc= 'EPT_NUMBER_CONTACTS'
+                        if lab.native_code == '355805--':
+                            loincdesc= 'EPT_NUMBER_CONTACTS_MEDS'
+                        elif lab.native_code == '355806--':
+                            loinc = 'NA-355'
+                            loincdesc= 'EPT_NUMBER_CONTACTS_PRESCRIBE'
+                        
                         obx1 = self.makeOBX(
                         obx1  = [('',n)],
                         obx2  = [('', 'ST')],
-                        obx3  = [('CE.4','NA-352'), ('CE.5','EPT_NUMBER_CONTACTS')],
+                        obx3  = [('CE.4',loinc), ('CE.5',loincdesc)],
                         obx5  = [('',exvRec.answer )]
                         )
                     elif lab.native_code == '355804--' and exvRec.answer.upper() == 'NO' and exvRec.question == 'Did the partner have their own encounter with this office for evaluation and treatment?' :                             
