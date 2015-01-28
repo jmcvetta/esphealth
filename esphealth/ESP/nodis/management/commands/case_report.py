@@ -789,7 +789,7 @@ class hl7Batch:
             obr.appendChild(self.addSpecimenSource ( False, lxRec))
             #
             #
-            if lxRec.status in ('FINAL','F'):
+            if lxRec.status.upper() in ('FINAL','F', 'C', 'CORRECTED'):
                 status='F'
             else:
                 status='P'
