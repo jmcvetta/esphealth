@@ -171,11 +171,16 @@ class hl7Batch:
         so we're going to have to create a separate document with all the cases and render it as
         a text string to enclose in a cdata section...
         """
+        self.ethnicity = {'NOT HISPANIC OR LATINO' : 'NH',
+                        'HISPANIC OR LATINO' : 'H',
+                        'NOT REPORTED' : 'U',
+                        'OTHER OR UNDETERMINED' : 'U',
+           }
         self.racedir = {'CAUCASIAN':'W',
            'WHITE':'W',
            'BLACK':'B',
            'OTHER':'O',
-           'HISPANIC': 'W',
+           'MULTIRACIAL': 'O',
            'INDIAN':'I',
            'AMERICAN INDIAN/ALASKAN NATIVE':'I',
            'ASIAN':'A',
@@ -422,9 +427,18 @@ class hl7Batch:
                 pidsec = self.casesDoc.createElement(sec)
                 self.addSimple(pidsec,elem,'CE.4')
                 section.appendChild(pidsec)
-        if demog.race and demog.race.upper() == 'HISPANIC':
+        # redmine 547 adding more codes for ethnicity        
+        ethnicity= None
+        if demog.ethnicity and demog.ethnicity.upper() in self.ethnicity:
+            ethnicity = self.ethnicity[demog.ethnicity.upper()]
+        elif demog.race and demog.race.upper() == 'HISPANIC':
+            ethnicity = 'H'
+        elif demog.ethnicity and  demog.ethnicity!= '': 
+            ethnicity = 'U'
+        
+        if ethnicity: 
             pidsec = self.casesDoc.createElement('PID.22')
-            self.addSimple(pidsec,'H','CE.4')
+            self.addSimple(pidsec,ethnicity,'CE.4')
             section.appendChild(pidsec)
         return section
 
@@ -789,7 +803,7 @@ class hl7Batch:
             obr.appendChild(self.addSpecimenSource ( False, lxRec))
             #
             #
-            if lxRec.status.upper() in ('FINAL','F', 'C', 'CORRECTED'):
+            if lxRec.status.upper() in ('FINAL','F', 'C', 'CORRECTED',''): #547 redmine allowing empty status as final
                 status='F'
             else:
                 status='P'
@@ -1368,13 +1382,16 @@ class hl7Batch:
 
 # from the mapping software
 hl7races = """
-I      American Indian or Alaska Native                       
+I     American Indian or Alaska Native                       
 A     Asian             
 B     Black or African-American             
 P     Native Hawaiian or Other Pacific Islander             
 O     Other             
-U     Unknown             
+U     Unknown 
+U     Hispanic
+O     Multiracial
 W     White"""
+
 
 class Command(BaseCommand):
     
