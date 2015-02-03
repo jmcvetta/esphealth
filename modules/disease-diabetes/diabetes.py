@@ -787,13 +787,13 @@ class Diabetes(DiseaseDefinition):
             case_obj, created = Case.objects.get_or_create(
                 patient = ts.patient,
                 condition = 'diabetes:gestational',
-                criteria = criteria,
                 date = first_event.date,
                 source = self.uri, 
                 defaults = {
                     'provider': first_event.provider,
                     },
                 )
+            case_obj.criteria = criteria
             if created:
                 case_obj.save()
                 case_obj.events = case_events
