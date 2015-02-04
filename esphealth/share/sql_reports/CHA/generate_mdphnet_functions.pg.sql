@@ -142,7 +142,7 @@ RETURNS varchar AS $$
 DECLARE
    first_char varchar(1) := '';
    adjusted_len int := len;
-   icd9_no_period varchar(10);
+   icd9_no_period varchar(20);
 BEGIN
    IF icd9_code IS NULL THEN
       RETURN NULL;

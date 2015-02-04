@@ -11,7 +11,7 @@
     <parameters>
         <parameter>
             <name>INPUT_FILE</name>
-            <default_value>&#47;home&#47;bzambarano&#47;genpoptesting.csv</default_value>
+            <default_value>&#47;home&#47;bzambarano&#47;genpoptest.csv</default_value>
             <description/>
         </parameter>
         <parameter>
@@ -101,7 +101,7 @@
     </attributes>
   </connection>
   <order>
-  <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>bmi_pctl</to><enabled>Y</enabled> </hop>  <hop> <from>bmi_pctl</from><to>rec_syspct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct</from><to>rec_diapct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 1</from><to>rec_diapct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct</from><to>rec_syspct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 2</from><to>rec_diapct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 3</from><to>rec_diapct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 1</from><to>rec_syspct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 2</from><to>rec_syspct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 3</from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Recent Chlamydia</to><enabled>Y</enabled> </hop>  <hop> <from>Recent Chlamydia</from><to>Select values</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>bmi_pctl</to><enabled>Y</enabled> </hop>  <hop> <from>bmi_pctl</from><to>rec_syspct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct</from><to>rec_diapct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 1</from><to>rec_diapct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct</from><to>rec_syspct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 2</from><to>rec_diapct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 3</from><to>rec_diapct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 1</from><to>rec_syspct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 2</from><to>rec_syspct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 3</from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Recent Chlamydia</to><enabled>Y</enabled> </hop>  <hop> <from>Recent Chlamydia</from><to>asthma</to><enabled>Y</enabled> </hop>  <hop> <from>asthma</from><to>smoking</to><enabled>Y</enabled> </hop>  <hop> <from>smoking</from><to>nvis</to><enabled>Y</enabled> </hop>  <hop> <from>nvis</from><to>Select values</to><enabled>Y</enabled> </hop>  </order>
   <step>
     <name>A1C 2ago</name>
     <type>NumberRange</type>
@@ -1050,7 +1050,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
     <escapechar/>
     <header>Y</header>
     <nr_headerlines>1</nr_headerlines>
-    <footer>N</footer>
+    <footer>Y</footer>
     <nr_footerlines>1</nr_footerlines>
     <line_wrapped>N</line_wrapped>
     <nr_wraps>1</nr_wraps>
@@ -1103,7 +1103,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>13</length>
+        <length>12</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1148,7 +1148,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>7</length>
+        <length>1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1178,7 +1178,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>8</length>
+        <length>15</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1223,7 +1223,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1238,7 +1238,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1253,7 +1253,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1268,7 +1268,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1283,7 +1283,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1298,7 +1298,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1313,7 +1313,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1448,7 +1448,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1463,14 +1463,14 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>15</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
       </field>
       <field>
         <name>max_bp_systolic3</name>
-        <type>String</type>
+        <type>Integer</type>
         <format/>
         <currency>$</currency>
         <decimal>.</decimal>
@@ -1485,7 +1485,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
       </field>
       <field>
         <name>max_bp_diastolic3</name>
-        <type>String</type>
+        <type>Integer</type>
         <format/>
         <currency>$</currency>
         <decimal>.</decimal>
@@ -1583,7 +1583,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>10</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1658,7 +1658,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>10</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1733,7 +1733,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>10</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1808,7 +1808,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
-        <length>10</length>
+        <length>-1</length>
         <precision>-1</precision>
         <trim_type>none</trim_type>
         <repeat>N</repeat>
@@ -1970,7 +1970,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <currency>$</currency>
         <decimal>.</decimal>
         <group>,</group>
-        <nullif/>
+        <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
         <length>15</length>
@@ -1985,7 +1985,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <currency>$</currency>
         <decimal>.</decimal>
         <group>,</group>
-        <nullif/>
+        <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
         <length>15</length>
@@ -2000,7 +2000,22 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <currency>$</currency>
         <decimal>.</decimal>
         <group>,</group>
-        <nullif/>
+        <nullif>-</nullif>
+        <ifnull/>
+        <position>-1</position>
+        <length>15</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>nvis</name>
+        <type>String</type>
+        <format/>
+        <currency>$</currency>
+        <decimal>.</decimal>
+        <group>,</group>
+        <nullif>-</nullif>
         <ifnull/>
         <position>-1</position>
         <length>15</length>
@@ -2227,7 +2242,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>R</rename>
         <length>-2</length>
         <precision>-2</precision>
-      </field>      <field>        <name>max_ldl2</name>
+      </field>      <field>        <name>max_ldl2_code</name>
         <rename>S</rename>
         <length>-2</length>
         <precision>-2</precision>
@@ -2307,11 +2322,15 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>AR</rename>
         <length>-2</length>
         <precision>-2</precision>
+      </field>      <field>        <name>nvis</name>
+        <rename>AS</rename>
+        <length>-2</length>
+        <precision>-2</precision>
       </field>        <select_unspecified>Y</select_unspecified>
     </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>443</xloc>
-      <yloc>1358</yloc>
+      <xloc>601</xloc>
+      <yloc>1361</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2520,7 +2539,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
       <add_time>N</add_time>
       <SpecifyFormat>N</SpecifyFormat>
       <date_time_format>yyyy-MM-dd</date_time_format>
-      <add_to_result_filenames>Y</add_to_result_filenames>
+      <add_to_result_filenames>N</add_to_result_filenames>
       <pad>N</pad>
       <fast_dump>N</fast_dump>
       <splitevery>0</splitevery>
@@ -2958,11 +2977,54 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <length>-1</length>
         <precision>-1</precision>
       </field>
+      <field>
+        <name>AS</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>568</xloc>
-      <yloc>1357</yloc>
+      <xloc>726</xloc>
+      <yloc>1360</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>asthma</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>asthma</field_to_use>
+    <target_field/>
+    <non_match_default>2</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>265</xloc>
+      <yloc>1362</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -3497,6 +3559,88 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>335</xloc>
       <yloc>771</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>smoking</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>smoking</field_to_use>
+    <target_field/>
+    <non_match_default>5</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+      <field>
+        <source_value>3</source_value>
+        <target_value>3</target_value>
+      </field>
+      <field>
+        <source_value>4</source_value>
+        <target_value>4</target_value>
+      </field>
+      <field>
+        <source_value>5</source_value>
+        <target_value>5</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>400</xloc>
+      <yloc>1358</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>nvis</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>nvis</field_to_use>
+    <target_field/>
+    <non_match_default>5</non_match_default>
+    <fields>
+      <field>
+        <source_value>0</source_value>
+        <target_value>0</target_value>
+      </field>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+      <field>
+        <source_value>-999</source_value>
+        <target_value>0</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>503</xloc>
+      <yloc>1360</yloc>
       <draw>Y</draw>
       </GUI>
     </step>

@@ -1,7 +1,7 @@
-﻿set search_path to gen_pop_tools;
+set search_path to gen_pop_tools;
 
 --first create the look-up tables
-
+drop table if exists gen_pop_tools.LGFAGE;
 create table gen_pop_tools.LGFAGE  --DATA FILE FOR LENGTH-FOR-AGE;
 (SEX varchar(1), AGEMOS1 numeric(4,1), LLG1 numeric(12,9), MLG1 numeric(12,9), SLG1 numeric(12,9),  
                  AGEMOS2 numeric(4,1), LLG2 numeric(12,9), MLG2 numeric(12,9), SLG2 numeric(12,9));
@@ -84,11 +84,12 @@ values
 (2, 35.5, 0.579556310, 94.433822780, 0.041971514, 36.5, 0.541980940, 95.013357090, 0.042017509)
 ;
 
-create table HTFAGE  --DATA FILE FOR STATURE-FOR-AGE;
+drop table if exists gen_pop_tools.HTFAGE;
+create table gen_pop_tools.HTFAGE  --DATA FILE FOR STATURE-FOR-AGE;
 (SEX varchar(1), AGEMOS1 numeric(4,1), LHT1 numeric(12,9), MHT1 numeric(12,9), SHT1 numeric(12,9),  
                  AGEMOS2 numeric(4,1), LHT2 numeric(12,9), MHT2 numeric(12,9), SHT2 numeric(12,9));
 alter table gen_pop_tools.HTFAGE add primary key (sex, agemos1);
-insert into HTFAGE (SEX, AGEMOS1, LHT1, MHT1, SHT1, AGEMOS2, LHT2, MHT2, SHT2)
+insert into gen_pop_tools.HTFAGE (SEX, AGEMOS1, LHT1, MHT1, SHT1, AGEMOS2, LHT2, MHT2, SHT2)
 values 
 (1, 23.5, 0.875839864, 86.042792680, 0.040247430, 24.5, 1.007208070, 86.861609340, 0.040395626),
 (1, 24.5, 1.007208070, 86.861609340, 0.040395626, 25.5, 0.837251351, 87.652472820, 0.040577525),
@@ -526,11 +527,12 @@ values
 (2, 239.5, 1.107132561, 163.335449100, 0.039637105, 240.0, 1.108046193, 163.338251000, 0.039636316)
 ;
 
-create table WTFAGE  --DATA FILE FOR WEIGHT-FOR-AGE;
+drop table if exists gen_pop_tools.WTFAGE;
+create table gen_pop_tools.WTFAGE  --DATA FILE FOR WEIGHT-FOR-AGE;
 (SEX varchar(1), AGEMOS1 numeric(4,1), LWT1 numeric(12,9), MWT1 numeric(12,9), SWT1 numeric(12,9),  
                  AGEMOS2 numeric(4,1), LWT2 numeric(12,9), MWT2 numeric(12,9), SWT2 numeric(12,9));
 alter table gen_pop_tools.WTFAGE add primary key (sex, agemos1);
-insert into WTFAGE (SEX, AGEMOS1, LWT1, MWT1, SWT1, AGEMOS2, LWT2, MWT2, SWT2)
+insert into gen_pop_tools.WTFAGE (SEX, AGEMOS1, LWT1, MWT1, SWT1, AGEMOS2, LWT2, MWT2, SWT2)
 values 
 (1, 0.0, 1.815151075, 3.530203168, 0.152385273, 0.5, 1.547523128, 4.003106424, 0.146025021),
 (1, 0.5, 1.547523128, 4.003106424, 0.146025021, 1.5, 1.068795548, 4.879525083, 0.136478767),
@@ -1016,11 +1018,12 @@ values
 (2, 239.5, -1.518754013, 58.198771400, 0.166520370, 240, -1.512809789, 58.222639225, 0.166650501)
 ;
 
-create table BMIFAGE   --DATA FILE FOR BODY MASS INDEX (BMI),-FOR-AGE;
+drop table if exists gen_pop_tools.BMIFAGE;
+create table gen_pop_tools.BMIFAGE   --DATA FILE FOR BODY MASS INDEX (BMI),-FOR-AGE;
 (SEX varchar(1), AGEMOS1 numeric(4,1), LBMI1 numeric(12,9), MBMI1 numeric(12,9), SBMI1 numeric(12,9),  
                  AGEMOS2 numeric(4,1), LBMI2 numeric(12,9), MBMI2 numeric(12,9), SBMI2 numeric(12,9));
 alter table gen_pop_tools.BMIFAGE add primary key (sex, agemos1);
-insert into BMIFAGE (SEX, AGEMOS1, LBMI1, MBMI1, SBMI1, AGEMOS2, LBMI2, MBMI2, SBMI2)
+insert into gen_pop_tools.BMIFAGE (SEX, AGEMOS1, LBMI1, MBMI1, SBMI1, AGEMOS2, LBMI2, MBMI2, SBMI2)
 values 
 (1, 23.5, -2.039988545, 16.602280490, 0.081057501, 24.5, -1.982373595, 16.547774870, 0.080127429),
 (1, 24.5, -1.982373595, 16.547774870, 0.080127429, 25.5, -1.924100169, 16.494427630, 0.079233994),
@@ -1458,11 +1461,12 @@ values
 (2, 239.5, -2.346962247, 21.711892250, 0.152716206, 240, -2.344958430, 21.716999340, 0.152974718)
 ;
 
-create table HCFAGE   --DATA FILE FOR HEAD CIRCUMFERENCE-FOR-AGE; 
+drop table if exists gen_pop_tools.HCFAGE;
+create table gen_pop_tools.HCFAGE   --DATA FILE FOR HEAD CIRCUMFERENCE-FOR-AGE; 
 (SEX varchar(1), AGEMOS1 numeric(4,1), LHC1 numeric(12,9), MHC1 numeric(12,9), SHC1 numeric(12,9),  
                  AGEMOS2 numeric(4,1), LHC2 numeric(12,9), MHC2 numeric(12,9), SHC2 numeric(12,9));
 alter table gen_pop_tools.HCFAGE add primary key (sex, agemos1);
-insert into HCFAGE (SEX, AGEMOS1, LHC1, MHC1, SHC1, AGEMOS2, LHC2, MHC2, SHC2)
+insert into gen_pop_tools.HCFAGE (SEX, AGEMOS1, LHC1, MHC1, SHC1, AGEMOS2, LHC2, MHC2, SHC2)
 values 
 (1, 0.0, 4.427825037, 35.813668350, 0.052172542, 0.5, 4.310927464, 37.193610540, 0.047259148),
 (1, 0.5, 4.310927464, 37.193610540, 0.047259148, 1.5, 3.869576802, 39.207429290, 0.040947903),
@@ -1540,11 +1544,12 @@ values
 (2, 35.5, 2.333589434, 48.597828280, 0.031830942, 36.5, 2.370334844, 48.671637620, 0.032063945)
 ;
 
-create table WTFLG   --DATA FILE FOR WEIGHT-FOR-LENGTH;
+drop table if exists gen_pop_tools.WTFLG;
+create table gen_pop_tools.WTFLG   --DATA FILE FOR WEIGHT-FOR-LENGTH;
 (SEX varchar(1), LG1 numeric(4,1), LWLG1 numeric(12,9), MWLG1 numeric(12,9), SWLG1 numeric(12,9),  
                  LG2 numeric(4,1), LWLG2 numeric(12,9), MWLG2 numeric(12,9), SWLG2 numeric(12,9));
 alter table gen_pop_tools.WTFLG add primary key (sex, lg1);
-insert into WTFLG (SEX, LG1, LWLG1, MWLG1, SWLG1, LG2, LWLG2, MWLG2, SWLG2)
+insert into gen_pop_tools.WTFLG (SEX, LG1, LWLG1, MWLG1, SWLG1, LG2, LWLG2, MWLG2, SWLG2)
 values 
 (1, 45.0, 1.449036890, 2.289757735, 0.149236691, 45.5, 1.317941650, 2.386172190, 0.144790131),
 (1, 45.5, 1.317941650, 2.386172190, 0.144790131, 46.5, 1.041730589, 2.587097922, 0.136547200),
@@ -1666,11 +1671,12 @@ values
 (2, 102.5, -2.654922113, 15.906409030, 0.086487929, 103.5, -2.717782155, 16.191039660, 0.087500575)
 ;
 
-create table WTFHT   --DATA FILE FOR WEIGHT-FOR-STATURE;
+drop table if exists gen_pop_tools.WTFHT;
+create table gen_pop_tools.WTFHT   --DATA FILE FOR WEIGHT-FOR-STATURE;
 (SEX varchar(1), HT1 numeric(4,1), LWHT1 numeric(12,9), MWHT1 numeric(12,9), SWHT1 numeric(12,9),  
                  HT2 numeric(4,1), LWHT2 numeric(12,9), MWHT2 numeric(12,9), SWHT2 numeric(12,9));
 alter table gen_pop_tools.WTFHT add primary key (sex, ht1);
-insert into WTFHT (SEX, HT1, LWHT1, MWHT1, SWHT1, HT2, LWHT2, MWHT2, SWHT2)
+insert into gen_pop_tools.WTFHT (SEX, HT1, LWHT1, MWHT1, SWHT1, HT2, LWHT2, MWHT2, SWHT2)
 values 
 (1, 77.0, -0.999294215, 10.274405270, 0.077115837, 77.5, -0.979897716, 10.389018710, 0.076995353),
 (1, 77.5, -0.979897716, 10.389018710, 0.076995353, 78.5, -0.943555181, 10.617249010, 0.076769511),
@@ -1764,10 +1770,11 @@ values
 (2, 120.5, -2.756365595, 22.514669770, 0.097533789, 121.5, -2.738514883, 22.937669710, 0.096611430)
 ;
 
-create table ZPROBWIDE   --Z score to probability table;
+drop table if exists gen_pop_tools.ZPROBWIDE;
+create table gen_pop_tools.ZPROBWIDE   --Z score to probability table;
 (Z numeric, prob0 numeric, prob1 numeric, prob2 numeric, prob3 numeric, prob4 numeric,  
                prob5 numeric, prob6 numeric, prob7 numeric, prob8 numeric, prob9 numeric);
-insert into zprobwide (Z, prob0, prob1, prob2, prob3, prob4, prob5, prob6, prob7, prob8, prob9)
+insert into gen_pop_tools.zprobwide (Z, prob0, prob1, prob2, prob3, prob4, prob5, prob6, prob7, prob8, prob9)
 values 
 (0, 0.5, 0.504, 0.508, 0.512, 0.516, 0.5199, 0.5239, 0.5279, 0.5319, 0.5359),
 (0.1, 0.5398, 0.5438, 0.5478, 0.5517, 0.5557, 0.5596, 0.5636, 0.5675, 0.5714, 0.5753),
@@ -1801,51 +1808,53 @@ values
 (2.9, 0.9981, 0.9982, 0.9982, 0.9983, 0.9984, 0.9984, 0.9985, 0.9985, 0.9986, 0.9986),
 (3, 0.9987, 0.9987, 0.9987, 0.9988, 0.9988, 0.9989, 0.9989, 0.9989, 0.999, 0.999)
 ;
-create table zprob as 
-select (z+.09)*-1 as z, 1-prob9 as prob from zprobwide
+drop table if exists gen_pop_tools.zprob;
+create table gen_pop_tools.zprob as 
+select (z+.09)*-1 as z, 1-prob9 as prob from gen_pop_tools.zprobwide
 union
-select (z+.08)*-1 as z, 1-prob8 as prob from zprobwide
+select (z+.08)*-1 as z, 1-prob8 as prob from gen_pop_tools.zprobwide
 union
-select (z+.07)*-1 as z, 1-prob7 as prob from zprobwide
+select (z+.07)*-1 as z, 1-prob7 as prob from gen_pop_tools.zprobwide
 union
-select (z+.06)*-1 as z, 1-prob6 as prob from zprobwide
+select (z+.06)*-1 as z, 1-prob6 as prob from gen_pop_tools.zprobwide
 union
-select (z+.05)*-1 as z, 1-prob5 as prob from zprobwide
+select (z+.05)*-1 as z, 1-prob5 as prob from gen_pop_tools.zprobwide
 union
-select (z+.04)*-1 as z, 1-prob4 as prob from zprobwide
+select (z+.04)*-1 as z, 1-prob4 as prob from gen_pop_tools.zprobwide
 union
-select (z+.03)*-1 as z, 1-prob3 as prob from zprobwide
+select (z+.03)*-1 as z, 1-prob3 as prob from gen_pop_tools.zprobwide
 union
-select (z+.02)*-1 as z, 1-prob2 as prob from zprobwide
+select (z+.02)*-1 as z, 1-prob2 as prob from gen_pop_tools.zprobwide
 union
-select (z+.01)*-1 as z, 1-prob1 as prob from zprobwide
+select (z+.01)*-1 as z, 1-prob1 as prob from gen_pop_tools.zprobwide
 union
-select z*-1, 1-prob0 as prob from zprobwide
+select z*-1, 1-prob0 as prob from gen_pop_tools.zprobwide
 union
-select z, prob0 as prob from zprobwide
+select z, prob0 as prob from gen_pop_tools.zprobwide
 union
-select z+.01 as z, prob1 as prob from zprobwide
+select z+.01 as z, prob1 as prob from gen_pop_tools.zprobwide
 union
-select z+.02 as z, prob2 as prob from zprobwide
+select z+.02 as z, prob2 as prob from gen_pop_tools.zprobwide
 union
-select z+.03 as z, prob3 as prob from zprobwide
+select z+.03 as z, prob3 as prob from gen_pop_tools.zprobwide
 union
-select z+.04 as z, prob4 as prob from zprobwide
+select z+.04 as z, prob4 as prob from gen_pop_tools.zprobwide
 union
-select z+.05 as z, prob5 as prob from zprobwide
+select z+.05 as z, prob5 as prob from gen_pop_tools.zprobwide
 union
-select z+.06 as z, prob6 as prob from zprobwide
+select z+.06 as z, prob6 as prob from gen_pop_tools.zprobwide
 union
-select z+.07 as z, prob7 as prob from zprobwide
+select z+.07 as z, prob7 as prob from gen_pop_tools.zprobwide
 union
-select z+.08 as z, prob8 as prob from zprobwide
+select z+.08 as z, prob8 as prob from gen_pop_tools.zprobwide
 union
-select z+.09 as z, prob9 as prob from zprobwide;
-alter table zprob add primary key (z);
+select z+.09 as z, prob9 as prob from gen_pop_tools.zprobwide;
+alter table gen_pop_tools.zprob add primary key (z);
 
-CREATE TABLE NHBP_REG (sex varchar(1), bptype varchar(3), alpha numeric, beta1 numeric, beta2 numeric, beta3 numeric, beta4 numeric,
+drop table if exists gen_pop_tools.NHBP_REG;
+CREATE TABLE gen_pop_tools.NHBP_REG (sex varchar(1), bptype varchar(3), alpha numeric, beta1 numeric, beta2 numeric, beta3 numeric, beta4 numeric,
                                                         gamma1 numeric, gamma2 numeric, gamma3 numeric, gamma4 numeric, sd numeric);
-INSERT INTO NHBP_REG (sex, bptype, alpha, beta1, beta2, beta3, beta4, gamma1, gamma2, gamma3, gamma4, sd)
+INSERT INTO gen_pop_tools.NHBP_REG (sex, bptype, alpha, beta1, beta2, beta3, beta4, gamma1, gamma2, gamma3, gamma4, sd)
 values
 ('M', 'SYS', 102.19768, 1.82416, 0.12776, 0.00249,-0.00135, 2.73157,-0.19618,-0.04659, 0.00947, 10.7128),
 ('F', 'SYS', 102.01027, 1.94397, 0.00598,-0.00789,-0.00059, 2.03526, 0.02534,-0.01884, 0.00121, 11.3032),
@@ -1922,7 +1931,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION gen_pop_tools.CDC_HGT(agemos numeric(4,1), sex varchar(1), heightCM numeric(4,1), ret_type varchar(6) ) 
   RETURNS numeric AS $$
 DECLARE
-  AGECAT numeric(4,1);
+  AGECAT numeric(5,1);
   HTZ numeric(5,2);
   HTPCT numeric(4,2);
   LHT numeric;
@@ -2009,8 +2018,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-drop function if exists gen_pop_tools.transpose(intable varchar, rowid varchar, colvar varchar, 
-                                                colset varchar[], coltab varchar, newtablname varchar);
 CREATE OR REPLACE FUNCTION gen_pop_tools.transpose(intable varchar, rowid varchar, colvar varchar, 
                                                    colset varchar[], coltab varchar, newtablname varchar)
   --intable is fully qualified name of table with data to be transposed.
@@ -2142,4 +2149,3 @@ BEGIN
   end loop;
 END;
 $$ LANGUAGE plpgsql;
-

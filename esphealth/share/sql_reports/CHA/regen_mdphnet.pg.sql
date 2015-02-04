@@ -1,4 +1,3 @@
-set default_tablespace = mdphnet_tablespace;
 drop table if exists mdphnet_schema_update_history;
 CREATE TABLE mdphnet_schema_update_history
 (
@@ -8,9 +7,10 @@ CREATE TABLE mdphnet_schema_update_history
 );
 insert into mdphnet_schema_update_history
 select current_timestamp, 0;
+drop view if exists esp_demographic_v;
 drop table if exists esp_temp_smoking;
 create table esp_temp_smoking as
-   select case when t1.latest='Yes' then 'Current'
+   select distinct case when t1.latest='Yes' then 'Current'
                when t2.yesOrQuit='Quit' then 'Former'
                when t3.passive='Passive' then 'Passive'
                when t4.never='Never' then 'Never'
@@ -43,11 +43,10 @@ create table esp_temp_smoking as
             from emr_socialhistory where tobacco_use ='Never') t00
             group by patient_id) t4 on t0.id=t4.patient_id;
 alter table esp_temp_smoking add primary key (patid);
-drop view if exists esp_demographic_v;
 CREATE OR REPLACE VIEW esp_demographic_v AS
 SELECT '1'::varchar(1) as centerid,
        pat.natural_key as patid,
-       pat.date_of_birth - ('1960-01-01'::date) as birth_date,
+       pat.date_of_birth::date - ('1960-01-01'::date) as birth_date,
        CASE
          WHEN UPPER(gender) in ('M','MALE') THEN 'M'::char(1)
          WHEN UPPER(gender) in ('F','FEMALE') THEN 'F'::char(1)
@@ -87,10 +86,10 @@ SELECT '1'::varchar(1) as centerid,
        'AV'::varchar(10) as enc_type, --this is initial value for Mass League data
        enc.site_natural_key as facility_code,
        date_part('year', enc.date)::integer as enc_year,
-       age_at_year_start(enc.date, pat.date_of_birth) as age_at_enc_year,
-       age_group_5yr(enc.date, pat.date_of_birth)::varchar(5) as age_group_5yr,
-       age_group_10yr(enc.date, pat.date_of_birth)::varchar(5) as age_group_10yr,
-       age_group_ms(enc.date, pat.date_of_birth)::varchar(5) as age_group_ms
+       esp_mdphnet.age_at_year_start(enc.date, pat.date_of_birth::date) as age_at_enc_year,
+       esp_mdphnet.age_group_5yr(enc.date, pat.date_of_birth::date)::varchar(5) as age_group_5yr,
+       esp_mdphnet.age_group_10yr(enc.date, pat.date_of_birth::date)::varchar(5) as age_group_10yr,
+       esp_mdphnet.age_group_ms(enc.date, pat.date_of_birth::date)::varchar(5) as age_group_ms
   FROM public.emr_encounter enc
          INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
@@ -106,26 +105,26 @@ SELECT '1'::varchar(1) as centerid,
        prov.natural_key as provider,
        'AV'::varchar(10) as enc_type, --this is initial value for Mass League data
        diag.dx_code_id as dx,
-       icd9_prefix(diag.dx_code_id, 3)::varchar(4) as dx_code_3dig,
-       icd9_prefix(diag.dx_code_id, 4)::varchar(5) as dx_code_4dig,
+       esp_mdphnet.icd9_prefix(diag.dx_code_id, 3)::varchar(4) as dx_code_3dig,
+       esp_mdphnet.icd9_prefix(diag.dx_code_id, 4)::varchar(5) as dx_code_4dig,
        case 
-         when length(icd9_prefix(diag.dx_code_id, 4))=5
+         when length(esp_mdphnet.icd9_prefix(diag.dx_code_id, 4))=5
 	   then substr(diag.dx_code_id,1,6)
          else substr(diag.dx_code_id,1,5)
        end as dx_code_4dig_with_dec,
-       icd9_prefix(diag.dx_code_id, 5)::varchar(6) as dx_code_5dig,
+       esp_mdphnet.icd9_prefix(diag.dx_code_id, 5)::varchar(6) as dx_code_5dig,
        case 
-         when length(icd9_prefix(diag.dx_code_id, 4))=6
+         when length(esp_mdphnet.icd9_prefix(diag.dx_code_id, 4))=6
 	   then substr(diag.dx_code_id,1,7)
          else substr(diag.dx_code_id,1,6)
        end as dx_code_5dig_with_dec,
        enc.site_name as facility_location,
        enc.site_natural_key as facility_code,
        date_part('year', enc.date)::integer as enc_year,
-       age_at_year_start(enc.date, pat.date_of_birth) as age_at_enc_year,
-       age_group_5yr(enc.date, pat.date_of_birth)::varchar(5) as age_group_5yr,
-       age_group_10yr(enc.date, pat.date_of_birth)::varchar(5) as age_group_10yr,
-       age_group_ms(enc.date, pat.date_of_birth)::varchar(5) as age_group_ms
+       esp_mdphnet.age_at_year_start(enc.date, pat.date_of_birth::date) as age_at_enc_year,
+       esp_mdphnet.age_group_5yr(enc.date, pat.date_of_birth::date)::varchar(5) as age_group_5yr,
+       esp_mdphnet.age_group_10yr(enc.date, pat.date_of_birth::date)::varchar(5) as age_group_10yr,
+       esp_mdphnet.age_group_ms(enc.date, pat.date_of_birth::date)::varchar(5) as age_group_ms
   FROM public.emr_encounter enc
          INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
@@ -141,10 +140,10 @@ SELECT '1'::varchar(1) as centerid,
        pat.natural_key as patid,
        disease.condition,
        disease.date - ('1960-01-01'::date) as date,
-       age_at_year_start(disease.date, pat.date_of_birth) as age_at_detect_year,
-       age_group_5yr(disease.date, pat.date_of_birth)::varchar(5) as age_group_5yr,
-       age_group_10yr(disease.date, pat.date_of_birth)::varchar(5) as age_group_10yr,
-       age_group_ms(disease.date, pat.date_of_birth)::varchar(5) as age_group_ms,
+       esp_mdphnet.age_at_year_start(disease.date, pat.date_of_birth::date) as age_at_detect_year,
+       esp_mdphnet.age_group_5yr(disease.date, pat.date_of_birth::date)::varchar(5) as age_group_5yr,
+       esp_mdphnet.age_group_10yr(disease.date, pat.date_of_birth::date)::varchar(5) as age_group_10yr,
+       esp_mdphnet.age_group_ms(disease.date, pat.date_of_birth::date)::varchar(5) as age_group_ms,
        disease.criteria,
        disease.status,
        disease.notes

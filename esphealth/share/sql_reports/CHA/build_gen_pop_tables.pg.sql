@@ -1,4 +1,4 @@
-﻿/*--------------------------------------------------------------------------------
+/*--------------------------------------------------------------------------------
 --
 --                                ESP Health
 --                         General Population Report
@@ -17,10 +17,10 @@
 -- not run on other RDBMS without porting.
 --
 --------------------------------------------------------------------------------*/
-drop table if exists gpr_pat;
-create table gpr_pat as
+drop table if exists gen_pop_tools.gpr_pat;
+create table gen_pop_tools.gpr_pat as
 SELECT 
-  pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth)) as age, pat.gender, pat.race, 
+  pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth::date)) as age, upper(substr(pat.gender,1,1)) gender, pat.race, 
   case
     when substring(pat.zip,6,1)='-' then substring(pat.zip,1,5)
     else pat.zip
@@ -41,35 +41,35 @@ WHERE pat.date_of_death IS NULL;
 -- Max blood pressure between two and three years
 --  using most recent max mean aterial pressure for the period
 --
-drop table if exists gpr_bp3;
-create table gpr_bp3 as 
-      select distinct on (t0.patient_id)
+drop table if exists gen_pop_tools.gpr_bp3;
+create table gen_pop_tools.gpr_bp3 as 
+      select * from (
+	SELECT 
 	  t0.patient_id
 	 , t0.bp_systolic AS max_bp_systolic
 	, t0.bp_diastolic AS max_bp_diastolic
         , t1.max_mean_arterial as map
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar) as syspct
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('FEMALE','F') then '2' else null end)::varchar, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_diastolic::numeric, 
 					 'DIA'::varchar, 
 					 'BPPCT'::varchar) as diapct
+        , row_number() over (partition by t0.patient_id order by t0.date desc) as rownum
 	FROM emr_encounter t0,
              (select patient_id, max((2*bp_diastolic + bp_systolic)/3) as max_mean_arterial
               from emr_encounter
@@ -78,40 +78,41 @@ create table gpr_bp3 as
              emr_patient as pat
 	WHERE t0.date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
 	and (2*bp_diastolic + bp_systolic)/3 = max_mean_arterial and t0.patient_id=t1.patient_id
-        and t0.patient_id=pat.id;
+        and t0.patient_id=pat.id) as t
+        where rownum=1;
 --
 -- Max blood pressure between one and two years
 --  using most recent max mean aterial pressure for the period
 --
-drop table if exists gpr_bp2;
-create table gpr_bp2 as 
- 	SELECT distinct on (t0.patient_id)
+drop table if exists gen_pop_tools.gpr_bp2;
+create table gen_pop_tools.gpr_bp2 as 
+     select * from (
+	SELECT 
 	  t0.patient_id
 	, t0.bp_systolic AS max_bp_systolic
 	, t0.bp_diastolic AS max_bp_diastolic
         , t1.max_mean_arterial as map
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar) as syspct
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_diastolic::numeric, 
 					 'DIA'::varchar, 
 					 'BPPCT'::varchar) as diapct
+        , row_number() over (partition by t0.patient_id order by t0.date desc) as rownum
 	FROM emr_encounter t0,
              (select patient_id, max((2*bp_diastolic + bp_systolic)/3) as max_mean_arterial
               from emr_encounter
@@ -120,40 +121,41 @@ create table gpr_bp2 as
              emr_patient as pat
 	 WHERE t0.date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
 	and (2*bp_diastolic + bp_systolic)/3 = max_mean_arterial and t0.patient_id=t1.patient_id
-        and t0.patient_id=pat.id;
+        and t0.patient_id=pat.id) as t
+        where rownum=1;
 --
 -- Max blood pressure between now and one years
 --  using most recent max mean aterial pressure for the period
 --
-drop table if exists gpr_bp1;
-create table gpr_bp1 as
-	SELECT distinct on (t0.patient_id)
+drop table if exists gen_pop_tools.gpr_bp1;
+create table gen_pop_tools.gpr_bp1 as
+     select * from (
+	SELECT 
 	  t0.patient_id
 	, t0.bp_systolic AS max_bp_systolic
 	, t0.bp_diastolic AS max_bp_diastolic
         , t1.max_mean_arterial as map
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar) as syspct
-        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_diastolic::numeric, 
 					 'DIA'::varchar, 
 					 'BPPCT'::varchar) as diapct
+        , row_number() over (partition by t0.patient_id order by t0.date desc) as rownum
 	FROM emr_encounter t0,
              (select patient_id, max((2*bp_diastolic + bp_systolic)/3) as max_mean_arterial
               from emr_encounter
@@ -162,33 +164,32 @@ create table gpr_bp1 as
              emr_patient as pat
 	WHERE t0.date between ( now() - interval '1 years' ) and now() 
 	and (2*bp_diastolic + bp_systolic)/3 = max_mean_arterial and t0.patient_id=t1.patient_id
-        and t0.patient_id=pat.id;
+        and t0.patient_id=pat.id) as t
+        where rownum=1;
 --
 -- most recent blood pressure 
 --
-drop table if exists gpr_recbp;
-create table gpr_recbp as
+drop table if exists gen_pop_tools.gpr_recbp;
+create table gen_pop_tools.gpr_recbp as
 	SELECT 
 	  t0.patient_id
 	, max(t0.bp_systolic) as bp_systolic
 	, max(t0.bp_diastolic) as bp_diastolic
-        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_systolic::numeric, 
 					 'SYS'::varchar, 
 					 'BPPCT'::varchar)) as syspct
-        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
-                     pat.gender, 
-                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
-                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-			         (case when pat.gender in ('M','MALE') then '1' 
-			               when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth::date))::numeric, 
+                     upper(substr(pat.gender,1,1)), 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth::date))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+			         (case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 					 t0.height::numeric, 
 					 'HTZ'::varchar ), 
 					 t0.bp_diastolic::numeric, 
@@ -209,13 +210,12 @@ create table gpr_recbp as
 --
 -- most recent BMI 
 --
-drop table if exists gpr_bmi;
-create table gpr_bmi as
+drop table if exists gen_pop_tools.gpr_bmi;
+create table gen_pop_tools.gpr_bmi as
         select t0.*
-        , gen_pop_tools.cdc_bmi((extract(year from age(t0.date, pat.date_of_birth))*12 
-                               + extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
-		(case when pat.gender in ('M','MALE') then '1' 
-                      when pat.gender in ('F','FEMALE') then '2' else null end)::varchar, 
+        , gen_pop_tools.cdc_bmi((extract(year from age(t0.date, pat.date_of_birth::date))*12 
+                               + extract(month from age(t0.date, pat.date_of_birth::date)))::numeric, 
+		(case when upper(substr(pat.gender,1,1))='M' then '1' when upper(substr(pat.gender,1,1))='F' then 2 else null end)::varchar, 
 		null::numeric, 
 		null::numeric, 
 		t0.bmi::numeric, 
@@ -241,8 +241,8 @@ create table gpr_bmi as
 --
 -- Recent A1C lab result
 --
-drop table if exists gpr_a1c;
-create table gpr_a1c as
+drop table if exists gen_pop_tools.gpr_a1c;
+create table gen_pop_tools.gpr_a1c as
 	SELECT 
 	  l0.patient_id
 	, l0.date  
@@ -274,8 +274,8 @@ create table gpr_a1c as
 --
 -- Max A1C lab result last year
 --
-drop table if exists gpr_a1c1;
-create table gpr_a1c1 as
+drop table if exists gen_pop_tools.gpr_a1c1;
+create table gen_pop_tools.gpr_a1c1 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_a1c1
@@ -289,8 +289,8 @@ create table gpr_a1c1 as
 --
 -- Max A1C lab result between 1 and 2 years ago
 --
-drop table if exists gpr_a1c2;
-create table gpr_a1c2 as
+drop table if exists gen_pop_tools.gpr_a1c2;
+create table gen_pop_tools.gpr_a1c2 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_a1c2
@@ -304,8 +304,8 @@ create table gpr_a1c2 as
 --
 -- Max A1C lab result between 2 and 3 years ago
 --
-drop table if exists gpr_a1c3;
-create table gpr_a1c3 as
+drop table if exists gen_pop_tools.gpr_a1c3;
+create table gen_pop_tools.gpr_a1c3 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_a1c3
@@ -319,8 +319,8 @@ create table gpr_a1c3 as
 --
 -- Recent cholesterol LDL lab result
 --
-drop table if exists gpr_ldl;
-create table gpr_ldl as
+drop table if exists gen_pop_tools.gpr_ldl;
+create table gen_pop_tools.gpr_ldl as
 	SELECT 
 	  l0.patient_id
 	, l0.date
@@ -352,8 +352,8 @@ create table gpr_ldl as
 --
 -- Max ldl lab result last year
 --
-drop table if exists gpr_ldl1;
-create table gpr_ldl1 as
+drop table if exists gen_pop_tools.gpr_ldl1;
+create table gen_pop_tools.gpr_ldl1 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_ldl1
@@ -367,8 +367,8 @@ create table gpr_ldl1 as
 --
 -- Max ldl lab result between 1 and 2 years ago
 --
-drop table if exists gpr_ldl2;
-create table gpr_ldl2 as
+drop table if exists gen_pop_tools.gpr_ldl2;
+create table gen_pop_tools.gpr_ldl2 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_ldl2
@@ -382,8 +382,8 @@ create table gpr_ldl2 as
 --
 -- Max ldl lab result between 2 and 3 years ago
 --
-drop table if exists gpr_ldl3;
-create table gpr_ldl3 as
+drop table if exists gen_pop_tools.gpr_ldl3;
+create table gen_pop_tools.gpr_ldl3 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_ldl3
@@ -397,8 +397,8 @@ create table gpr_ldl3 as
 --
 -- Recent Triglycerides lab result
 --
-drop table if exists gpr_trig;
-create table gpr_trig as
+drop table if exists gen_pop_tools.gpr_trig;
+create table gen_pop_tools.gpr_trig as
 	SELECT 
 	  l0.patient_id
 	, l0.date
@@ -430,8 +430,8 @@ create table gpr_trig as
 --
 -- Max trig lab result last year
 --
-drop table if exists gpr_trig1;
-create table gpr_trig1 as
+drop table if exists gen_pop_tools.gpr_trig1;
+create table gen_pop_tools.gpr_trig1 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_trig1
@@ -445,8 +445,8 @@ create table gpr_trig1 as
 --
 -- Max trig lab result between 1 and 2 years ago
 --
-drop table if exists gpr_trig2;
-create table gpr_trig2 as 
+drop table if exists gen_pop_tools.gpr_trig2;
+create table gen_pop_tools.gpr_trig2 as 
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_trig2
@@ -460,8 +460,8 @@ create table gpr_trig2 as
 --
 -- Max trig lab result between 2 and 3 years ago
 --
-drop table if exists gpr_trig3;
-create table gpr_trig3 as
+drop table if exists gen_pop_tools.gpr_trig3;
+create table gen_pop_tools.gpr_trig3 as
 	SELECT 
 	  l0.patient_id
 	, MAX(l0.result_float) AS max_trig3
@@ -475,8 +475,8 @@ create table gpr_trig3 as
 --
 -- Prediabetes
 --
-drop table if exists gpr_predm;
-create table gpr_predm as
+drop table if exists gen_pop_tools.gpr_predm;
+create table gen_pop_tools.gpr_predm as
 	SELECT 
 	  DISTINCT c0.patient_id
 	, 1 AS prediabetes
@@ -495,8 +495,8 @@ create table gpr_predm as
 --
 -- Type 1 Diabetes
 --
-drop table if exists gpr_type1;
-create table gpr_type1 as
+drop table if exists gen_pop_tools.gpr_type1;
+create table gen_pop_tools.gpr_type1 as
 	SELECT 
 	DISTINCT patient_id
 	, 1 AS type_1_diabetes
@@ -505,8 +505,8 @@ create table gpr_type1 as
 --
 -- Type 2 Diabetes
 --
-drop table if exists gpr_type2;
-create table gpr_type2 as
+drop table if exists gen_pop_tools.gpr_type2;
+create table gen_pop_tools.gpr_type2 as
 	SELECT 
 	DISTINCT patient_id
 	, 1 AS type_2_diabetes
@@ -515,8 +515,8 @@ create table gpr_type2 as
 --
 -- Current Gestational diabetes
 --
-drop table if exists gpr_gdm;
-create table gpr_gdm as
+drop table if exists gen_pop_tools.gpr_gdm;
+create table gen_pop_tools.gpr_gdm as
 	SELECT distinct
 	c0.patient_id
 	, 1 AS current_gdm
@@ -531,8 +531,8 @@ create table gpr_gdm as
 --
 -- Recent Gestational diabetes 1 year
 --
-drop table if exists gpr_recgdm1;
-create table gpr_recgdm1 as
+drop table if exists gen_pop_tools.gpr_recgdm1;
+create table gen_pop_tools.gpr_recgdm1 as
 	SELECT distinct
 	c0.patient_id
 	, 1 AS recent_gdm
@@ -547,8 +547,8 @@ create table gpr_recgdm1 as
 --
 -- Recent Gestational diabetes 2 year
 --
-drop table if exists gpr_recgdm2;
-create table gpr_recgdm2 as
+drop table if exists gen_pop_tools.gpr_recgdm2;
+create table gen_pop_tools.gpr_recgdm2 as
 	SELECT distinct
 	c0.patient_id
 	, 1 AS recent_gdm
@@ -563,8 +563,8 @@ create table gpr_recgdm2 as
 --
 -- Recent pregnancy 2 year
 --
-drop table if exists gpr_recpreg2;
-create table gpr_recpreg2 as
+drop table if exists gen_pop_tools.gpr_recpreg2;
+create table gen_pop_tools.gpr_recpreg2 as
 	SELECT
 	  patient_id
 	, 1 AS recent_pregnancy -- if there is more than one pregnancy in the period, take the last one
@@ -576,8 +576,8 @@ create table gpr_recpreg2 as
 --
 -- Recent pregnancy 1 year
 --
-drop table if exists gpr_recpreg1;
-create table gpr_recpreg1 as
+drop table if exists gen_pop_tools.gpr_recpreg1;
+create table gen_pop_tools.gpr_recpreg1 as
 	SELECT
 	  patient_id
 	, 1 AS recent_pregnancy
@@ -589,8 +589,8 @@ create table gpr_recpreg1 as
 --
 -- Current pregnancy
 --
-drop table if exists gpr_curpreg;
-create table gpr_curpreg as
+drop table if exists gen_pop_tools.gpr_curpreg;
+create table gen_pop_tools.gpr_curpreg as
 	SELECT
 	  DISTINCT ts.patient_id
 	, 1 AS currently_pregnant
@@ -602,8 +602,8 @@ create table gpr_curpreg as
 -- Insulin
 --    Prescription for insulin within the previous year
 --
-drop table if exists gpr_insulin;
-create table gpr_insulin as
+drop table if exists gen_pop_tools.gpr_insulin;
+create table gen_pop_tools.gpr_insulin as
 	SELECT 
 	  DISTINCT patient_id
 	, 1 AS insulin
@@ -614,8 +614,8 @@ create table gpr_insulin as
 -- Metformin
 --     Prescription for metformin within the previous year
 --
-drop table if exists gpr_metformin;
-create table gpr_metformin as 
+drop table if exists gen_pop_tools.gpr_metformin;
+create table gen_pop_tools.gpr_metformin as 
 	SELECT 
 	  DISTINCT patient_id
 	, 1 AS metformin
@@ -626,8 +626,8 @@ create table gpr_metformin as
 -- Influenza vaccine
 --     Prescription for influenza vaccine current flu season
 --
-drop table if exists gpr_flu_cur;
-create table gpr_flu_cur as
+drop table if exists gen_pop_tools.gpr_flu_cur;
+create table gen_pop_tools.gpr_flu_cur as
 	SELECT 
 	  DISTINCT patient_id
 	, 1 AS influenza_vaccine
@@ -645,8 +645,8 @@ create table gpr_flu_cur as
 -- Influenza vaccine
 --     Prescription for influenza vaccine previous flu season
 --
-drop table if exists gpr_flu_prev;
-create table gpr_flu_prev as
+drop table if exists gen_pop_tools.gpr_flu_prev;
+create table gen_pop_tools.gpr_flu_prev as
 	SELECT 
 	  DISTINCT patient_id
 	, 1 AS influenza_vaccine
@@ -663,8 +663,8 @@ create table gpr_flu_prev as
 --
 -- most recent chlamydia lab result
 --
-drop table if exists gpr_chlamydia;
-create table gpr_chlamydia as
+drop table if exists gen_pop_tools.gpr_chlamydia;
+create table gen_pop_tools.gpr_chlamydia as
 	SELECT 
 	  l0.patient_id
 	, case 
@@ -695,21 +695,21 @@ create table gpr_chlamydia as
 --
 -- Smoking
 --
-drop table if exists gpr_smoking;
-create table gpr_smoking as
+drop table if exists gen_pop_tools.gpr_smoking;
+create table gen_pop_tools.gpr_smoking as
    select case when t1.latest='Yes' then '1'
                when t2.yesOrQuit='Quit' then '2'
                when t3.passive='Passive' then '4'
                when t4.never='Never' then '3'
-               else '5'
+               else '5' 
            end as smoking,
            t1.patient_id
    from
-     (select t00.tobacco_use as latest, t00.patient_id
+     (select t00.tobacco_use as latest, t00.patient_id 
       from emr_socialhistory t00
       inner join
-      (select max(date) as maxdate, patient_id
-       from emr_socialhistory
+      (select max(date) as maxdate, patient_id 
+       from emr_socialhistory 
        where tobacco_use is not null and tobacco_use<>''
        group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t1
    left outer join
@@ -724,18 +724,28 @@ create table gpr_smoking as
             group by patient_id) t3 on t1.patient_id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'never'::text as val, patient_id
+      from (select 'Never'::text as val, patient_id
             from emr_socialhistory where tobacco_use ='Never') t00
             group by patient_id) t4 on t1.patient_id=t4.patient_id;
 --
 -- Asthma
 --
-drop table if exists gpr_asthma;
-create table gpr_asthma as
+drop table if exists gen_pop_tools.gpr_asthma;
+create table gen_pop_tools.gpr_asthma as
   select case when count(*) > 0 then 1 else 2 end as asthma,
   patient_id
 from nodis_case
 where condition='asthma'
 group by patient_id;
-
+--
+-- Number of encounters last year
+--
+drop table if exists gen_pop_tools.gpr_enc;
+create table gen_pop_tools.gpr_enc as
+  select case when count(*) >= 2 then 2
+              else count(*) end as nvis,
+  patient_id
+  from emr_encounter
+  where date>=current_date - interval '1 year'
+  group by patient_id;        
 

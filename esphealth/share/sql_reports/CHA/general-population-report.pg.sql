@@ -12,6 +12,7 @@
 -- @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 --
 --------------------------------------------------------------------------------*/
+
 --select max(counts) from ( select count(*) as counts from (
 SELECT 
   gpr_pat.patient_id 
@@ -79,181 +80,184 @@ SELECT
 , gpr_chlamydia.recent_chlamydia
 , gpr_asthma.asthma
 , gpr_smoking.smoking
-FROM gpr_pat 
+, gpr_enc.nvis
+FROM gen_pop_tools.gpr_pat 
 --
 -- Max blood pressure between two and three years
 --  using most recent max mean aterial pressure for the period
 --
-LEFT JOIN gpr_bp3
+LEFT JOIN gen_pop_tools.gpr_bp3
 	ON gpr_bp3.patient_id = gpr_pat.patient_id
 --
 -- Max blood pressure between one and two years
 --  using most recent max mean aterial pressure for the period
 --
-LEFT JOIN gpr_bp2
+LEFT JOIN gen_pop_tools.gpr_bp2
 	ON gpr_bp2.patient_id = gpr_pat.patient_id
 --
 -- Max blood pressure between now and one years
 --  using most recent max mean aterial pressure for the period
 --
-LEFT JOIN gpr_bp1
+LEFT JOIN gen_pop_tools.gpr_bp1
 	ON gpr_bp1.patient_id = gpr_pat.patient_id
 --
 -- most recent blood pressure 
 --
-LEFT JOIN gpr_recbp
+LEFT JOIN gen_pop_tools.gpr_recbp
 	ON gpr_recbp.patient_id = gpr_pat.patient_id
 --
 -- most recent BMI 
 --
-LEFT JOIN gpr_bmi
+LEFT JOIN gen_pop_tools.gpr_bmi
 	ON gpr_bmi.patient_id = gpr_pat.patient_id
 --
 -- Recent A1C lab result
 --
-LEFT JOIN gpr_a1c
+LEFT JOIN gen_pop_tools.gpr_a1c
 	ON gpr_a1c.patient_id = gpr_pat.patient_id
 --
 -- Max A1C lab result last year
 --
-LEFT JOIN gpr_a1c1
+LEFT JOIN gen_pop_tools.gpr_a1c1
 	ON gpr_a1c1.patient_id = gpr_pat.patient_id
 --
 -- Max A1C lab result between 1 and 2 years ago
 --
-LEFT JOIN gpr_a1c2
+LEFT JOIN gen_pop_tools.gpr_a1c2
 	ON gpr_a1c2.patient_id = gpr_pat.patient_id
 --
 -- Max A1C lab result between 2 and 3 years ago
 --
-LEFT JOIN gpr_a1c3
+LEFT JOIN gen_pop_tools.gpr_a1c3
 	ON gpr_a1c3.patient_id = gpr_pat.patient_id
 --
 -- Recent cholesterol LDL lab result
 --
-LEFT JOIN gpr_ldl
+LEFT JOIN gen_pop_tools.gpr_ldl
 	ON gpr_ldl.patient_id = gpr_pat.patient_id
 --
 -- Max ldl lab result last year
 --
-LEFT JOIN gpr_ldl1
+LEFT JOIN gen_pop_tools.gpr_ldl1
 	ON gpr_ldl1.patient_id = gpr_pat.patient_id
 --
 -- Max ldl lab result between 1 and 2 years ago
 --
-LEFT JOIN gpr_ldl2
+LEFT JOIN gen_pop_tools.gpr_ldl2
 	ON gpr_ldl2.patient_id = gpr_pat.patient_id
 --
 -- Max ldl lab result between 2 and 3 years ago
 --
-LEFT JOIN gpr_ldl3
+LEFT JOIN gen_pop_tools.gpr_ldl3
 	ON gpr_ldl3.patient_id = gpr_pat.patient_id
 --
 -- Recent Triglycerides lab result
 --
-LEFT JOIN gpr_trig
+LEFT JOIN gen_pop_tools.gpr_trig
 	ON gpr_trig.patient_id = gpr_pat.patient_id
 --
 -- Max trig lab result last year
 --
-LEFT JOIN gpr_trig1
+LEFT JOIN gen_pop_tools.gpr_trig1
 	ON gpr_trig1.patient_id = gpr_pat.patient_id
 --
 -- Max trig lab result between 1 and 2 years ago
 --
-LEFT JOIN gpr_trig2
+LEFT JOIN gen_pop_tools.gpr_trig2
 	ON gpr_trig2.patient_id = gpr_pat.patient_id
 --
 -- Max trig lab result between 2 and 3 years ago
 --
-LEFT JOIN gpr_trig3
+LEFT JOIN gen_pop_tools.gpr_trig3
 	ON gpr_trig3.patient_id = gpr_pat.patient_id
 --
 -- Prediabetes
 --
-LEFT JOIN gpr_predm
+LEFT JOIN gen_pop_tools.gpr_predm
 	ON gpr_predm.patient_id = gpr_pat.patient_id
 --
 -- Type 1 Diabetes
 --
-LEFT JOIN gpr_type1
+LEFT JOIN gen_pop_tools.gpr_type1
 	ON gpr_type1.patient_id = gpr_pat.patient_id
-
 --
 -- Type 2 Diabetes
 --
-LEFT JOIN gpr_type2
+LEFT JOIN gen_pop_tools.gpr_type2
 	ON gpr_type2.patient_id = gpr_pat.patient_id
-
 --
 -- Current Gestational diabetes
 --
-LEFT JOIN gpr_gdm
+LEFT JOIN gen_pop_tools.gpr_gdm
 	ON gpr_gdm.patient_id = gpr_pat.patient_id
 --
 -- Recent Gestational diabetes 1 year
 --
-LEFT JOIN gpr_recgdm1
+LEFT JOIN gen_pop_tools.gpr_recgdm1
 	ON gpr_recgdm1.patient_id = gpr_pat.patient_id
 --
 -- Recent Gestational diabetes 2 year
 --
-LEFT JOIN gpr_recgdm2
+LEFT JOIN gen_pop_tools.gpr_recgdm2
 	ON gpr_recgdm2.patient_id = gpr_pat.patient_id
 --
 -- Recent pregnancy 2 year
 --
-LEFT JOIN gpr_recpreg2
+LEFT JOIN gen_pop_tools.gpr_recpreg2
 	ON gpr_recpreg2.patient_id = gpr_pat.patient_id
 --
 -- Recent pregnancy 1 year
 --
-LEFT JOIN gpr_recpreg1
+LEFT JOIN gen_pop_tools.gpr_recpreg1
 	ON gpr_recpreg1.patient_id = gpr_pat.patient_id
 --
 -- Current pregnancy
 --
-LEFT JOIN gpr_curpreg
+LEFT JOIN gen_pop_tools.gpr_curpreg
 	ON gpr_curpreg.patient_id = gpr_pat.patient_id
 --
 -- Insulin
 --    Prescription for insulin within the previous year
 --
-LEFT JOIN gpr_insulin
+LEFT JOIN gen_pop_tools.gpr_insulin
 	ON gpr_insulin.patient_id = gpr_pat.patient_id
 --
 -- Metformin
 --     Prescription for metformin within the previous year
 --
-LEFT JOIN gpr_metformin
+LEFT JOIN gen_pop_tools.gpr_metformin
 	ON gpr_metformin.patient_id = gpr_pat.patient_id
 --
 -- Influenza vaccine
 --     Prescription for influenza vaccine current flu season
 --
-LEFT JOIN gpr_flu_cur
+LEFT JOIN gen_pop_tools.gpr_flu_cur
 	ON gpr_flu_cur.patient_id = gpr_pat.patient_id
 --
 -- Influenza vaccine
 --     Prescription for influenza vaccine previous flu season
 --
-LEFT JOIN gpr_flu_prev
+LEFT JOIN gen_pop_tools.gpr_flu_prev
 	ON gpr_flu_prev.patient_id = gpr_pat.patient_id
 --
 -- Most recent chlamydia test
 --
-LEFT JOIN gpr_chlamydia
+LEFT JOIN gen_pop_tools.gpr_chlamydia
 	ON gpr_chlamydia.patient_id = gpr_pat.patient_id
 --
 -- Smoking
 --
-LEFT JOIN gpr_smoking 
+LEFT JOIN gen_pop_tools.gpr_smoking 
         ON gpr_smoking.patient_id = gpr_pat.patient_id
 --
 -- asthma
 --
-LEFT JOIN gpr_asthma
+LEFT JOIN gen_pop_tools.gpr_asthma
         on gpr_asthma.patient_id = gpr_pat.patient_id
+--
+-- n visits
+LEFT JOIN gen_pop_tools.gpr_enc
+        on gpr_enc.patient_id = gpr_pat.patient_id
 --
 -- Ordering
 --
