@@ -330,7 +330,7 @@ class Asthma(DiseaseDefinition):
                         t, new_case = self._create_case_from_event_obj(
                             condition = self.conditions[0],
                             criteria = 'Criteria #1: Asthma diagnosis >=4 and >=2 prescriptions',
-                            recurrence_interval = self.recurrence_interval, # Does not recur
+                            recurrence_interval = None, # Does not recur
                             event_obj = dx4_event,
                             relevant_event_qs = rx_qs | dx4_event_qs,
                             )
@@ -376,7 +376,7 @@ class Asthma(DiseaseDefinition):
                     t, new_case = self._create_case_from_event_obj(
                         condition = self.conditions[0],
                         criteria = 'Criteria #2: >=4 prescriptions',
-                        recurrence_interval = self.recurrence_interval, # Does not recur
+                        recurrence_interval = None, # Does not recur
                         event_obj = rx4_event,
                         relevant_event_qs =  rx4_event_qs,
                         )
