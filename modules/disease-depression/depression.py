@@ -52,7 +52,7 @@ class Depression(DiseaseDefinition):
     
     timespan_heuristics = []
     
-    recurrence_interval = 360 # episode length 1 year
+    recurrence_interval = 365 # episode length 1 year
     
     
     @property
@@ -74,8 +74,8 @@ class Depression(DiseaseDefinition):
                 Dx_CodeQuery(starts_with='309.28', type='icd9'),
                 Dx_CodeQuery(starts_with='311', type='icd9'),
                 Dx_CodeQuery(starts_with='V79.0', type='icd9'),
-                Dx_CodeQuery(starts_with='F32', type='icd10'), 
-                Dx_CodeQuery(starts_with='F33', type='icd10'), 
+                Dx_CodeQuery(starts_with='F32.', type='icd10'), 
+                Dx_CodeQuery(starts_with='F33.', type='icd10'), 
                 Dx_CodeQuery(starts_with='F34.1', type='icd10'),
                 Dx_CodeQuery(starts_with='F43.21', type='icd10'),
                 Dx_CodeQuery(starts_with='F43.23', type='icd10'),
@@ -189,8 +189,6 @@ class Depression(DiseaseDefinition):
     def generate_def_a (self):
     #
     # criteria 1
-    # >=4 encounters with dx code 493.xx and asthma drug prescriptions 
-    # (can be >=2 scripts for the same med or scripts for 2 or more different meds)
     #
        
         dx_ev_names = ['dx:depression']
