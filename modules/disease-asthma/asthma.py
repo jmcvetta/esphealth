@@ -52,7 +52,6 @@ class Asthma(DiseaseDefinition):
     
     timespan_heuristics = []
     
-    
     @property
     def event_heuristics(self):
         heuristic_list = []
@@ -311,13 +310,13 @@ class Asthma(DiseaseDefinition):
                     create new case 
          '''   
         ifcdx4 = 0    
-        for dx_event in dx_qs:   
+        for dx_event in dx_qs:  
             new_patient = dx_event.patient
             # first time, change of patient or last event in qs.
             if not prev_patient or prev_patient != new_patient or  dx_event == dx_qs[dx_count-1]: 
                 if count_dx4 >= 4:
                     #count how many times we get in here ? 
-                    log.info('def a Start of if countdx4: %s' % datetime.datetime.now())
+                    #log.info('def a Start of if countdx4: %s' % datetime.datetime.now())
                     ifcdx4 +=1
                     rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
                     rx_qs = rx_qs.exclude(case__condition=self.conditions[0]) 
@@ -327,19 +326,20 @@ class Asthma(DiseaseDefinition):
                         #
                         # Patient has Asthma
                         #
+                        
                         t, new_case = self._create_case_from_event_obj(
                             condition = self.conditions[0],
                             criteria = 'Criteria #1: Asthma diagnosis >=4 and >=2 prescriptions',
-                            recurrence_interval = None, # Does not recur
+                            recurrence_interval = self.recurrence_interval, # Does not recur
                             event_obj = dx4_event,
                             relevant_event_qs = rx_qs | dx4_event_qs,
                             )
                         if t:
                             counter_a += 1
                             log.info('Created new asthma case def a: %s' % new_case)
-                    log.info('def a End of if countdx4: %s' % datetime.datetime.now())      
+                    #log.info('def a End of if countdx4: %s' % datetime.datetime.now())      
                 prev_patient = dx_event.patient 
-                log.info('def a if count times: %s' % ifcdx4)    
+                #log.info('def a if count times: %s' % ifcdx4)    
                 
                 count_dx4 = 0  
                 dx4_event = dx_event
@@ -367,7 +367,7 @@ class Asthma(DiseaseDefinition):
             # TODO check for performance of mainrx_qs[rx_count-1]
             if not prev_patient or prev_patient != new_patient or rx_event == mainrx_qs[rx_count-1]: 
                 if count_rx4 >= 4:  
-                    log.info('def b Start of if countdx4: %s' % datetime.datetime.now())    
+                    #log.info('def b Start of if countdx4: %s' % datetime.datetime.now())    
                     ifcrx4 +=1
                     rx4_event_qs =  mainrx_qs.filter(patient =prev_patient )       
                     #
@@ -376,17 +376,17 @@ class Asthma(DiseaseDefinition):
                     t, new_case = self._create_case_from_event_obj(
                         condition = self.conditions[0],
                         criteria = 'Criteria #2: >=4 prescriptions',
-                        recurrence_interval = None, # Does not recur
+                        recurrence_interval = self.recurrence_interval, # Does not recur
                         event_obj = rx4_event,
                         relevant_event_qs =  rx4_event_qs,
                         )
                     if t: 
                         counter_b += 1
                         log.info('Created new asthma case def b: %s' % new_case)
-                    log.info('def b End of if countdx4: %s' % datetime.datetime.now())  
+                    #log.info('def b End of if countdx4: %s' % datetime.datetime.now())  
                 prev_patient = rx_event.patient  
                 count_rx4 = 0 
-                log.info('def b if count times: %s' % ifcrx4)    
+                #log.info('def b if count times: %s' % ifcrx4)    
                 
                 rx4_event = rx_event
                 
