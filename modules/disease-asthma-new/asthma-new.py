@@ -40,11 +40,11 @@ class AsthmaNew(DiseaseDefinition):
     Asthma new
     '''
     
-    conditions = ['asthma-new']
+    conditions = ['asthma']
     
-    uri = 'urn:x-esphealth:disease:channing:asthma-new:v1'
+    uri = 'urn:x-esphealth:disease:channing:asthma:v1'
     
-    short_name = 'asthma-new'
+    short_name = 'asthma'
     
     test_name_search_strings = [
         
@@ -291,16 +291,16 @@ class AsthmaNew(DiseaseDefinition):
         # possibly split in two sections for new and added events to existing cases 
         #or run two checks the dxs and rxs walk through the two lists.       
         dx_qs = BaseEventHeuristic.get_events_by_name(dx_ev_names)
-        dx_qs = dx_qs.exclude(case__condition=self.conditions[0]).order_by('date')
         
-        dx_qs_patient  = dx_qs.values('patient').distint()
+        dx_qs = dx_qs.exclude(case__condition=self.conditions[0]).order_by('date')
+        rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
+        rx_qs = rx_qs.exclude(case__condition=self.conditions[0]) 
+                
+        dx_qs_patient  = dx_qs.values('patient').distinct()
         for patient in dx_qs_patient:
-            dx4_event_qs = dx_qs.filter(patient = patient).count()
-            if dx4_event_qs>=4:
-                rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
-                rx_qs = rx_qs.exclude(case__condition=self.conditions[0]) 
-                rx_qs = rx_qs.filter(patient=patient)
-                if rx_qs.count() >= 2: 
+            dx4_event_qs = dx_qs.filter(patient__id = patient.values()[0])
+            if dx4_event_qs.count()>=4:
+                if rx_qs.filter(patient__id=patient.values()[0]).count() >= 2: 
                     #
                     # Patient has Asthma
                     #
@@ -323,14 +323,11 @@ class AsthmaNew(DiseaseDefinition):
         # for the same med or scripts for different meds
         log.info('Generating cases for Asthma new Definition (b)')
         counter_b = 0
-        allrx_event_names =  rx_ev_names + rx_comb_ev_names
                
-        mainrx_qs = BaseEventHeuristic.get_events_by_name(allrx_event_names)
-        mainrx_qs = mainrx_qs.exclude(case__condition=self.conditions[0]).order_by('date')
-        mainrx_qs_patient = mainrx_qs.values('patient').distinct()
+        mainrx_qs_patient = rx_qs.order_by('date').values('patient').distinct()
         for patient in mainrx_qs_patient:
-            rx_qs = mainrx_qs.filter(patient=patient)
-            if rx_qs.count() >= 2: 
+            rx_qs = rx_qs.filter(patient__id=patient.values()[0])
+            if rx_qs.count() >= 4: 
                     #
                     # Patient has Asthma
                     #
@@ -338,8 +335,8 @@ class AsthmaNew(DiseaseDefinition):
                             condition = self.conditions[0],
                             criteria = 'Criteria #2: >=4 prescriptions',
                             recurrence_interval = None, # Does not recur
-                            event_obj = dx4_event_qs[0],
-                            relevant_event_qs = rx_qs | dx4_event_qs,
+                            event_obj = rx_qs[0],
+                            relevant_event_qs = rx_qs ,
                             )
             if t:
                 counter_b += 1
