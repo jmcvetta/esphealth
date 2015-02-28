@@ -55,6 +55,7 @@ SELECT '1'::varchar(1) as centerid,
        END as sex,
        CASE
          WHEN UPPER(race) = 'HISPANIC' THEN 'Y'::char(1)
+         WHEN ETHNICITY = 'Y' then 'Y'::char(1)
          ELSE 'U'::char(1)
        END as Hispanic,
        CASE

@@ -20,7 +20,11 @@
 drop table if exists gen_pop_tools.gpr_pat;
 create table gen_pop_tools.gpr_pat as
 SELECT 
-  pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth::date)) as age, upper(substr(pat.gender,1,1)) gender, pat.race, 
+  pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth::date)) as age, upper(substr(pat.gender,1,1)) gender, 
+  case 
+     when pat.ethnicty='Y' then 'HISPANIC'::varchar(100)
+     else pat.race
+  end as race, 
   case
     when substring(pat.zip,6,1)='-' then substring(pat.zip,1,5)
     else pat.zip
