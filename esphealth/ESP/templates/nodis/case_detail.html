@@ -120,8 +120,6 @@
         <th>Case Status</th>
         <th>Created Date</th>
         <th>Last Updated</th>
-        <th>Case Definition</th>
-        <th>Comment</th>
     </tr>
     <tr>
         <td>{{ case.patient.pk }}</td>
@@ -141,8 +139,6 @@
         <td>{{ case.get_status_display }}</td>
         <td>{{ created }}</td>
         <td> {{ updated }}</td>
-        <td>{{ case.definition }}</td>
-        <td> {{ case.comments|default:"-" }}</td>
     </tr>
 </table>
 
