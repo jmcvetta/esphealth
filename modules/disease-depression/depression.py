@@ -235,14 +235,10 @@ class Depression(DiseaseDefinition):
             patient__event__name__in = rx_ev_names,
             patient__event__date__gte = (F('date') - 60 ),
             patient__event__date__lte = (F('date') + 60 ),
-            )
+            ).exclude(case__condition='depression').order_by('date')
         
         if dxrx_event_qs:
             self.criteria =  'Criteria #1 depression dx code and prescription for antidepressant within 60 days'
-         
-        dxrx_event_qs = dxrx_event_qs.exclude(case__condition='depression')
-        # ordering here doesnt matter because create cases from event sorts again
-        dxrx_event_qs = dxrx_event_qs.order_by('date')
         
         new_case_count = self._create_cases_from_event_qs(
             condition = 'depression',
