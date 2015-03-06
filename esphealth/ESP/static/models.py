@@ -67,13 +67,14 @@ class DrugSynonym (models.Model):
     
     @staticmethod
     def generics_plus_synonyms(drugnames):
-       
-        alldrugnames = drugnames
+        
+        alldrugnames = []
         for drug in drugnames:
-            allotherdrugsqs= DrugSynonym.objects.filter(generic_name__icontains = drug)
+            allotherdrugsqs= DrugSynonym.objects.filter(generic_name__icontains = drug).values_list('other_name', flat=True)
             for otherdrug in allotherdrugsqs:
-                if not otherdrug.comment == 'Self':
-                    alldrugnames.append(otherdrug.other_name)
+                alldrugnames.append(otherdrug)
+            if len(allotherdrugsqs) == 0:
+                return drugnames
         return alldrugnames   
      
 class FakeDx_Codes (models.Model):
