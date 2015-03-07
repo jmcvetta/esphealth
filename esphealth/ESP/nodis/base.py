@@ -284,6 +284,97 @@ class DiseaseDefinition(object):
     #
     #-------------------------------------------------------------------------------
     
+    def _update_case_from_event_list(self,
+        case,
+        relevant_events = [],
+        ):
+        '''
+        Create a new case for specified event object.
+        @param case: case
+        @type case:  case
+        @param relevant_events: Attach events matching with these names to new case
+        @type relevant_events:  [String, String, ...]
+        @return: Was new case created
+        @rtype: (Bool)
+        '''
+        
+        # If this patient has an existing case, we attach this event 
+        # to that case and continue.
+        for event in relevant_events:
+            case.events.add(event)
+        # redmine 467 transition existing 'S' status cases from 'S' to 'RQ' 
+        # whenever events are added to an existing case.
+        if (case.status == 'S'):
+                case.status = 'RQ'
+        case.save()
+            
+        log.debug('Updated %s ' % (case))
+        return (True)
+        
+    
+    def _create_case_from_event_list(self,
+        condition,
+        criteria,
+        recurrence_interval,
+        event_obj, 
+        relevant_event_names = [],
+        ):
+        '''
+        Create a new case for specified event object.
+        @param condition: Create a case of this condition
+        @type condition:  String
+        @param criteria: Criteria for creating these cases
+        @type criteria:  String
+        @param recurrence_interval: How many days after a case until this condition can recur?
+        @type recurrence_interval: Integer or None (if condition cannot recur)
+        @param event_obj: Event on which to base new case
+        @type event_obj:  models.Model chil instance
+        @param relevant_event_names: Attach events matching with these names to new case
+        @type relevant_event_names:  [String, String, ...]
+        @return: Was new case created, and case object (new or existing) to which event was attached
+        @rtype: (Bool, Case)
+        '''
+        
+        #
+        # Create new case
+        #
+        try:
+            #redmine 491, by default FILTER_CENTERS has one element with an empty list.
+            if ( FILTER_CENTERS[0]=='' or (FILTER_CENTERS and event_obj.patient.center_id in FILTER_CENTERS )):
+                status=ConditionConfig.objects.get(name=condition).initial_status
+            else:
+                status='AR'
+        except ObjectDoesNotExist:
+            status='AR'
+        new_case = Case(
+            patient = event_obj.patient,
+            provider = event_obj.provider,
+            date = event_obj.date,
+            condition =  condition,
+            criteria = criteria,
+            source = self.uri,
+            status = status,
+            )
+        new_case.save()
+        new_case.events.add(event_obj)
+        #
+        # Attach all relevant events, that are not already attached to a
+        # case of this condition.
+        #
+        if relevant_event_names:
+            for related_event in relevant_event_names:
+                new_case.events.add(related_event)
+            new_case.save()
+        
+        log.debug('Created new case: %s' % new_case)
+        return (True, new_case)
+    
+    #-------------------------------------------------------------------------------
+    #
+    # Instance methods
+    #
+    #-------------------------------------------------------------------------------
+    
     def _create_case_from_event_obj(self,
         condition,
         criteria,
