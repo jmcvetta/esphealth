@@ -252,9 +252,12 @@ class AsthmaNew(DiseaseDefinition):
             patients.add(case.patient)
             try:
                 events += rx_patient_rxevents[case.patient.id]
+            except KeyError:
+                pass
+            try:
                 if dx_patient_events:
                     events += dx_patient_events[case.patient.id]
-            except KeyError:
+            except:
                 pass                
             self._update_case_from_event_list(case,
                             relevant_events = events )
