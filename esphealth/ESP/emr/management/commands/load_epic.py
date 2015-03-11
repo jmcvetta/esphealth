@@ -418,7 +418,7 @@ class BaseLoader(object):
                 break
             if cur_row > self.line_count:
                 break
-            if self.fields.__len__() < row.__len__():
+            if len(self.fields) < len(row):
                 errors += 1
                 e = 'Skipping row. More items in row than fields'  
                 err = EtlError()
@@ -433,7 +433,7 @@ class BaseLoader(object):
                     transaction.savepoint_rollback(sid)
                     raise
                 log.error('Skipping row %s. More than %s items in row.  Item count: %s ' 
-                    % (cur_row, self.fields.__len__() , row.__len__() ))
+                    % (cur_row, len(self.fields) , len(row) ))
                 if not self.options['load_with_errors']:
                     raise BaseException(e)
                 continue
@@ -443,7 +443,7 @@ class BaseLoader(object):
                 if row[key]:
                     try:
                         if not key:
-                            # Not sure how this error could ever trigger since we've already checked for self.fields.__len__() < row.__len__()
+                            # Not sure how this error could ever trigger since we've already checked for len(self.fields) < len(row)
                             errors += 1
                             e = ('There is a value that does not correspond to any field in line: %s for value: %s' % (cur_row,row[key]))  
                             err = EtlError()
@@ -1581,7 +1581,7 @@ class OrderExtLoader(BaseLoader):
             'natural_key' : natural_key,
             'patient' : self.get_patient(row['patient_id']),
             'provider' : self.get_provider(row['provider_id']),
-            'order': self.get_labresult(row['order_id']),
+            'order': self.get_laborder(row['order_id']),
             'order_natural_key': string_or_none(row['order_id']),
             'date': self.date_or_none(row['date']),
             'question': string_or_none(row['question']),
