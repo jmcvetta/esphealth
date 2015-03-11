@@ -1405,7 +1405,7 @@ class Order_Extension(BaseMedicalRecord):
     Some orders are accompanied by one or more questions that provide information necessary for order
     completion.
     '''
-    order = models.ForeignKey(LabResult)
+    order = models.ForeignKey(LabOrder)
     order_natural_key = models.CharField(blank=True, null=True, max_length=128)
     patient = models.ForeignKey(Patient, blank=True, null=True) 
     provider = models.ForeignKey(Provider, blank=True, null=True) 
@@ -1557,7 +1557,7 @@ class Prescription(BasePatientRecord):
         
         # second item contains dose and 3rd contains unit, or could be a longer name
         
-        if dose.__len__() > 1 :
+        if len(dose) > 1 :
             i = 1
             if dose[i].isdigit():
                 p.dose = dose[i] + dose[i + 1] 
