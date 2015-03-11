@@ -700,6 +700,7 @@ class hl7Batch:
             if not lxRec.result_float and not lxRec.result_string:
                 continue
 
+            #TODO this is not used .. remove?
             reinf_output_code = lxRec.output_or_native_code 
             reinf_output_code = LabTestMap.objects.filter (native_code =  lxRec.native_code).values_list('reinf_output_code', flat=True)
             if reinf_output_code:
@@ -803,7 +804,7 @@ class hl7Batch:
             obr.appendChild(self.addSpecimenSource ( False, lxRec))
             #
             #
-            if lxRec.status.upper() in ('FINAL','F', 'C', 'CORRECTED'): #547 redmine allowing empty status as final
+            if lxRec.status and lxRec.status.upper() in ('FINAL','F', 'C', 'CORRECTED'): #547 redmine allowing empty status as final
                 status='F'
             else:
                 status='P'
