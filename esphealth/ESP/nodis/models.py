@@ -113,6 +113,9 @@ class Case(models.Model):
     
     timespans = models.ManyToManyField(Timespan, blank=False)
     followup_sent = models.BooleanField('Followup event sent?', default=False)
+    
+    #isactive =  models.BooleanField('Case is active?', default=True)
+    #inactive_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
