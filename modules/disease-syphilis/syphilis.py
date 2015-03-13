@@ -202,7 +202,7 @@ class Syphilis(DiseaseDefinition):
         # ordering here doesnt matter because create cases from event sorts again
         combined_criteria_qs = combined_criteria_qs.order_by('date')
         all_event_names = dx_ev_names + lx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vdrl_csf_ev_names
-        counter = 0
+        
         new_case_count = self._create_cases_from_event_qs(
             condition = 'syphilis',
             criteria = self.criteria, 
