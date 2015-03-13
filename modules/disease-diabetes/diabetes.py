@@ -631,9 +631,9 @@ class Diabetes(DiseaseDefinition):
         # Ignore patients who already have a prediabetes case
         patient_pks = patient_pks - set( Case.objects.filter(condition='diabetes:prediabetes').values_list('patient', flat=True) )
         
-        # TODO ignore Known frank diabetes ON THE DAY the patient fulfills above criteria for pre-diabetes OR ANY TIME IN THE PAST 
-        # condition_exclude = ['diabetes:prediabetes','diabetes:type-2', 'diabetes:type-1']
-        # patient_pks = patient_pks - set( Case.objects.filter(condition__in=condition_exclude).values_list('patient', flat=True) )
+        #  ignore Known frank diabetes ON THE DAY the patient fulfills above criteria for pre-diabetes OR ANY TIME IN THE PAST 
+        condition_exclude = ['diabetes:type-2', 'diabetes:type-1']
+        patient_pks = patient_pks - set( Case.objects.filter(condition__in=condition_exclude).values_list('patient', flat=True) )
         total = len(patient_pks)
         counter = 0
         for pat_pk in patient_pks:
