@@ -659,7 +659,7 @@ def pertussis_detail(request, case_id):
     created = case.created_timestamp.strftime(PY_DATE_FORMAT)
     updated = case.updated_timestamp.strftime(PY_DATE_FORMAT)
     rep_encounters, rep_dx_codes = case.reportable_encounters
-    #TODO: make ICD10 compatible
+    
     asthma_bronchitis = ['icd9:493','icd9:493.0','icd9:493.00','icd9:493.01','icd9:493.02','icd9:493.1','icd9:493.10',
                          'icd9:493.11','icd9:493.12','icd9:493.2','icd9:493.20','icd9:493.21','icd9:493.22','icd9:493.8',
                          'icd9:493.82','icd9:493.9','icd9:493.90','icd9:493.91','icd9:493.92','icd9:466','icd9:466.0',
