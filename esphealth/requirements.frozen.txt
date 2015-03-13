@@ -1,35 +1,39 @@
 Django==1.4.15
-South==0.7.3
-configobj==4.7.2
-coverage==3.5.1
-decorator==3.3.2
-django-nose==0.1.3
+South==1.0.1
+argparse==1.2.1
+configobj==5.0.6
+coverage==3.7.1
+django-nose==1.2
 django-tables==0.2
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma@4494#egg=esphealth_disease_asthma-dev_r4494
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia@4415#egg=esphealth_disease_chlamydia-dev_r4415
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes@4547#egg=esphealth_disease_diabetes-dev_r4547
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis@4415#egg=esphealth_disease_giardiasis-dev_r4415
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea@4415#egg=esphealth_disease_gonorrhea-dev_r4415
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined@4597#egg=esphealth_disease_hepatitis_combined-dev_r4597
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili@4415#egg=esphealth_disease_ili-dev_r4415
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme@4492#egg=esphealth_disease_lyme-dev_r4492
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease@4492#egg=esphealth_disease_pelvic_inflammatory_disease-dev_r4492
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis@4492#egg=esphealth_disease_pertussis-dev_r4492
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis@4590#egg=esphealth_disease_syphilis-dev_r4590
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis@4492#egg=esphealth_disease_tuberculosis-dev_r4492
--e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test@4564#egg=esphealth_elr_positive_test-dev_r4564
--e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth@3973#egg=esphealth_encountertypemap_metrohealth-dev_r3973
--e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf@2915#egg=esphealth_heuristic_glucose_crf-dev_r2915
--e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy@4348#egg=esphealth_heuristic_pregnancy-dev_r4348
-futures==2.1.2
-hl7==0.2.3
-ipython==0.12
-nose==1.1.2
-paramiko==1.7.7.2
-psycopg2==2.4.1
-pycrypto==2.6
-pyparsing==1.5.6
-python-dateutil==2.0
-simplejson==2.3.2
-sqlparse==0.1.3
+ecdsa==0.11
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma@4800#egg=esphealth_disease_asthma-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia@4800#egg=esphealth_disease_chlamydia-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-depression@4800#egg=esphealth_disease_depression-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes@4800#egg=esphealth_disease_diabetes-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis@4800#egg=esphealth_disease_giardiasis-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea@4800#egg=esphealth_disease_gonorrhea-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined@4800#egg=esphealth_disease_hepatitis_combined-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new@4800#egg=esphealth_disease_hepatitis_new-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new2@4800#egg=esphealth_disease_hepatitis_new2-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili@4800#egg=esphealth_disease_ili-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme@4800#egg=esphealth_disease_lyme-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease@4800#egg=esphealth_disease_pelvic_inflammatory_disease-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis@4800#egg=esphealth_disease_pertussis-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis@4800#egg=esphealth_disease_syphilis-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis@4800#egg=esphealth_disease_tuberculosis-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test@4800#egg=esphealth_elr_positive_test-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth@4800#egg=esphealth_encountertypemap_metrohealth-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf@4800#egg=esphealth_heuristic_glucose_crf-dev_r4800
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy@4800#egg=esphealth_heuristic_pregnancy-dev_r4800
+futures==2.2.0
+hl7==0.3.2
+ipython==2.3.0
+nose==1.3.4
+paramiko==1.15.1
+psycopg2==2.5.4
+pycrypto==2.6.1
+python-dateutil==2.2
+simplejson==3.6.5
+six==1.8.0
+sqlparse==0.1.13
 wsgiref==0.1.2
