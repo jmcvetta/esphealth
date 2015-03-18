@@ -20,7 +20,7 @@ from django.db import transaction
 from ESP.utils import log
 
 #TODO: this should be a configurable setting
-hqmf_datadir = '/home/bobz/workspace/hqmf'
+hqmf_datadir = '/srv/esp/data/hqmf'
 
 class hqmf_loader(object):
     
