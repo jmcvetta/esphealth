@@ -10,7 +10,7 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-import os
+import os, sys
 from optparse import make_option
 from datetime import datetime
 from ESP.qmetric.base import HQMF_Parser
@@ -42,6 +42,7 @@ class hqmf_loader(object):
             meas.save()
         except:
             print 'eMeasure already loaded'
+            sys.exit(0)
         for comp in hqmfdict['QualityMeasureDocument']['component']:
             if any(comp['section']['title'] in s for s in element_titles):
                 sectionTitle=comp['section']['title']

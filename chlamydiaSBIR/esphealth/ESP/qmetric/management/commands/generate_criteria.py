@@ -26,7 +26,6 @@ class Command(BaseCommand):
         )
     
     help = 'generate population events from hqmf document logic'
-
     
     def handle(self, *fixture_labels, **options):
         docname = options['docname']
@@ -39,6 +38,7 @@ class Command(BaseCommand):
         hp = HQMF_Parser(filepath)
         if hp.gettype() in ['POQM_HD000001','POQM_HD000001UV02']:
             popqual = DSTU2Qualifier(hp)
+            #I actually have the nomenclature wrong here - should not be DSTU2, and shouldn't include both types.
             counts=popqual.load_criteria()
             print str(counts) + " criteria records loaded"
         #Note: the two types above are the only two HQMF definitions by HL7 as of late 2014.   
