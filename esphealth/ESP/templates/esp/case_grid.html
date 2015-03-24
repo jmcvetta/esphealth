@@ -1,0 +1,10 @@
+<tbody>
+    {% for c in cases %}<tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.getCondition.ruleName }}</td>
+        <td>{{ c.getLxOrderdate|default:"-" }}</td>
+        <td>{{ c.getLxProviderSite|default:"-" }}</td>
+        <td>{{ c.get_caseWorkflow_display }}</td>
+        <td>{{ c.getcaseLastUpDate }}</td>
+    </tr>{% endfor %}
+</tbody>

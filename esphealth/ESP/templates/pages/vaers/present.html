@@ -1,0 +1,203 @@
+{% extends "vaers.html" %}
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
+{% endblock %}
+{% block extrascript %}
+
+<script type="text/javascript" src="{{ site_javascript_folder }}vaers.js">
+
+</script>
+
+{% endblock%}
+
+{% block content %}
+<table border="0"> 
+<tr >
+<td style="border:0">
+<table id="tbl_case_details" 
+  <tr>
+  <th align = left >Patient name <bR> [MRN] </th>
+    <td>{{ case.patient.full_name  }} <BR> [{{ case.patient.mrn  }}]</td>
+  
+    <th align = left>Gender</th>
+    <td> {% ifequal  case.patient.gender 'F' %} 
+          Female 
+          {% else %}
+          Male 
+          {% endifequal %}
+     </td>
+  </tr>
+  <tr>
+    <th align = left>Date of birth [age]</th>
+    <td>{{ case.patient.date_of_birth|date:"d-M-Y" }} 
+    {% if  case.patient.age.years  > 2 %}
+      [{{ case.patient.age.years }} years]
+    {% else %}
+     [{{ case.patient.age.months }} months]
+    {% endif %}
+    
+    </td>
+      
+    <th align = left>Telephone number</th>
+    <td>({{ case.patient.areacode }}) {{ case.patient.tel }}</td>
+  </tr> 
+</table>
+</td>
+<td style="border:0">
+<table id="tbl_case_details" >
+
+  <tr>
+  <th align = left>Reviewing Clinician</th>
+    <td>{{ questionnaire.provider.full_name  }}</td>
+  </tr> 
+  <tr>
+  <th align = left>Primary Care Provider</th>
+    <td> {{ case.patient.pcp }}</td>
+  </tr> 
+  
+</table>
+
+</td>
+</tr>
+</table>
+<BR>
+
+<b>Your patient received the following vaccination on {{ case.date|date:"M d, Y"}} 
+   <br></b>
+  {% for vacc in case.immunizations.all %}
+	  {{ vacc.name }}  <BR>
+  {% endfor %}
+<br>
+  <b>We noted the following potentially concerning events after vaccination: </b>
+  <BR><BR>
+ <table border="0"> 
+<tr >
+<td style="border:0">
+<table border="0" id="tbl_case_details">
+<tr>
+  <th align = left>Event Date</th>
+  <th align = left>Days Since Vaccine(s) given</th>
+  <th align = left>Encounter Type</th>
+  <th align = left>Labs</th>
+  <th align = left>Diagnosis</th>
+  <th align = left>Prescription</th>
+  <th align = left>Allergies</th>
+</tr>
+<!-- add comments here 
+-->
+
+{% for event in case.highest_event_category %}
+ <tr>
+  
+  {% ifequal content_type_enc event.content_type %}
+    
+    <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
+    <td> {{ event.gap }} </td>
+    <td> {% ifequal event.content_object.encounter_type 'VISIT' %}
+            Ambulatory
+          {% endifequal %}   
+          {% ifequal event.content_object.encounter_type 'HOSPITALIZATION' %}
+            Hospitalized
+          {% endifequal %} 
+          {% ifequal event.content_object.encounter_type 'ER' %}
+            ED
+          {% endifequal %}  
+    <td></td>
+    <td> {{ event.matching_rule_explain }}    </td>
+    </td>
+    <td></td>
+    <td></td>
+  {% endifequal %}
+  
+   {% ifequal content_type_lx event.content_type %}
+   
+  <td> {{event.content_object.collection_date|date:"d-M-Y"}}</td>
+  <td> {{ event.gap }} </td>
+  <td></td>
+  <td> {{ event.content_object.native_name }} {{ event.content_object.result_float|default:"N/A"}} {{ event.content_object.ref_unit}}
+     {% if  event.last_known_value  %}
+     <BR>(last value prior to vaccination {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}) 
+     {% endif %}
+     </td>
+  <td></td>
+  <td></td>
+  <td></td>
+  
+  {% endifequal %}
+  
+   {% ifequal content_type_rx event.content_type %}
+  <td>{{ event.content_object.date|date:"d-M-Y" }} </td>
+  <td> {{ event.gap }} </td>
+  <td></td><td></td>
+  <td></td>
+  <td> {{ event.content_object.matching_rule_explain }}  </td>
+  <td></td>
+  
+  {% endifequal %}
+  
+   {% ifequal content_type_all event.content_type %}
+   <td> {{ event.content_object.date_noted|date:"d-M-Y" }}</td>
+   <td> {{ event.gap }} </td>
+   <td></td><td></td>
+   <td></td>
+   <td></td>
+     <td> {{ event.content_object.name }}  </td>
+  
+  {% endifequal %}
+    
+   </tr>
+  
+  {% endfor %}
+
+</table></td></tr></table>
+<BR>
+{% if  case.prior_immunizations.all %}
+  <b>Note: the patient has also recently received the following vaccine(s):</b><BR>
+  {% for vacc in case.prior_immunizations.all %}
+	 {{ vacc.date|date:"M d, Y"}} {{ vacc.name }} <BR>
+  {% endfor %}
+  
+  {% endif %}
+<form id="frm_case_confirmation" method="POST" action="{% url present_case ptype formid  %}">
+ <B>
+    <div class="css_state">
+    <header>
+    <h2>
+    <label for="id_state_0">Possible Adverse Event?</label>
+    </h2>
+  </header>
+        {{ form.state }}   
+    
+    <div id=first style="display:block">
+    <label for="id_comment">Comments:</label>
+    </div>    
+    <div id=second  style="display:none;">
+    <label for="id_comment">Please provide details on the likelihood and severity of this possible event:</label>
+    </div>    
+    <div id=third style="display:none;">
+    <label for="id_comment">Please provide details so that we can refine our adverse event detection algorithms:</label>
+    </div>    
+    <div id=commentbox >
+      {{ form.comment }}
+     </div>
+    <div class="css_ishelpful">
+    <header>
+    <h2>Please help us assess this automated adverse event reporting tool.</h2>
+  </header>
+    <label for="id_message_ishelpful">Was this message helpful?</label>
+        {{ form.message_ishelpful }}
+        
+    </div>
+    <div class="css_inter_satis">
+    <label for="id_interrupts_work">Did it interrupt your work flow?</label>
+       {{ form.interrupts_work }}
+    <label for="id_satisfaction_num_msg">Has the number of messages recently been:</label> 
+     {{ form.satisfaction_num_msg }}    
+     </div>
+   
+ </B>
+ 
+  <input type="submit" value="submit" />
+  {% csrf_token %}
+</form>
+{% endblock %}

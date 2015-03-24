@@ -1,0 +1,9 @@
+{% autoescape off %}
+{
+    'event':{{event}},
+    'patient':{{patient}},
+    {% if encounter %}'encounter':{{encounter}},{% endif%}
+    {% if lab_result %}'lab_result':{{lab_result}},{% endif%}    
+    'immunizations':{{immunizations}}
+}
+{% endautoescape %}

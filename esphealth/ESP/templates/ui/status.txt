@@ -1,0 +1,306 @@
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++                                                                              + 
++                              ESP Status Report                               +
++                                                                              + 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Date:  {{ today_string }}
+Site:  {{ site_name }}
+{% if type == "NODIS" or type == "BOTH" %}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                     Nodis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NEW CASE SUMMARY:
+{% if new_case_summary.count %}
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in new_case_summary %}{{ item.condition|stringformat:"-20s" }} {{ item.count }}
+{% endfor %}
+
+NEW CASE DETAILS:
+
+Case ID     Condition        Date          Department
+--------------------------------------------------------------------------------
+{% for case in new_cases %}{{ case.id|stringformat:"-10s" }}  {{ case.condition|stringformat:"-15s" }}  {{ case.date|stringformat:"-12s" }}  {{ case.provider.dept }}
+{% endfor %}
+{% else %}
+No new cases today.</em>
+{% endif %}
+
+ALL CASES:
+{% if all_case_summary.count %}
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in all_case_summary %}{{ item.condition|stringformat:"-20.20s" }} {{ item.count }}
+{% endfor %}
+{% else %}
+No new cases today.</em>
+{% endif %}
+
+
+CASES REPORTED:
+{% if reports %}
+Case #   Condition   Case Date   Patient   Sent?   Filename
+--------------------------------------------------------------------------------
+{% for rep in reports %}{% for c in rep.cases.all %}{{ c.pk|stringformat:"-9s" }}{{ c.condition|stringformat:"-12s" }}{{ c.date|stringformat:"-12s" }}{{ c.patient.pk|stringformat:"-10s" }}{{ rep.sent|stringformat:"-8s" }}{{ rep.filename }}
+{% endfor %}
+{% endfor %}
+{% else %}
+No cases reported in past day.
+{% endif %}
+
+
+CASES PREVIOUS 365 DAYS:
+
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in cases_365_days %}{{ item.condition|stringformat:"-20.20s" }} {{ item.count }}
+{% endfor %}
+
+
+CASES THIS CALENDAR YEAR:
+	
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in cases_calendar_year %}{{ item.condition|stringformat:"-20.20s" }} {{ item.count }}
+{% endfor %}
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                               Data Load Status
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{% if data_status %}
+Status              Count
+--------------------------------------------------------------------------------
+{% for item in data_status %}{{ item.status|stringformat:"-20s" }}{{ item.count }}
+{% endfor %}
+{% else %}
+No data loading attempted in the past day
+{% endif %}
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                              Unmapped Lab Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Native Name                    Native Code                    Lab Record Count
+--------------------------------------------------------------------------------
+{% for item in unmapped_labs %}{{ item.native_name|stringformat:"-30.30s" }} {{ item.native_code|stringformat:"-30s" }} {{ item.count }}
+{% endfor %}
+{% endif %}
+
+{% if type == "VAERS" or type == "BOTH" %}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          VAERS AE and Case counts Today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Category       Basis             AE Name                                 AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_daycounts %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_daytots %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             VAERS Any Other Diagnosis AE and Case counts Today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code      Name                                           AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_daycounts %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_daytots %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     Vaccination counts today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                               Vx Count
+------------------------------------------------------------------------------------------
+{% for item in vx_daycounts %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in vx_daytots %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             Source data records loaded and scanned today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                                Count
+------------------------------------------------------------------------------------------
+{% for item in tot_daycounts %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in tot_daytots %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                           Messaging Today
+(all messages for an AE are counted if any message for that AE was transmitted today)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                            First msg  Confirmed  False pos   Auto sent
+Provider                                    Count      Count      Count       Count
+------------------------------------------------------------------------------------------
+{% for item in msg_daycounts %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in msg_daytots %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          VAERS AE and Case counts since Monday
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Category       Basis             AE Name                                 AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_dayscounts %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_daystots %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             VAERS Any Other Diagnosis AE and Case counts since Monday
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code      Name                                           AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_dayscounts %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_daystots %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     Vaccination counts since Monday
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                               Vx Count
+------------------------------------------------------------------------------------------
+{% for item in vx_dayscounts %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in vx_daystots %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             Source data records loaded and scanned since Monday
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                                Count
+------------------------------------------------------------------------------------------
+{% for item in tot_dayscounts %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in tot_daystots %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                           Messaging since Monday
+(all messages for an AE are counted if any message for that AE was transmitted since Monday)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                            First msg  Confirmed  False pos   Auto sent
+Provider                                    Count      Count      Count       Count
+------------------------------------------------------------------------------------------
+{% for item in msg_dayscounts %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in msg_daystots %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          VAERS AE and Case counts in the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Category       Basis             AE Name                                 AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_weekcounts %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_weektots %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             VAERS Any Other Diagnosis AE and Case counts since last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code      Name                                           AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_weekcounts %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_weektots %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     Vaccination counts for the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                               Vx Count
+------------------------------------------------------------------------------------------
+{% for item in vx_weekcounts %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in vx_weektots %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             Source data records loaded and scanned in the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                                Count
+------------------------------------------------------------------------------------------
+{% for item in tot_weekcounts %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in tot_weektots %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                           Messaging over the the last week
+(all messages for an AE are counted if any message for that AE was transmitted this week)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                            First msg  Confirmed  False pos   Auto sent
+Provider                                    Count      Count      Count       Count
+------------------------------------------------------------------------------------------
+{% for item in msg_weekcounts %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in msg_weektots %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Summaries over the last year:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          VAERS AE and Case counts in the last year
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Category       Basis             AE Name                                 AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_yearcounts %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_yeartots %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             VAERS Any Other Diagnosis AE and Case counts in the last year
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code      Name                                           AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_yearcounts %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_yeartots %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     Vaccination counts for the last year
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                               Vx Count
+------------------------------------------------------------------------------------------
+{% for item in vx_yearcounts %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in vx_yeartots %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             Source data records loaded and scanned in the last year
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                                Count
+------------------------------------------------------------------------------------------
+{% for item in tot_yearcounts %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in tot_yeartots %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                           Messaging over the the last year
+(all messages for an AE are counted if any message for that AE was transmitted this year)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                            First msg  Confirmed  False pos   Auto sent
+Provider                                    Count      Count      Count       Count
+------------------------------------------------------------------------------------------
+{% for item in msg_yearcounts %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in msg_yeartots %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} {% endfor %}
+
+{% endif %}

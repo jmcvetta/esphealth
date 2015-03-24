@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+    </script>
+{% endblock %}
+
+
+{% block content %}
+
+<p align="center">{{ date }} &mdash; {{ site_name }}</p>
+
+<h2> {{ title }}</h2>
+
+<b>Implicit Reportable Labs</b>
+
+<table>
+    <tr> <td>
+        {% for heuristic in reportable_lx %}
+          {{ heuristic }} <BR>
+	        {% if forloop.counter|divisibleby:"12" %} 
+	        </td>
+	          {% if not forloop.last %}
+	            <td>
+	            {% endif %}
+	        {% endif %}
+        {% endfor %}
+    </tr> 
+    </table>
+   <BR>
+ <b>Implicit Reportable Diagnosis codes</b>
+    <table>
+    <tr> <td>
+        {% for heuristic in reportable_dx %}
+          {{ heuristic }} <BR>
+	        {% if forloop.counter|divisibleby:"12" %} 
+	        </td>
+	          {% if not forloop.last %}
+	            <td>
+	            {% endif %}
+	        {% endif %}
+        {% endfor %}
+    </tr> 
+    </table>
+    <BR>
+<b>Implicit Reportable Prescriptions</b>
+  <table>
+    <tr> <td>
+        {% for heuristic in reportable_rx %}
+          {{ heuristic }} <BR>
+	        {% if forloop.counter|divisibleby:"12" %} 
+	        </td>
+	          {% if not forloop.last %}
+	            <td>
+	            {% endif %}
+	        {% endif %}
+        {% endfor %}
+    </tr> 
+    </table>  
+    
+{% endblock %}

@@ -1,0 +1,278 @@
+[
+  {
+    "pk": 1, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "HARVA", 
+      "cdc_site_id": null, 
+      "location": "Harvard", 
+      "zip5": "01451" 
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "WESTB", 
+      "cdc_site_id": null, 
+      "location": "Westboro", 
+      "zip5": "01581" 
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "FRAMI", 
+      "cdc_site_id": null, 
+      "location": "Framingham", 
+      "zip5": "01701" 
+    }
+  },   {
+    "pk": 4, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "CONCO", 
+      "cdc_site_id": null, 
+      "location": "Concord", 
+      "zip5": "01742" 
+    }
+  },   {
+    "pk": 5, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "MILFO", 
+      "cdc_site_id": null, 
+      "location": "Milford", 
+      "zip5": "01757" 
+    }
+  },   {
+    "pk": 6, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "SOBOR", 
+      "cdc_site_id": null, 
+      "location": "Southboro", 
+      "zip5": "01772" 
+    }
+  },   {
+    "pk": 7, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "SUDBU", 
+      "cdc_site_id": null, 
+      "location": "Sudbury", 
+      "zip5": "01776" 
+    }
+  },   {
+    "pk": 8, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "BURLI", 
+      "cdc_site_id": null, 
+      "location": "Burlington", 
+      "zip5": "01803" 
+    }
+  },   {
+    "pk": 9, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "CHELM", 
+      "cdc_site_id": null, 
+      "location": "Chelmsford", 
+      "zip5": "01824" 
+    }
+  },   {
+    "pk": 10, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "LYNNF", 
+      "cdc_site_id": null, 
+      "location": "Lynnfield", 
+      "zip5": "01960" 
+    }
+  },
+   {
+    "pk": 11, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "PEABO", 
+      "cdc_site_id": null, 
+      "location": "Peabody", 
+      "zip5": "01961" 
+    }
+  },
+   {
+    "pk": 12, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "DEDHA", 
+      "cdc_site_id": null, 
+      "location": "Dedham", 
+      "zip5": "02026" 
+    }
+  },
+   {
+    "pk": 13, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "NORWE", 
+      "cdc_site_id": null, 
+      "location": "Norwell", 
+      "zip5": "02061" 
+    }
+  },   {
+    "pk": 14, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "NORWO", 
+      "cdc_site_id": null, 
+      "location": "Norwood", 
+      "zip5": "02062" 
+    }
+  },   {
+    "pk": 15, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "POSQU", 
+      "cdc_site_id": null, 
+      "location": "Post Office Square", 
+      "zip5": "02109" 
+    }
+  },   {
+    "pk": 16, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "WENTW", 
+      "cdc_site_id": null, 
+      "location": "Wentworth", 
+      "zip5": "02115" 
+    }
+  },   {
+    "pk": 17, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "COPLE", 
+      "cdc_site_id": null, 
+      "location": "Copley", 
+      "zip5": "02116" 
+    }
+  },   {
+    "pk": 18, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "FAULK", 
+      "cdc_site_id": null, 
+      "location": "Faulkner", 
+      "zip5": "02130" 
+    }
+  },   {
+    "pk": 19, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "CAMBR", 
+      "cdc_site_id": null, 
+      "location": "Cambridge", 
+      "zip5": "02138" 
+    }
+  },   {
+    "pk": 20, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "SOMER", 
+      "cdc_site_id": null, 
+      "location": "Somerville", 
+      "zip5": "02144" 
+    }
+  },   {
+    "pk": 21, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "MEDFO", 
+      "cdc_site_id": null, 
+      "location": "Medford", 
+      "zip5": "02155" 
+    }
+  },   {
+    "pk": 22, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "GRANI", 
+      "cdc_site_id": null, 
+      "location": "Granite", 
+      "zip5": "02169" 
+    }
+  },   {
+    "pk": 23, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "QUINC", 
+      "cdc_site_id": null, 
+      "location": "Quincy", 
+      "zip5": "02170" 
+    }
+  },   {
+    "pk": 24, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "BRAIN", 
+      "cdc_site_id": null, 
+      "location": "Braintree", 
+      "zip5": "02184" 
+    }
+  },   {
+    "pk": 25, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "LIBBE", 
+      "cdc_site_id": null, 
+      "location": "Libbey", 
+      "zip5": "02189" 
+    }
+  },   {
+    "pk": 26, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "KENMO", 
+      "cdc_site_id": null, 
+      "location": "Kenmore", 
+      "zip5": "02215" 
+    }
+  },   {
+    "pk": 27, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "KINGS", 
+      "cdc_site_id": null, 
+      "location": "Kingston", 
+      "zip5": "02364" 
+    }
+  },   {
+    "pk": 28, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "WROXB", 
+      "cdc_site_id": null, 
+      "location": "West Roxbury", 
+      "zip5": "02467" 
+    }
+  },   {
+    "pk": 29, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "WATER", 
+      "cdc_site_id": null, 
+      "location": "Watertown", 
+      "zip5": "02472" 
+    }
+  },   {
+    "pk": 30, 
+    "model": "static.sitegroup", 
+    "fields": {
+      "group": "WELLE", 
+      "cdc_site_id": null, 
+      "location": "Wellesley", 
+      "zip5": "02481" 
+    }
+  } 
+]

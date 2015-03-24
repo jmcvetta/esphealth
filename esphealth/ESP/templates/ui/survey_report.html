@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<p>Date:  {{ today_string }}
+<br>Site:  {{ site_name }}
+
+
+<h2>
+    <hr>
+    {{ subtitle }}
+    <hr>
+</h2>
+
+<p>
+    <a href="{{ full_path }}&export_csv=brfssdemo_report">Export Survey Report to CSV file</a>
+ <p>
+
+{% for table in tables %}
+<div id="new_case_summary" style="float: left;">
+    <h3>
+         {{ table.0 }}
+    </h3>
+    
+    <table id="new_case_summary_table1">
+    
+    <tr>
+     {% for item in table.1 %}
+           <th> {{ item.name }}   </th>
+            
+         {% endfor %}
+        {% for row in table.2 %}
+         <tr> 
+         
+        {% for col in row %}
+            {% if col %}
+                <td> {{ col }} </td>
+            {% else %}
+                <td> </td>
+            {% endif %}
+         {% endfor %}
+            
+        </tr>
+        {% endfor %}
+    </table>
+    
+</div>
+
+  {% endfor %}
+ 
+ 
+<p style="clear: left;">&nbsp;</p>
+
+
+<div style="clear: both;" />
+
+
+{% comment %}
+
+{% endcomment %}
+
+{% endblock %}

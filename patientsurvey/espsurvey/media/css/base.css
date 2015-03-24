@@ -1,0 +1,78 @@
+@import url(global.css);
+@import url(changelists.css);
+
+body {
+    font-size: 12px;
+}
+
+#navigation {
+    margin-bottom: 1em;
+}
+
+#title {
+    text-align: center;
+}
+
+#version_site_user {
+	float: right;
+}
+
+#main_title {
+	font-variant: small-caps;
+}
+
+#message_list {
+	background-color: yellow;
+	border: thick dotted blue;
+	padding-left: 2em;
+	padding-right: 2em;
+	padding-top: 1em;
+	padding-bottom: 1em;
+}
+
+#suspected_condition {
+	background-color: gray;
+	padding: 0.5em;
+}
+
+#status_form {
+	float: left;
+	background-color: green;
+	padding: 0.5em;
+}
+
+#submit_positive_form {
+	float: right;
+	padding: 1em;
+	text-align: center;
+}
+
+#submit_positive {
+	border: 1.5em groove #800000;
+}
+
+
+table {
+    border-width: thin;
+    border-spacing: 0;
+    border-style: solid;
+    border-color: gray;
+    border-collapse: separate;
+    background-color: white;
+}
+table th {
+    border-width: thin;
+    padding: 0.5em;
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+    -moz-border-radius: ;
+}
+table td {
+    border-width: thin;
+    padding: 0.5em;
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+    -moz-border-radius: ;
+}

@@ -1,0 +1,12 @@
+001.01^18547545^111_TEST000123A^5671-3^^^^1^MNGFL_PRV_001^Lead [Mass/volume] in Blood^^F^^^^V1586^^Lead exposure^20120615^20120615^^
+002.01^12346^211_PN-F20120325-1^5609-3^^^^1^MNGFL_PRV_004^Cadmium [Mass/volume] in Blood^^F^^^^^^^20120325^^Order Comment^
+003.01^PATID1234^311_ORD723222-4^625-4^^^^1^MNGFL_PRV_007^Bacteria identified in Stool by Culture^^P^^^^^^^20110528123500-0500^^^
+004.01^PATID1234^411_ORD723222-4-1^625-4_1^^^^1^MNGFL_PRV_010^Bacteria identified in Stool by Culture^^F^^^^^^^20110528^^^
+004.01^PATID1234^411_ORD723222-4-2^50545-3^^^^2^MNGFL_PRV_010^Bacterial susceptibility panel in Isolate by Minimum inhibitory concentration (MIC)^^F^^^^^^^20110528^^^411_ORD723222-4_OBS_1_RES_1
+005A.01^PATID1234^5A11_ORD723222^AHEPR^^^^1^MNGFL_PRV_013^Acute Hepatititis Panel with Reflex^^F^^^^^^^20120628070100^^^
+005B.01^PATID1234^5B11_ORD723222^AHEPR^^^^1^MNGFL_PRV_015^Acute Hepatititis Panel with Reflex^^F^^^^^^^20120628070100^^^
+005B.01^PATID1234^5B11_ORD723222-2^11011-4^^^^2^MNGFL_PRV_015^Hepatitis C virus RNA [Units/volume] (viral load) in Serum or Plasma by Probe and target amplification method^^F^^^^^^^20120628070100^^^5B11_ORD723222_OBS_1_RES_4
+006.01^PATID1234^611_OR980768901-1^6812-2^^^^1^MNGFL_PRV_020^Dengue virus IgM Ab [Titer] in Serum^^F^^^^^^^20120601095300^^^
+007.01^PATID1234^711_O12-897451-23^23826-1^^^^1^MNGFL_PRV_023^Bordetella pertussis DNA [Presence] in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120710^^^
+008.01^WILJ2012-979952^811_Ord89017782^64017-7^^^^1^MNGFL_PRV_026^Chlamydia trachomatis and Neisseria gonorrhoeae rRNA panel in Unspecified specimen by Probe and target amplification method^^F^^^^^^^20120731140000^^^
+009.01^ShuA20120618-1^911_Ord123499^6463-4^^^^1^MNGFL_PRV_029^Bacteria identified in Unspecified specimen by Culture^^F^^^^^^^20120618^^^

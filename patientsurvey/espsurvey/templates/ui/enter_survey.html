@@ -1,0 +1,156 @@
+
+	{% extends 'base.html' %}
+
+
+{% block extrastyle %}
+
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+{% block extrascript %}
+{% load myfilters %}  
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+        
+        window.onload = function() {
+        	{% for field in form %}           
+	     		{% if field|field_hidden  %}   
+		        	document.getElementById('{{ field|field_hidden  }}').onchange = ShowHide();    
+	    		{% endif %}
+	    		{% if field|field_unsure %}
+	    		   
+	    				document.getElementById('{{ field|field_unsure }}').onchange = ShowHide();   
+	    			
+	    		{% endif %}	 
+	    	{% endfor %}  	    	
+		};
+		
+       function ShowHide(){    
+            {% for field in form %}  
+            	{% if field|field_unsure  %}  
+            		if (document.getElementById("{{ field|field_unsure }}").checked == true  ){ 
+           		  		document.getElementById("{{field.html_name}}").value = "";
+           			    document.getElementById("{{field.html_name}}").readOnly = true;
+	           		}
+	           		else {
+	           			document.getElementById("{{field.html_name}}").readOnly = false;
+	           			
+	            		}
+                {% endif %}	       
+ 	     		{% if field|field_hidden  %}
+		        	var ele = document.getElementsByName('{{ field.html_name }}');
+					var i = ele.length;    
+					
+				    if(document.getElementById("{{ field|field_hidden }}").value == "{{ field|field_hiding_value }}" 
+				       {% if field|field_hidden_parent_type:'radioselect' %}	
+				           		&&  document.getElementById("{{ field|field_hidden }}").checked == true
+				       {% endif %} ) {
+				       {% if field|field_type:'radioselect' %}	
+				          	document.getElementById('choicelabelid_{{ field.html_name }}').style.display = 'inline';
+						    for (var j = 0; j < i; j++) {
+						        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'inline';
+						        document.getElementById('labelid_{{ field.html_name }}').style.display = 'inline';	
+						        document.getElementById('{{ field.html_name }}_'+j.toString()).style.display = 'inline';	
+					       }			    		 	
+			    	  {% else %}
+				         document.getElementById('{{ field.html_name }}').style.display = 'inline';
+				         document.getElementById('labelid_{{ field.html_name }}').style.display = 'inline';
+			         {% endif %}
+				    }
+				    else
+					    {   
+					     {% if field|field_type:'radioselect' %} 
+				       		 	document.getElementById('choicelabelid_{{ field.html_name }}').style.display = 'none';
+							    for (var j = 0; j < i; j++) {
+							        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'none';
+							        document.getElementById('labelid_{{ field.html_name }}').style.display = 'none';	
+							        document.getElementById('{{ field.html_name }}_'+j.toString()).style.display = 'none';	
+							        document.getElementsByName('{{ field.html_name }}')[j].checked = false;
+								}			    		 					    		 
+				    	 {% else %}
+					         document.getElementById('{{ field.html_name }}').style.display = 'none';
+					         document.getElementById('labelid_{{ field.html_name }}').style.display = 'none';
+					         document.getElementById('{{ field.html_name }}').value ="";
+					     {% endif %}
+					    }
+	    		{% endif %}
+    		{% endfor %}  
+ 		}
+    </script>
+{% endblock %}
+
+{% block content %}
+
+<p>Date:  {{ today_string }}
+
+<form method="POST" action="{% url save_survey_response  %}" onsubmit="checkerrors();" onchange="ShowHide();">
+  	{% if error_message %}
+		<h3><font  color="red" ><p class="errornote">{{ error_message }}</p></font> </h3>
+		{{ form.non_field_errors }}
+	{% endif %}
+	<hr>
+		<input type="hidden" name="surveyid" value= {{ surveyid }} id="surveyid"> 
+	<h3>Fill in the survey below for Participant {{ mrn }} </h3>
+	 <input type="hidden" name="mrn" value= {{ mrn }} id="mrn"> 
+	 <ol>
+	 {% for field in form %}
+     	{% if not field|field_inline %}
+           </blockquote>
+           <div class="fieldWrapper">
+       {% endif %}
+      
+       {% if field|field_type:'checkboxinput' %}
+   			    {{ field }} <label id= "labelid_{{ field.html_name }}"  for="{{ field.html_name }}"> {{ field.label }}</label>
+	   {% else %}
+		    {% if field|field_inline %}
+             	<label id= "labelid_{{ field.html_name }}"   for="{{ field.html_name }}"> {{ field.label }}</label>
+ 		 	{% else %}
+		 			</div></li> 
+		            {% if not field|field_hidden  %}
+		                <li>
+		            {% endif %}
+		 	  		<label id= "labelid_{{ field.html_name }}"  for="{{ field.html_name }}"> {{ field.label }}</label>
+		 	    	<blockquote>   
+		   {% endif %}
+		   
+		    {% if field|field_type:'radioselect' %}
+		    	 
+			        <p id= "choicelabelid_{{ field.html_name }}"   >
+			             {{field}} 
+			        </p>
+			   	
+		    {% else %}
+		     	{{ field }}  
+		    {% endif %} 
+		   		   
+   	   {% endif %}
+   	   {% if error_message %}
+      				<font color="red" > {{ field.errors }} </font> 
+       	{% endif %}
+    {% endfor %}  
+ 	</ol> 
+    
+ <!-- {% for item in surveys %}
+	<h2><hr>
+	   {{ item.name }}
+	    <hr>
+	</h2>
+	
+	<ul>	   	
+	{% for question in item.questions %}
+	    <li>{{ question.text }} ({{question.short_name }} )
+	     <input type="input" name="questions"  id="question.id">
+	    
+	{% endfor %}
+	</ul>
+{% endfor %}
+-->
+<p> 
+        <input type="submit" value="Save Survey"> 
+    </p>
+    
+{% csrf_token %}
+</form>
+
+{% endblock %}

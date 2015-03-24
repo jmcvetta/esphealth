@@ -1,0 +1,172 @@
+[
+  {
+    "pk": 1, 
+    "model": "emr.provenance", 
+    "fields": {
+      "status": "system", 
+      "timestamp": "1900-01-01 00:00:00", 
+      "hostname": "[N/A]", 
+      "comment": "Provenance used for system records - i.e. those distributed with ESP, and not loaded from any data source.", 
+      "source": "SYSTEM",
+      "valid_rec_count": "-1",
+      "error_count": "-1"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "emr.provenance", 
+    "fields": {
+      "status": "system", 
+      "timestamp": "1900-01-01 00:00:00", 
+      "hostname": "[N/A]", 
+      "comment": "Provenance used for Provider and Patient models whose most recent provenance was removed by cleanup script.  Many/most of these records will be updated to a new, valid provenance when a future data set is loaded.", 
+      "source": "CLEANUP",
+      "valid_rec_count": "-1",
+      "error_count": "-1"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "emr.provider", 
+    "fields": {
+      "natural_key" : "UNKNOWN",
+      "middle_name": "UNKNOWN", 
+      "updated_timestamp": "2009-07-30 16:14:54", 
+      "first_name": "UNKNOWN", 
+      "last_name": "UNKNOWN", 
+      "title": "UNKNOWN", 
+      "area_code": "UNKNOWN", 
+      "dept_natural_key": "UNKNOWN", 
+      "provenance": 1, 
+      "dept_city": "UNKNOWN", 
+      "dept_zip": "UNKNOWN", 
+      "dept_state": "UNKNOWN", 
+      "dept": "UNKNOWN", 
+      "dept_address_1": "UNKNOWN", 
+      "telephone": "UNKNOWN", 
+      "created_timestamp": "2009-07-30 16:14:54", 
+      "dept_address_2": "UNKNOWN"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "emr.patient", 
+    "fields": {
+      "last_name": "UNKNOWN", 
+      "tel": "UNKNOWN", 
+      "suffix": "UNKNOWN", 
+      "areacode": "UNKNOWN", 
+      "natural_key": "UNKNOWN", 
+      "created_timestamp": "2009-07-30 16:15:48", 
+      "marital_stat": "UNKNOWN", 
+      "zip5": null, 
+      "aliases": "UNKNOWN", 
+      "updated_timestamp": "2009-07-30 16:15:48", 
+      "first_name": "UNKNOWN", 
+      "middle_name": "UNKNOWN", 
+      "zip": "UNKNOWN", 
+      "pcp": 1, 
+      "provenance": 1, 
+      "religion": "UNKNOWN", 
+      "state": "UNKNOWN", 
+      "date_of_birth": null, 
+      "home_language": "UNKNOWN", 
+      "city": "UNKNOWN", 
+      "occupation": "UNKNOWN", 
+      "address1": "UNKNOWN", 
+      "address2": "UNKNOWN", 
+      "date_of_death": null, 
+      "ssn": "UNKNOWN", 
+      "mother_mrn": "UNKNOWN", 
+      "tel_ext": "UNKNOWN", 
+      "country": "UNKNOWN", 
+      "mrn": "UNKNOWN", 
+      "race": "UNKNOWN", 
+      "gender": "UNKNOWN"
+    }
+  },
+  {
+   "pk": 3, 
+   "model": "emr.encountertypemap", 
+   "fields": {
+      "priority": 1, 
+      "raw_encounter_type": "HOSP", 
+      "mapping": "HOSPITALIZATION"
+     }
+  }, 
+  {
+   "pk": 1, 
+   "model": "emr.encountertypemap", 
+   "fields": {
+      "priority": 3, 
+      "raw_encounter_type": "ENCOUNTER", 
+      "mapping": "VISIT"
+     }
+  }, 
+  {
+   "pk": 2, 
+   "model": "emr.encountertypemap", 
+   "fields": {
+      "priority": 2, 
+      "raw_encounter_type": "EMERGENCY", 
+      "mapping": "ER"
+     }
+  },
+  {
+   "pk": "1", 
+   "model": "emr.laborder", 
+   "fields": {
+     "provenance": 2,
+     "natural_key": null,
+     "created_timestamp":  "2009-07-30 16:15:48", 
+     "updated_timestamp": "2009-07-30 16:15:48", 
+     "patient": 1,
+     "provider": 1,
+     "date": "2009-07-30",
+     "mrn": "UNKNOWN",
+     "cdate": null,
+     "procedure_code": null,
+     "procedure_modifier": null,
+     "procedure_name": null,
+     "specimen_id": null,
+     "order_type": "Null",
+     "specimen_source": null,
+     "test_status": null,
+     "patient_class": null,
+     "patient_status": null,
+     "group_id": null,
+     "reason_code": null,
+     "reason_code_type": null,
+     "order_info": null,
+     "remark": null
+    }
+  },
+  {
+   "pk": "1", 
+   "model": "emr.specimen", 
+   "fields": {
+      "order_natural_key": null,
+      "specimen_num": null,
+      "laborder": 1,
+      "provenance": 2, 
+      "specimen_source": null, 
+      "type_modifier": null, 
+      "additives": null, 
+      "collection_method": null, 
+      "Source_site": null, 
+      "Source_site_modifier": null, 
+      "Specimen_role": null, 
+      "Collection_amount": null, 
+      "Received_date": null,
+      "creceived_date": null, 
+      "analysis_date": null, 
+      "canalysis_date": null
+     }
+  },
+  {
+   "pk": "", 
+   "model": "emr.labinfo", 
+   "fields": {
+      "provenance": 2}}
+  
+]

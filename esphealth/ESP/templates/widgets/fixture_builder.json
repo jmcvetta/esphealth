@@ -1,0 +1,11 @@
+[
+{% for obj in fixtures %}
+{"pk":"{{ obj.pk }}",
+ "model":"conf.Dx_code",
+ "fields":{
+     "code":"{{obj.pk}}",
+     "name":"{{obj.dx_codeLong}}"
+ }
+},
+{% endfor %}
+]
