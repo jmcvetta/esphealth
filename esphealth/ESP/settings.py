@@ -233,6 +233,7 @@ CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP = {
     'brain':    '12738006',
     'equivocal': '42425007',  
     'oropharynx': '263376008',
+    'pharynx':  '181211006', #redmine 579 fix 
     'bronchial washing':    '232595000',
     'right middle lobe bronchus - bronchial brush':    '232595000',
     'left lower lobe - protected specimen brush':    '232595000',
@@ -545,6 +546,7 @@ CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP = {
     'ulcer':    '56208002',
     'unknown':    '261665006',
     'urethra':    '13648007',
+    'urethral': '13648007', #579 fix 
     'urine':    '78014005',
     'urine bag':    '78014005',
     'urine, bladder tap':    '78014005',
