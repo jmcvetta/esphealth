@@ -1482,6 +1482,7 @@ class Prescription(BasePatientRecord):
     end_date = models.DateField(blank=True, null=True)
     patient_class = models.CharField('Patient Class', max_length=50, null=True)
     patient_status = models.CharField('Patient status', max_length=50, null=True)
+    quantity_type = models.CharField(max_length=200, blank=True, null=True)
     
     @staticmethod
     def fakes(**kw):
