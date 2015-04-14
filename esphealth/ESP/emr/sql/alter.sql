@@ -601,3 +601,8 @@ ALTER TABLE emr_laborder
 
 -- ppml adjustment 1/12/2015 
 ALTER TABLE emr_labresult ALTER COLUMN abnormal_flag TYPE character varying(100);
+
+--2015-03-30 Add quantity_type column to emr_prescription for opioid project
+-- emr model changes 
+ALTER TABLE emr_prescription
+	ADD COLUMN quantity_type character varying(200);
