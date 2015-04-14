@@ -39,6 +39,7 @@ from ESP.utils.utils import float_or_none
 from ESP.utils.utils import string_or_none
 from ESP.utils.utils import sanitize_str
 from ESP.utils.utils import truncate_str
+from ESP.utils.utils import str_remainder
 from ESP.utils import date_from_str
 from ESP.utils import height_str_to_cm
 from ESP.utils import weight_str_to_kg
@@ -1872,7 +1873,10 @@ class PrescriptionLoader(BaseLoader):
         # some data sources have dirty (and lengthy) data in the 'quantity' field.
         # Truncate the field at 200 characters
         quantity = string_or_none(row['quantity'])
-        quantity = truncate_str(quantity, 'quantity', 200)                                     
+        quantity = truncate_str(quantity, 'quantity', 200) 
+        
+        qty_float = float_or_none(quantity)      
+        qty_type = str_remainder(quantity, qty_float)                           
 
         values = {
         'provenance' : self.provenance,
@@ -1888,7 +1892,7 @@ class PrescriptionLoader(BaseLoader):
         'directions' : directions,
         'code' : row['ndc'],
         'quantity' : quantity,
-        'quantity_float' : float_or_none(quantity),
+        'quantity_float' : qty_float,
         'refills' : refills,
         'start_date' : self.date_or_none(row['start_date']),
         'end_date' : self.date_or_none(row['end_date']),
@@ -1896,6 +1900,7 @@ class PrescriptionLoader(BaseLoader):
         'dose' : string_or_none(row['dose']),
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
+        'quantity_type' : qty_type,
         
         }
         try:

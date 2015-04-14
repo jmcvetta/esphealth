@@ -241,7 +241,8 @@ def float_or_none(str):
     returns none if it doesn't parse as a float number
     '''
     float_catcher = re.compile(r'([-]*\d+\.?\d*)') 
-    if not str:
+
+    if str is None:
         return None
     m = float_catcher.match(str)
     if m and m.groups():
@@ -251,8 +252,23 @@ def float_or_none(str):
     if result == float('infinity'): # Rare edge case, but it does happen
         result = None
     return result
+
+def str_remainder(string, number):
+    '''
+    Given a string containing a number, return only the string portion and strip the whitespace
+    and make it lowercase
+    '''
+    if string is None or number is None:
+        return None
+   
+    if (number).is_integer():
+        number = int(number)  
+        
+    result = string.replace(str(number),'').strip().lower()
     
-                                                                        
+    return result
+
+                                                                            
 def date_from_str(timestamp):
     '''
     Given a string in timestamp format (YYYYMMDD), returns the corresponding date.
