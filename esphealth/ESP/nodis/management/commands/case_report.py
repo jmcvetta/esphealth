@@ -799,7 +799,7 @@ class hl7Batch:
             obr.appendChild(obr4)
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
-            self.addSimple(obr7,lxRec.date.strftime(DATE_FORMAT),'TS.1') # lx date
+            self.addSimple(obr7,lxRec.collection_date.strftime(DATE_FORMAT),'TS.1') # lx date
             # add specimen source 
             obr.appendChild(self.addSpecimenSource ( False, lxRec))
             #
@@ -811,7 +811,7 @@ class hl7Batch:
             self.addSimple(obr,status,'OBR.25') # result status
             orcs.appendChild(obr)
             # now add the obx records needed to describe dose, frequency and duration
-            lxTS = lxRec.date
+            lxTS = lxRec.result_date
             lxRange = 'Low: %s - High: %s' % (lxRec.ref_low_string, lxRec.ref_high_string)
             if titer_dilution:
                 res = lxRec.result_string
