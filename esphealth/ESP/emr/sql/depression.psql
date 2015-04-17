@@ -1,0 +1,27 @@
+﻿
+ 
+--all patients with ≥1 encounters
+select count (distinct patient_id) as patientswithmorethanoneencounter2year from emr_encounter e1 where 
+(select count( e2.id) from emr_encounter e2 where e1.patient_id = e2.patient_id) >=1
+and e1.date >= current_date - interval '2 year';
+
+--all patients with active depression
+select count(distinct patient_id) as patientswithdepression1year
+from nodis_case where condition ='depression' and date >= current_date - interval '365 day';
+
+--patients with active depression during the past year and ≥1 diagnosis code for cancer within the past year (ICD9’s 140-209 or ICD10 C00-C97), 
+--group 10 year agegroup
+select zip, gender, floor(extract(years from (age( date_of_birth)))/10) as agegroup,race, count(*) from nodis_case c, emr_patient p, emr_encounter e, emr_encounter_dx_codes edx where condition ='depression' and c.date >= current_date - interval '365 day'
+and e.id = edx.encounter_id and  e.date >= current_date - interval '365 day' and 
+(numrange(140,209) @>  floor(trim( 'icd9:' from dx_code_id)::decimal)  
+and dx_code_id like '%icd9:%' and dx_code_id not like '%icd9:V%' ) or 
+( numrange(000,97) @>  floor(trim( 'icd10:C' from dx_code_id)::decimal) 
+ and dx_code_id like '%icd10:C%'  )
+ and e.patient_id = p.id and e.patient_id = p.id 
+group by zip, agegroup, gender, race;
+
+
+--140-209 or ICD10 C00-C97
+select floor(trim( 'icd10:C' from dx_code_id)::decimal) as code, * from emr_encounter_dx_codes
+where  numrange(000,97) @>  floor(trim( 'icd10:C' from dx_code_id)::decimal) 
+ and dx_code_id like '%icd10:C%' 

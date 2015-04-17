@@ -67,8 +67,10 @@ esphealth/ESP/emr/models.py -text
 esphealth/ESP/emr/report.py -text
 esphealth/ESP/emr/sql/alter.sql -text
 esphealth/ESP/emr/sql/alterconstraints.sql -text
+esphealth/ESP/emr/sql/depression.psql -text
 esphealth/ESP/emr/sql/encounter.postgresql_psycopg2.sql -text
 esphealth/ESP/emr/sql/labresult.postgresql_psycopg2.sql -text
+esphealth/ESP/emr/sql/neweptreinfection.psql -text
 esphealth/ESP/emr/sql/patient.postgresql_psycopg2.sql -text
 esphealth/ESP/emr/sql/prescription.postgresql_psycopg2.sql -text
 esphealth/ESP/env-setup.sh -text
