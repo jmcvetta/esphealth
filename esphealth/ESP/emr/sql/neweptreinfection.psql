@@ -224,28 +224,28 @@ do $$
           if foundit<>1 then
             insrtxt:=insrtxt || 'null, null::date, ';
             if dx_ept_found then
-              if eptcursrow.native_code='355805--'  then epttxt:='Yes'', ''Floor Meds Dispensed'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              elsif eptcursrow.native_code='355806--' then epttxt:='Yes'', ''Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              elsif eptcursrow.native_code='355805--,355806--' then epttxt:='Yes'', ''Floor Meds Dispensed and Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              elsif eptcursrow.native_code='355804--' then epttxt:='No'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              else epttxt:='No'', null, null)';
+              if eptcursrow.native_code='355805--'  then epttxt:='1'', ''Floor Meds Dispensed'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              elsif eptcursrow.native_code='355806--' then epttxt:='1'', ''Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              elsif eptcursrow.native_code='355805--,355806--' then epttxt:='1'', ''Floor Meds Dispensed and Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              elsif eptcursrow.native_code='355804--' then epttxt:='0'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              else epttxt:='0'', null, null)';
               end if;
-              insrtxt:=insrtxt || '''Yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
+              insrtxt:=insrtxt || '''1'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
               if insrtxt is null then raise notice '%', 'check line 223'; end if;
             else
-              insrtxt:=insrtxt || '''No'', null::date, null, null, null)';
+              insrtxt:=insrtxt || '''0'', null::date, null, null, null)';
             end if;
           else
             insrtxt:=insrtxt || rxcursrow.provider_id || ', ''' || to_char(rxcursrow.date,'yyyy-mm-dd') || '''::date, ';
             if insrtxt is null then raise notice '%', 'check line 229'; end if;
             if dx_ept_found then
-              if eptcursrow.native_code='355805--'  then epttxt:='Yes'', ''Floor Meds Dispensed'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              elsif eptcursrow.native_code='355806--' then epttxt:='Yes'', ''Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              elsif eptcursrow.native_code='355805--,355806--'  then epttxt:='Yes'', ''Floor Meds Dispensed and Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              elsif eptcursrow.native_code='355804--' then epttxt:='No'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              else epttxt:='No'', null, null)';
+              if eptcursrow.native_code='355805--'  then epttxt:='1'', ''Floor Meds Dispensed'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              elsif eptcursrow.native_code='355806--' then epttxt:='1'', ''Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              elsif eptcursrow.native_code='355805--,355806--'  then epttxt:='1'', ''Floor Meds Dispensed and Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              elsif eptcursrow.native_code='355804--' then epttxt:='0'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              else epttxt:='0'', null, null)';
               end if;
-              insrtxt:=insrtxt || '''Yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
+              insrtxt:=insrtxt || '''1'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
               if insrtxt is null then raise notice 'check line 237: %, %',  date_part('hour',eptcursrow.result_date); end if;
             else
               execute 'select patient_id, date,  native_code, result_date from temp_ept_lb where patient_id=' || pat_id || 'and date between ''' ||
@@ -255,13 +255,13 @@ do $$
               if foundit<>1 then
                 insrtxt:=insrtxt || 'null, null::date, null, null, null)';
               else
-                if eptcursrow.native_code='355805--'  then epttxt:='Yes'', ''Floor Meds Dispensed'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-                elsif eptcursrow.native_code='355806--' then epttxt:='Yes'', ''Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-                elsif eptcursrow.native_code='355805--,355806--'  then epttxt:='Yes'', ''Floor Meds Dispensed and Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-                elsif eptcursrow.native_code='355804--' then epttxt:='No'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
-              else epttxt:='No'', null, null)';
+                if eptcursrow.native_code='355805--'  then epttxt:='1'', ''Floor Meds Dispensed'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+                elsif eptcursrow.native_code='355806--' then epttxt:='1'', ''Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+                elsif eptcursrow.native_code='355805--,355806--'  then epttxt:='1'', ''Floor Meds Dispensed and Print Rx Manual Fax'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+                elsif eptcursrow.native_code='355804--' then epttxt:='0'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
+              else epttxt:='0'', null, null)';
                 end if;
-                insrtxt:=insrtxt || '''Yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
+                insrtxt:=insrtxt || '''1'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
                 if insrtxt is null then raise notice '%', 'check line 252'; end if;
               end if;
             end if;
@@ -289,8 +289,8 @@ select  pat.id as ESP_patid,
          when lower(pat.race) like '%hispanic%' and  lower(pat.race)  like '%non%' then 'NON-HISPANIC' 
          else '' 
        end as ethnicityvalues, -- calculated from race
-       case when epi.pstart_date is not null then 'Yes'
-       else ''
+       case when epi.pstart_date is not null then '1'
+       else '0'
        end as pregnantwhenposchla,
        epi.provider_id  as providerposchla,
        pro1.dept as providerlocposchla,
@@ -305,14 +305,14 @@ select  pat.id as ESP_patid,
        epi.ept_type as typeept, 
        epi.ept_date as dateept,
        'not available',--epi.ept_time as timeofdayept,
-       case when gon.patient_id is not null then 'Yes' else 'No' end as positivegonorrhea, 
+       case when gon.patient_id is not null then '1' else '0' end as positivegonorrhea, 
        null as hashiv, --place holder until condition is completed
        null as hivtest, --place holder until condition is completed
-       case when rep.patient_id is not null then 'Yes' else 'No' end as repeatchlamydia,
+       case when rep.patient_id is not null then '1' else '0' end as repeatchlamydia,
        rep.date as daterepeatchla,
        case when rep.result=1 then 'Positive' when rep.result=0 then 'Negative' when rep.result=-1 then 'Indeterminate' else null end as resultrepeatchla,
        symp.lists as chlamydiasymptoms,
-       case when reppos.patient_id is not null then 'Yes' else 'No' end as repeatposchla,
+       case when reppos.patient_id is not null then '1' else '0' end as repeatposchla,
        reppos.date as daterepeatposchla 
        
  from emr_patient pat 
