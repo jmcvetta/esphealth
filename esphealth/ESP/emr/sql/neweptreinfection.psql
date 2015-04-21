@@ -230,7 +230,7 @@ do $$
               elsif eptcursrow.native_code='355804--' then epttxt:='No'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
               else epttxt:='No'', null, null)';
               end if;
-              insrtxt:=insrtxt || '''yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
+              insrtxt:=insrtxt || '''Yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
               if insrtxt is null then raise notice '%', 'check line 223'; end if;
             else
               insrtxt:=insrtxt || '''No'', null::date, null, null, null)';
@@ -261,7 +261,7 @@ do $$
                 elsif eptcursrow.native_code='355804--' then epttxt:='No'', ''Declined'', ''' || COALESCE(to_char(date_part('hour',eptcursrow.result_date),'99'),'') || ''')';
               else epttxt:='No'', null, null)';
                 end if;
-                insrtxt:=insrtxt || '''yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
+                insrtxt:=insrtxt || '''Yes'', ''' || to_char(eptcursrow.date,'yyyy-mm-dd') || '''::date, ''' || epttxt;
                 if insrtxt is null then raise notice '%', 'check line 252'; end if;
               end if;
             end if;
@@ -278,7 +278,8 @@ analyze temp_chlamyd_episode;
 --select * from temp_chlamyd_episode
 --now build the report query from epi and the patient and provider tables.
 --copy (
-select pat.id as patient_id,
+select  pat.id as ESP_patid,
+        pat.mrn as Atrius_patid,
        epi.date as dateposchlamydia, 
        date_part('year', age(epi.date,pat.date_of_birth)) as ageatchlamydiapos,
        pat.gender, 
@@ -288,7 +289,9 @@ select pat.id as patient_id,
          when lower(pat.race) like '%hispanic%' and  lower(pat.race)  like '%non%' then 'NON-HISPANIC' 
          else '' 
        end as ethnicityvalues, -- calculated from race
-       epi.pstart_date as pregnantwhenposchla,
+       case when epi.pstart_date is not null then 'Yes'
+       else ''
+       end as pregnantwhenposchla,
        epi.provider_id  as providerposchla,
        pro1.dept as providerlocposchla,
        epi.dx_date as datedxchla,
@@ -301,7 +304,7 @@ select pat.id as patient_id,
        epi.ept_prvd as eptprovided,
        epi.ept_type as typeept, 
        epi.ept_date as dateept,
-       epi.ept_time as timeofdayept,
+       'not available',--epi.ept_time as timeofdayept,
        case when gon.patient_id is not null then 'Yes' else 'No' end as positivegonorrhea, 
        null as hashiv, --place holder until condition is completed
        null as hivtest, --place holder until condition is completed
@@ -311,6 +314,7 @@ select pat.id as patient_id,
        symp.lists as chlamydiasymptoms,
        case when reppos.patient_id is not null then 'Yes' else 'No' end as repeatposchla,
        reppos.date as daterepeatposchla 
+       
  from emr_patient pat 
       join temp_chlamyd_pats tcp on tcp.patient_id=pat.id
       join temp_chlamyd_episode epi on tcp.patient_id=epi.patient_id
@@ -341,5 +345,6 @@ select pat.id as patient_id,
                  where reppos.date between epi.date + interval '14 days' and epi.date + interval '365 days')
                  select rs.patient_id, rs.date, rs.edate from row_sumry rs where rs.rn=1
                  ) reppos on reppos.patient_id=epi.patient_id and reppos.edate=epi.date
+ where epi.date >= '12-01-2014'  
  order by epi.date;
  -- )to 'chlamyd_reinfection2.csv' with (format csv, header);
