@@ -606,3 +606,8 @@ ALTER TABLE emr_labresult ALTER COLUMN abnormal_flag TYPE character varying(100)
 -- emr model changes 
 ALTER TABLE emr_prescription
 	ADD COLUMN quantity_type character varying(200);
+
+-- 2015 april 22
+-- depression-hiv meds
+COPY static_drugsynonym FROM 'drugsynonyms.csv' WITH CSV HEADER;
+
