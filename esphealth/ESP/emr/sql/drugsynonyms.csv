@@ -1,0 +1,222 @@
+drugynonym_id,generic_name,other_name,comment
+70,CEFTRIAXONE,Rocephin,	
+71,GLYBURIDE,GLYBURIDE,Self
+181,Pulmicort,Pulmicort,Self
+182,Aerobid,Aerobid,Self
+197,Dulera,Dulera,Self
+198,Dulera,Zenhale,
+178,Indacaterol,Arcapta,
+179,Salmeterol,Serevent,
+180,Beclomethasone,Qvar,
+186,Montelukast,Singulair,
+187,Zafirlukast,Accolate,
+188,Zileuton,Zyflo,
+189,Ipratropium,Atrovent,
+190,Tiotropium,Serevent,
+194,Omalizumab,Xolair,
+196,Combivent,Duoneb,
+199,Symbicort,Symbicort,Self
+219,Combivent,Combivent,Self
+4,Isoniazid,Tubizid	,
+90,ROSIGLITAZONE,ROSIGLITAZONE,Self
+92,ROSIGLITAZONE,Avandamet,Rosiglitazone and Metformin
+93,ROSIGLITAZONE,Avandaryl,Rosiglitazone and Glimepiride
+94,REPAGLINIDE,REPAGLINIDE,Self
+95,REPAGLINIDE,Prandin,	
+96,REPAGLINIDE,PrandiMet,Repaglinide and Metformin
+97,NATEGLINIDE,NATEGLINIDE,Self
+98,NATEGLINIDE,Starlix,	
+99,MEGLITINIDE,MEGLITINIDE,Self
+100,MEGLITINIDE,********,Meglitinide appears to be a drug class
+101,SITAGLIPTIN,SITAGLIPTIN,Self
+102,SITAGLIPTIN,Januvia,	
+103,SITAGLIPTIN,Janumet,Sitagliptin and Metformin
+104,SITAGLIPTIN,Juvisync,Sitagliptin and Simvastatin
+105,EXENATIDE,EXENATIDE,Self
+183,Aerobid,Aerospan,
+184,Flovent,Flovent,Self
+185,Asmanex,Asmanex,Self
+191,Intal,Intal,Self
+192,Intal,Gastrocrom,
+193,Intal,Nalcrom,
+31,Ethionamide,Ethionamide,Self
+32,Ethionamide,Trecator,	
+33,Moxifloxacin,Moxifloxacin,Self
+34,Moxifloxacin,Avelox,	
+35,Erythromycin,Erythromycin,Self
+37,Erythromycin,Ery-Tab,	
+36,Erythromycin,E.E.S.,erythromycin ethylsuccinate
+113,Metformin,Glumetza,	
+120,Metformin,Kombiglyze,Saxagliptin and Metformin
+121,Metformin,Glucovance,Glyburide and Metformin
+122,Metformin,Jentadueto,Linagliptin and Metformin
+124,Linagliptin,Tradjenta	,
+128,Saxagliptin,Kombiglyze,Saxagliptin and Metformin
+130,Miglitol,Glyset,	
+131,Glucagon,Glucagon,Self
+132,Glucagon,Glucagen,	
+202,Albuterol,Albuterol,Self
+138,Insulin,Humulin	,
+139,Insulin,Novolin	,
+140,Insulin,Lantus,	
+145,Insulin,Lente,"e.g., Lente Iletin"
+146,Insulin,NovoRapid,	
+147,Amoxicillin,Amoxicillin,Self
+151,Amoxicillin,Moxatag,	
+174,Formeterol,Foradil,
+175,Formeterol,Perforomist,
+177,Formeterol,Oxeze,
+220,Ciclesonide,Ciclesonide,Self
+222,Montelukast,Montelukast,Self
+200,Levalbuterol,Levalbuterol,Self
+201,Pirbuterol,Pirbuterol,Self
+163,Levalbuterol,Xopenex,
+164,Pirbuterol,Maxair,
+165,Albuterol,AccuNeb,
+166,Albuterol,Ventolin,
+167,Albuterol,Proventil,
+168,Albuterol,ProAir,
+169,Albuterol,VoSpire,
+170,Albuterol,Airomir,
+171,Albuterol,Asmavent,
+172,Albuterol,salbutamol,
+173,Arformoterol,Brovana,
+83,GLIMEPIRIDE,Amaryl,	
+84,GLIMEPIRIDE,Avandaryl,Rosiglitazone and Glimepiride
+85,GLIMEPIRIDE,Duetact,Pioglitazone and Glimepiride
+86,PIOGLITAZONE,PIOGLITAZONE,Self
+87,PIOGLITAZONE,Actos,	
+88,PIOGLITAZONE,Actoplus Met,Pioglitazone and Metformin
+89,PIOGLITAZONE,Duetact,Pioglitazone and Glimepiride
+136,Insulin,Apidra	,
+91,ROSIGLITAZONE,Avandia,	
+155,Amoxicillin,Augmentin,Amoxicillin and Clavulanate
+156,Cefuroxime,Cefuroxime,Self
+157,Cefuroxime,Ceftin,	
+158,Cefuroxime,Zinacef,	
+159,Cefotaxime,Cefotaxime,Self
+160,Cefotaxime,Claforan,	
+161,ACARBOSE,ACARBOSE,Self
+162,ACARBOSE,Precose,	
+223,Budesonide,Budesonide,Self
+224,Alvesco,Alvesco,Self
+64,DOXYCYCLINE,Monodox,	
+65,DOXYCYCLINE,Oracea,	
+66,DOXYCYCLINE,Periostat,	
+123,Linagliptin,Linagliptin,Self
+125,Linagliptin,Jentadueto,Linagliptin and Metformin
+126,Saxagliptin,Saxagliptin,Self
+67,DOXYCYCLINE,Vibramycin,	
+68,DOXYCYCLINE,Vibra-Tabs,	
+69,CEFTRIAXONE,CEFTRIAXONE,Self
+114,Metformin,Riomet,	
+115,Metformin,PrandiMet,Repaglinide and Metformin
+116,Metformin,Janumet,Sitagliptin and Metformin
+117,Metformin,Avandamet,Rosiglitazone and Metformin
+118,Metformin,Metaglip,Glipizide and Metformin
+119,Metformin,Actoplus Met,Pioglitazone and Metformin
+127,Saxagliptin,Onglyza,	
+129,Miglitol,Miglitol,Self
+133,Insulin,Insulin,Self
+134,Insulin,Humalog	,
+135,Insulin,Novolog	,
+137,Insulin,Veosulin,	
+141,Insulin,Levemir	,
+142,Insulin,Exubera	,
+143,Insulin,Iletin	,
+144,Insulin,Relion	,
+148,Amoxicillin,Amoxicot,	
+149,Amoxicillin,Amoxil,	
+150,Amoxicillin,DisperMox,	
+204,Formeterol,Formeterol,Self
+39,Erythromycin,Eryc,	
+40,Erythromycin,ERY-C,	
+41,Erythromycin,Erythrocin,	
+42,Erythromycin,Eryped,	
+43,Erythromycin,Ilosone,	
+44,Erythromycin,Eryzole,Erythromycin and Sulfisoxazole
+45,Erythromycin,Pediazole,Erythromycin and Sulfisoxazole
+46,Erythromycin,E.S.P.,Erythromycin Ethylsuccinate and Sulfisoxazole Acetyl for Oral Suspension
+47,Clarithromycin,Clarithromycin,Self
+48,Clarithromycin,Biaxin,	
+49,Azithromycin,Azithromycin,Self
+50,Azithromycin,Zithromax,	
+51,Azithromycin,Zmax,	
+52,Trimethoprim-sulfamethoxazole,Trimethoprim-sulfamethoxazole,Self
+53,Trimethoprim-sulfamethoxazole,Sulfamethoxazole/Trimethoprim,	
+54,Trimethoprim-sulfamethoxazole,Bactrim,	
+55,Trimethoprim-sulfamethoxazole,Septra,	
+56,Trimethoprim-sulfamethoxazole,Sulfatrim	,
+57,PENICILLIN G,PENICILLIN G,Self
+58,PENICILLIN G,Benzylpenicillin,Variant generic name
+59,PENICILLIN G,Pfizerpen,	
+60,DOXYCYCLINE,DOXYCYCLINE,Self
+61,DOXYCYCLINE,Adoxa,	
+62,DOXYCYCLINE,Alodox,	
+63,DOXYCYCLINE,Doryx,	
+72,GLYBURIDE,Diabeta,	
+73,GLYBURIDE,Glycron,	
+74,GLYBURIDE,Glynase,	
+75,GLYBURIDE,Micronase,	
+76,GLYBURIDE,Glucovance,Glyburide and Metformin
+77,GLICLAZIDE,GLICLAZIDE,Self
+78,GLICLAZIDE,********,Not marketed in U.S.
+79,GLIPIZIDE,GLIPIZIDE,Self
+80,GLIPIZIDE,Glucotrol,	
+81,GLIPIZIDE,Metaglip,Glipizide and Metformin
+82,GLIMEPIRIDE,GLIMEPIRIDE,Self
+106,EXENATIDE,Byetta,	
+107,EXENATIDE,Bydureon,	
+108,PRAMLINTIDE,PRAMLINTIDE,Self
+109,PRAMLINTIDE,Symlin,	
+110,Metformin,Metformin,Self
+111,Metformin,Fortamet,	
+112,Metformin,Glucophage,	
+152,Amoxicillin,Moxilin,	
+153,Amoxicillin,Trimox,	
+154,Amoxicillin,Amoclan,Amoxicillin and Clavulanate
+203,Arformoterol,Arformoterol,Self
+206,Salmeterol,Salmeterol,Self
+205,Indacaterol,Indacaterol,Self
+207,Beclomethasone,Beclomethasone,Self
+208,Budesonide,Budesonide,Self
+209,Flunisolide,Flunisolide,Self
+210,Fluticasone,Fluticasone,Self
+211,Mometasone,Mometasone,Self
+212,Zafirlukast,Zafirlukast,Self
+213,Zileuton,Zileuton,Self
+214,Ipratropium,Ipratropium,Self
+215,Tiotropium,Tiotropium,Self
+216,Cromolyn,Cromolyn,Self
+217,Omalizumab,Omalizumab,Self
+195,Advair,Advair,Self
+1,Pyrazinamide,Pyrazinamide,Self
+2,Pyrazinamide,Rifater,"Pyrazinamide, Rifampin, and Isoniazid"
+3,Isoniazid,Isoniazid,Self
+5,Isoniazid,Nydrazid,	
+6,Isoniazid,IsonaRif,Rifampin and Isoniazid
+7,Isoniazid,Rifamate,Rifampin and Isoniazid
+8,Isoniazid,Rifater,"Pyrazinamide, Rifampin, and Isoniazid"
+9,Ethambutol,Ethambutol,Self
+10,Ethambutol,Myambutol,	
+11,Rifampin,Rifampin,Self
+12,Rifampin,Rifampicin,Alternate generic name
+13,Rifampin,Rifadin	,
+14,Rifampin,Rimactane,	
+15,Rifampin,IsonaRif,Rifampin and Isoniazid
+16,Rifampin,Rifamate,Rifampin and Isoniazid
+17,Rifampin,Rifater,"Isoniazid, Pyrazinamide, Rifampin"
+18,Rifabutin,Rifabutin,Self
+19,Rifabutin,Mycobutin,	
+20,Rifapentine,Rifapentine,Self
+21,Rifapentine,Priftin,	
+22,Streptomycin,Streptomycin,Self
+23,Para-aminosalicyclic acid,Para-aminosalicyclic acid,Self
+24,Para-aminosalicyclic acid,PASER,	
+25,Kanamycin,Kanamycin,Self
+26,Kanamycin,Kantrex,
+27,Capreomycin,Capreomycin,Self
+28,Capreomycin,Capastat,	
+29,Cycloserine,Cycloserine,Self
+30,Cycloserine,Seromycin,	
+38,Erythromycin,PCE	,
