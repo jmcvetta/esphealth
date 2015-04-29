@@ -236,33 +236,7 @@ class AsthmaNew(DiseaseDefinition):
             ))        
                
         return heuristic_list
-        
-    def process_existing_cases(self, relevant_patients,dx_patient_events,rx_patient_rxevents):
-        
-        # Non-recurring condition - once you have it, you've always 
-        existing_cases = Case.objects.filter(
-                patient__in = relevant_patients ,
-                condition = self.conditions[0],
-                ).select_related().order_by('date')
-
-        #get distinct patients 
-        patients = set()
-        for case in existing_cases:
-            events = []
-            patients.add(case.patient)
-            try:
-                events += rx_patient_rxevents[case.patient.id]
-            except KeyError:
-                pass
-            try:
-                if dx_patient_events:
-                    events += dx_patient_events[case.patient.id]
-            except:
-                pass                
-            self._update_case_from_event_list(case,
-                            relevant_events = events )
-        return patients
-        
+              
     def generate_def_ab (self):
     #
     # criteria 1
