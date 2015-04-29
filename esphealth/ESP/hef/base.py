@@ -752,52 +752,56 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     def createEvents(self, positive_q, negative_q, indeterminate_q):
         #
         # Generate Events
-        ## 
-        positive_labs = self.unbound_labs.filter(positive_q)
-        #log_query('Positive labs for %s' % self.uri, positive_labs)
-        log.info('Generating positive events for %s' % self)
-        #for lab in positive_labs.iterator():
+        #
         pos_counter = 0
-        for lab in queryset_iterator(positive_labs):
-            if self.date_field == 'order':
-                lab_date = lab.date
-            elif self.date_field == 'result':
-                lab_date = lab.result_date
-            Event.create(
-                name = self.positive_event_name,
-                source = self.uri,
-                patient = lab.patient,
-                date = lab_date,
-                provider = lab.provider,
-                emr_record = lab,
-                )
-            pos_counter += 1
-        log.info('Generated %s new positive events for %s' % (pos_counter, self))
-        negative_labs = self.unbound_labs.filter(negative_q)
+        if positive_q:
+            positive_labs = self.unbound_labs.filter(positive_q)
+            #log_query('Positive labs for %s' % self.uri, positive_labs)
+            log.info('Generating positive events for %s' % self)
+            #for lab in positive_labs.iterator():
+            
+            for lab in queryset_iterator(positive_labs):
+                if self.date_field == 'order':
+                    lab_date = lab.date
+                elif self.date_field == 'result':
+                    lab_date = lab.result_date
+                Event.create(
+                    name = self.positive_event_name,
+                    source = self.uri,
+                    patient = lab.patient,
+                    date = lab_date,
+                    provider = lab.provider,
+                    emr_record = lab,
+                    )
+                pos_counter += 1
+            log.info('Generated %s new positive events for %s' % (pos_counter, self))
         #log_query('Negative labs for %s' % self, negative_labs)
         log.info('Generating negative events for %s' % self)
         neg_counter = 0
-        for lab in queryset_iterator(negative_labs):
-            if self.date_field == 'order':
-                lab_date = lab.date
-            elif self.date_field == 'result':
-                lab_date = lab.result_date
-            Event.create(
-                name = self.negative_event_name,
-                source = self.uri,
-                patient = lab.patient,
-                date = lab_date,
-                provider = lab.provider,
-                emr_record = lab,
-                )
-            neg_counter += 1
-        log.info('Generated %s new negative events for %s' % (neg_counter, self))
+        if negative_q:
+            negative_labs = self.unbound_labs.filter(negative_q)
+            
+            for lab in queryset_iterator(negative_labs):
+                if self.date_field == 'order':
+                    lab_date = lab.date
+                elif self.date_field == 'result':
+                    lab_date = lab.result_date
+                Event.create(
+                    name = self.negative_event_name,
+                    source = self.uri,
+                    patient = lab.patient,
+                    date = lab_date,
+                    provider = lab.provider,
+                    emr_record = lab,
+                    )
+                neg_counter += 1
+            log.info('Generated %s new negative events for %s' % (neg_counter, self))
         #log_query('Indeterminate labs for %s' % self, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self)
         ind_counter = 0
         if indeterminate_q:
+            
             indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
-        
             for lab in queryset_iterator(indeterminate_labs):
                 if self.date_field == 'order':
                     lab_date = lab.date
@@ -812,7 +816,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                     emr_record = lab,
                     )
                 ind_counter += 1
-        log.info('Generated %s new indeterminate events for %s' % (ind_counter, self))
+            log.info('Generated %s new indeterminate events for %s' % (ind_counter, self))
         return pos_counter, neg_counter, ind_counter
     
     def generate(self):
@@ -1183,23 +1187,23 @@ class LabResultWesternBlotHeuristic(BaseLabResultHeuristic):
     Generates events from western blot test results.
     http://en.wikipedia.org/wiki/Western_blot
     '''
-    def __init__(self, test_name, bands, date_field='order'):
+    def __init__(self, test_name, bands, band_count, date_field='order'):
         '''
         Generates events for Western Blot lab results
         @param bands: List of interesting bands for this western blot
         @type bands:  List of strings
         '''
-        assert test_name and date_field and bands
+        assert test_name and date_field and bands and band_count
         self.test_name = test_name
         self.date_field = date_field
-        self.bands = ['%s'.strip() %b for b in bands]
-    
+        self.interesting_bands = ['%s'.strip() %b for b in bands]
+        self.band_count = band_count
     @property
     def bands_str(self):
         '''
         Printable string of self.bands
         '''
-        return '|'.join(self.bands)
+        return '|'.join(self.interesting_bands)
     
     @property
     def short_name(self):
@@ -1233,8 +1237,8 @@ class LabResultWesternBlotHeuristic(BaseLabResultHeuristic):
         counter = 0
         # Find potential positives -- tests whose results contain at least one 
         # of the interesting band numbers.
-        q_obj = Q(result_string__icontains = self.bands[0])
-        for band in self.bands[1:]:
+        q_obj = Q(result_string__icontains = self.interesting_bands[0])
+        for band in self.interesting_bands[1:]:
             q_obj = q_obj | Q(result_string__icontains = band)
         potential_positives = self.unbound_labs.filter(q_obj)
         log.debug('Found %s potential positive lab results.' % potential_positives.count())
