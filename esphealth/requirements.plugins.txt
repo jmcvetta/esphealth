@@ -55,6 +55,6 @@
 # Depression
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-depression#egg=disease-depression
 # hiv
-#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hiv#egg=disease-hiv
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hiv#egg=disease-hiv
 
 
