@@ -182,6 +182,7 @@ do $$
       dx_date:=null;
       for cursrow in execute 'select distinct date, provider_id from temp_hef_poschlamyd where patient_id=' || pat_id || ' order by date'
       loop
+      
         if epi_date is null or cursrow.date > epi_date + interval '1 year' then
           dx_ept_found:=FALSE; -- set this to false just in case it could get carried over from prior loop iteration
           epi_date:=cursrow.date;
@@ -274,6 +275,42 @@ do $$
 $$ language plpgsql;
 alter table temp_chlamyd_episode add primary key (patient_id, date);
 analyze temp_chlamyd_episode;
+
+-- building second and third chlamydia positive tests
+create temp table tmp_first_reppos as (
+with row_sumry as
+                 (select reppos.patient_id, reppos.date, epi.date as edate, 
+                  row_number() over (partition by epi.patient_id, epi.date order by reppos.date) as rn
+                  from temp_hef_poschlamyd reppos
+                  join temp_chlamyd_episode epi on reppos.patient_id=epi.patient_id
+                 where reppos.date between epi.date + interval '14 days' and epi.date + interval '365 days')
+                 select rs.patient_id, rs.date, rs.edate from row_sumry rs where rs.rn=1
+                 
+) 
+
+--exlude the above 
+create temp table tmp_second_reppos as (
+with row_sumry as
+                 (select reppos.patient_id, reppos.date, epi.date as edate, 
+                  row_number() over (partition by epi.patient_id, epi.date order by reppos.date) as rn
+                  from temp_hef_poschlamyd reppos
+                  join temp_chlamyd_episode epi on reppos.patient_id=epi.patient_id
+                 where reppos.date between epi.date + interval '14 days' and epi.date + interval '365 days')
+                 select rs.patient_id, rs.date, rs.edate from row_sumry rs where rs.rn=1
+                 
+) 
+
+--exlude the above 
+create temp table tmp_third_reppos as (
+with row_sumry as
+                 (select reppos.patient_id, reppos.date, epi.date as edate, 
+                  row_number() over (partition by epi.patient_id, epi.date order by reppos.date) as rn
+                  from temp_hef_poschlamyd reppos
+                  join temp_chlamyd_episode epi on reppos.patient_id=epi.patient_id
+                 where reppos.date between epi.date + interval '14 days' and epi.date + interval '365 days')
+                 select rs.patient_id, rs.date, rs.edate from row_sumry rs where rs.rn=1
+                 
+) 
 
 --select * from temp_chlamyd_episode
 --now build the report query from epi and the patient and provider tables.
