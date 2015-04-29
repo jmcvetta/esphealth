@@ -24,7 +24,7 @@ from ESP.utils import log
 from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
-from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic
+from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic, LabResultWesternBlotHeuristic
 
 from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
@@ -112,6 +112,11 @@ class Lyme(DiseaseDefinition):
             test_name = 'lyme_ab_csf',
             ))
         
+        heuristic_list.append( LabResultWesternBlotHeuristic(
+              test_name = 'lyme_igg_imwb',
+              bands = [18, 21, 28, 30, 39, 41, 45, 58, 66, 93],
+              band_count = 5,
+        ))
         #
         # Lab order/any result
         #
@@ -163,16 +168,17 @@ class Lyme(DiseaseDefinition):
             'lx:lyme_pcr_csf:positive',
             'lx:lyme_ab_csf:positive',
             'lx:lyme_igg_wb:positive',
-            'lx:lyme_igm_wb:positive',  ]
+            'lx:lyme_igm_wb:positive', 
+            'lx:lyme_igg_imwb:westernblot:18|21|28|30|39|41|45|58|66|93:positive', ]
         
         lx_event_qs = Event.objects.filter(
             name__in =  lx_ev_names,
             )
         if lx_event_qs:
-            self.criteria += ' Criteria #2 lyme_pcr_pos or lyme_pcr_csf_pos or lyme_ab_csf_pos or lyme_igg_wb_pos or lyme_igm_wb_pos'
+            self.criteria += ' Criteria #2 lyme_pcr_pos or lyme_pcr_csf_pos or lyme_ab_csf_pos or lyme_igg_wb_pos or lyme_igm_wb_pos or lime_igg_imwb >=5bands'
         
         #
-        # Criteria Set #3 condition 1 from spec
+        # Criteria Set # condition 1 from spec
         # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme dx_code or Lyme Antibiotics) w/in 30 days
         #
         rpr_ev_names = dx_ev_names + rx_ev_names
