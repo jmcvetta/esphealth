@@ -18,9 +18,9 @@ DATABASES = {
     
      'esp': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'esp310',
+        'NAME': 'esp3',
         'USER': 'esp',
-        'PASSWORD': 'esp',
+        'PASSWORD': 'postgres',
         'HOST': 'localhost',
         'PORT': '5432',
         }
@@ -29,7 +29,7 @@ DATABASES = {
 DATABASE_ENGINE = 'django.db.backends.postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'esp3survey'             # Or path to database file if using sqlite3.
 DATABASE_USER = 'esp'           # Not used with sqlite3.
-DATABASE_PASSWORD = 'esp'         # Not used with sqlite3.
+DATABASE_PASSWORD = 'postgres'         # Not used with sqlite3.
 DATABASE_HOST = 'localhost'             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = '5432'            # Set to empty string for default. Not used with sqlite3.
 
