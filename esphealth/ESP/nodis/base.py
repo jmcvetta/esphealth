@@ -311,7 +311,36 @@ class DiseaseDefinition(object):
         log.debug('Updated %s ' % (case))
         return (True)
         
-    
+    def process_existing_cases(self, relevant_patients,set1_patient_events,set2_patient_events):
+        
+        # Non-recurring condition - once you have it, you've always 
+        existing_cases = None
+        if relevant_patients:
+            existing_cases = Case.objects.filter(
+                patient__in = relevant_patients ,
+                condition = self.conditions[0],
+                ).select_related().order_by('date')
+
+        #get distinct patients 
+        patients = set()
+        
+        if existing_cases:
+            for case in existing_cases:
+                events = []
+                patients.add(case.patient)
+                try:
+                    events += set2_patient_events[case.patient.id]
+                except KeyError:
+                    pass
+                try:
+                    if set1_patient_events:
+                        events += set1_patient_events[case.patient.id]
+                except:
+                    pass                
+                self._update_case_from_event_list(case,
+                                relevant_events = events )
+        return patients
+
     def _create_case_from_event_list(self,
         condition,
         criteria,
