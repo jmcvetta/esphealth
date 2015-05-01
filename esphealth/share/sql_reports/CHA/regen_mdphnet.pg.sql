@@ -66,6 +66,15 @@ SELECT '1'::varchar(1) as centerid,
          WHEN UPPER(race) in ('CAUCASIAN','WHITE') THEN 5
          ELSE 0
        END as race,
+       case 
+         when upper(race)='HISPANIC' then 6 
+         when ethnicity = 'Y' then 6
+         when UPPER(race) = 'CAUCASIAN' then 5
+         when UPPER(race) in ('ASIAN','INDIAN','NATIVE HAWAI') then 2
+         when UPPER(race) = 'BLACK'then 3
+         when UPPER(race) in ('NAT AMERICAN','ALASKAN') then 1
+         else 0
+       end as race_ethnicity,
        pat.zip5,
        smk.smoking
   FROM public.emr_patient pat,
@@ -105,19 +114,19 @@ SELECT '1'::varchar(1) as centerid,
        enc.date - ('1960-01-01'::date) as a_date,
        prov.natural_key as provider,
        'AV'::varchar(10) as enc_type, --this is initial value for Mass League data
-       diag.dx_code_id as dx,
+       substr(diag.dx_code_id,6) as dx,
        esp_mdphnet.icd9_prefix(diag.dx_code_id, 3)::varchar(4) as dx_code_3dig,
        esp_mdphnet.icd9_prefix(diag.dx_code_id, 4)::varchar(5) as dx_code_4dig,
        case 
          when length(esp_mdphnet.icd9_prefix(diag.dx_code_id, 4))=5
-	   then substr(diag.dx_code_id,1,6)
-         else substr(diag.dx_code_id,1,5)
+	   then substr(diag.dx_code_id,6,6)
+         else substr(diag.dx_code_id,6,5)
        end as dx_code_4dig_with_dec,
        esp_mdphnet.icd9_prefix(diag.dx_code_id, 5)::varchar(6) as dx_code_5dig,
        case 
          when length(esp_mdphnet.icd9_prefix(diag.dx_code_id, 4))=6
-	   then substr(diag.dx_code_id,1,7)
-         else substr(diag.dx_code_id,1,6)
+	   then substr(diag.dx_code_id,6,7)
+         else substr(diag.dx_code_id,6,6)
        end as dx_code_5dig_with_dec,
        enc.site_name as facility_location,
        enc.site_natural_key as facility_code,
@@ -163,6 +172,7 @@ create index esp_demographic_birth_date_idx_r on esp_demographic_r (birth_date);
 create index esp_demographic_sex_idx_r on esp_demographic_r (sex);
 create index esp_demographic_hispanic_idx_r on esp_demographic_r (hispanic);
 create index esp_demographic_race_idx_r on esp_demographic_r (race);
+create index esp_demographic_race_eth_idx_r on esp_demographic_r (race_ethnicity);
 create index esp_demographic_zip5_idx_r on esp_demographic_r (zip5);
 create index esp_demographic_smk_idx_r on esp_demographic_r (smoking);
 alter table esp_demographic_r add primary key (patid);
@@ -269,6 +279,24 @@ drop view if exists esp_demographic_v;
         FROM esp_demographic_r pat;
         ALTER TABLE UVT_RACE_r ADD PRIMARY KEY (item_code);
         
+
+--   UVT_RACE_ETHNICITY
+     drop table if exists uvt_race_ethnicity_r;
+     create table uvt_race_ethnicity_r as
+     select distinct 
+         pat.race_ethnicity item_code,
+               case
+                    when pat.race_ethnicity=5 then 'White'::varchar(50)
+                    when pat.race_ethnicity=3 then 'Black'::varchar(50)
+                    when pat.race_ethnicity=2 then 'Asian'::varchar(50)
+                    when pat.race_ethnicity=6 then 'Hispanic'::varchar(50)
+                    when pat.race_ethnicity=1 then 'Native American'::varchar(50)
+                    when pat.race_ethnicity=0 then 'Unknown'::varchar(50)
+                end item_text
+     from esp_demographic_r pat;
+     alter table uvt_race_ethnicity_r add primary key (item_code);
+
+
 --    UVT_ZIP5
       DROP TABLE if exists uvt_zip5_r;
       create table uvt_zip5_r as 
@@ -456,8 +484,9 @@ drop view if exists esp_demographic_v;
         alter index esp_demographic_birth_date_idx_r rename to esp_demographic_birth_date_idx;
         alter index esp_demographic_sex_idx_r rename to esp_demographic_sex_idx;
         alter index esp_demographic_hispanic_idx_r rename to esp_demographic_hispanic_idx;
-        alter index esp_demographic_race_idx_r rename to esp_demographic_race_idx;
         alter index esp_demographic_zip5_idx_r rename to esp_demographic_zip5_idx;
+        alter index esp_demographic_race_idx_r rename to esp_demographic_race_idx;
+        alter index esp_demographic_race_eth_idx_r rename to esp_demographic_race_eth_idx;
         alter index esp_demographic_smk_idx_r rename to esp_demographic_smk_idx;
 
         drop table if exists esp_encounter cascade;
@@ -516,6 +545,8 @@ drop view if exists esp_demographic_v;
         alter table  UVT_SEX_r rename to UVT_SEX;
         drop table if exists UVT_RACE;
         alter table UVT_RACE_r rename to UVT_RACE;
+        drop table if exists UVT_RACE_ETHNICITY;
+        alter table UVT_RACE_ETHNICITY_r rename to UVT_RACE_ETHNICITY;
         drop table if exists UVT_ZIP5;
         alter table uvt_zip5_r rename to UVT_ZIP5;
         drop table if exists UVT_PROVIDER;
@@ -552,7 +583,6 @@ drop view if exists esp_demographic_v;
         alter table UVT_DETECTED_STATUS_r rename to UVT_DETECTED_STATUS;
 
         GRANT SELECT ON esp_demographic TO mdphnet_user;
-        GRANT SELECT ON esp_demographic_u TO mdphnet_user;
         GRANT SELECT ON esp_diagnosis TO mdphnet_user;
         GRANT SELECT ON esp_disease TO mdphnet_user;
         GRANT SELECT ON esp_encounter TO mdphnet_user;
@@ -574,15 +604,15 @@ drop view if exists esp_demographic_v;
         GRANT SELECT ON uvt_period TO mdphnet_user;
         GRANT SELECT ON uvt_provider TO mdphnet_user;
         GRANT SELECT ON uvt_race TO mdphnet_user;
+        GRANT SELECT ON uvt_race_ethnicity TO mdphnet_user;
         GRANT SELECT ON uvt_sex TO mdphnet_user;
         GRANT SELECT ON uvt_site TO mdphnet_user;
         GRANT SELECT ON uvt_zip5 TO mdphnet_user;
 
---    REMOTE KEYS USING UVTs
+--    FOREIGN KEYS USING UVTs
       ALTER TABLE esp_demographic ADD FOREIGN KEY (sex) REFERENCES uvt_sex (item_code);
       ALTER TABLE esp_demographic ADD FOREIGN KEY (race) REFERENCES uvt_race (item_code);
       ALTER TABLE esp_encounter ADD FOREIGN KEY (provider) REFERENCES uvt_provider (item_code);
-      ALTER TABLE esp_encounter ADD FOREIGN KEY (facility_code) REFERENCES uvt_site (item_code);
       ALTER TABLE esp_demographic ADD FOREIGN KEY (centerid) REFERENCES uvt_center (item_code);
       ALTER TABLE esp_encounter ADD FOREIGN KEY (enc_year) REFERENCES uvt_period (item_code);
       ALTER TABLE esp_encounter ADD FOREIGN KEY (enc_type) REFERENCES uvt_encounter (item_code);
