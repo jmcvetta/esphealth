@@ -148,14 +148,14 @@ BEGIN
       RETURN NULL;
    END IF;
 
-   first_char := substr(icd9_code, 1, 1);
+   first_char := substr(icd9_code, 6, 1);
    IF first_char NOT IN ('0','1','2','3','4','5','6','7','8','9') THEN
       adjusted_len := adjusted_len + 1;
-   ELSIF strpos(icd9_code,'.')=3 THEN
+   ELSIF strpos(substr(icd9_code,6),'.')=3 THEN
       adjusted_len := adjusted_len - 1;
    END IF;
 
-   icd9_no_period = replace(icd9_code, '.', '');
+   icd9_no_period = replace(substr(icd9_code,6), '.', '');
 
    RETURN substr(icd9_no_period, 1, adjusted_len);
 END;
