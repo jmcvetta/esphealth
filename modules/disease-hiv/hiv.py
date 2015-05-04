@@ -17,7 +17,7 @@
 import datetime
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-from ESP.utils import log
+from ESP.utils import log, overlap
 from django.db import transaction
 from django.db.models import F
 
@@ -549,23 +549,43 @@ class HIV(DiseaseDefinition):
         
         for patient in rx_patient_events - set(patients_with_existing_cases): 
             
+            #take care of 3 + meds
+            count = 0
             for event in rx_patient_events[patient.id]:
-                count = 0
                 # check for concurrent for 3 months, count meds and check for the time
                 #tdelta = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-                if event.name in rx3_4_ev_names and abs((event.content_object.end_date - event.content_object.start_date).months) >= 3: # has 3 or 4 meds
-                    count =3 
-                elif (event.name in rx2_ev_names and len(rx_patient_events[patient.id]) >=2):#has 2 and 1s
-                    #TOOD calculate concurrency
-                    count=3
-                elif len(rx_patient_events[patient.id]) >=3 : # has only ones
-                    #TODO check for concurrency
-                    count=3
-                else: 
-                    count += 1
-                if count == 3:
-                    break
+                if event.name in rx3_4_ev_names and abs((event.content_object.end_date - event.content_object.start_date).months) >= 3:
+                     # has 3 or 4 meds for 3 months
+                     count =3
+                     break 
+            
+            if count <3:
+                #take care of meds <3 or 4
+                for event in rx_patient_events[patient.id]:
+                    if (event.name in rx2_ev_names and len(rx_patient_events[patient.id]) >=2)  :#has 2 and 1s
+                        for event2 in rx_patient_events[patient.id]:
+                            #calculate concurrency with any of the other meds??
+                            if event2.id != event.id: # exclude 
+                                overlap = overlap (event.content_object.start_date,event.content_object.end_date,event2.content_object.start_date, event2.content_object.end_date )
+                                if overlap >= 90:
+                                    count = 3
+                                    break #inner loop
+                        if count == 3: break #outter for 
                 
+                if count<3:
+                    # take care of single drugs 
+                    if len(rx_patient_events[patient.id]) >=3 : # has only ones
+                        for event in rx_patient_events[patient.id]:        
+                        # for event2 in rx_patient_events[patient.id]:
+                            if (event.name in rx1_ev_names):
+                                for event2 in rx_patient_events[patient.id]: 
+                                    if event2.id != event.id and event2.name in rx1_ev_names: # exclude 
+                                        overlap = overlap (event.content_object.start_date,event.content_object.end_date,event2.content_object.start_date, event2.content_object.end_date )
+                                        if overlap >= 90:
+                                            count +=1
+                                        if count ==3: break  
+                                if count == 3: break                                
+                                               
             if count >=3:       
                 t, new_case = self._create_case_from_event_list(
                                         condition = self.conditions[0],
