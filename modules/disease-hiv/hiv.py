@@ -17,7 +17,8 @@
 import datetime
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-from ESP.utils import log, overlap
+from ESP.utils import log
+from ESP.utils import overlap
 from django.db import transaction
 from django.db.models import F
 
@@ -485,6 +486,7 @@ class HIV(DiseaseDefinition):
         
         patients_with_existing_cases = self.process_existing_cases(lxcomb_patients,None,lxcomb_patient_events)
         
+        #TODO debug this below.. nodis is not running 
         if lxcomb_event_qs:
             self.criteria =  'Criteria 2. pos hiv elisa and pos hiv antigen/antibody'
         
