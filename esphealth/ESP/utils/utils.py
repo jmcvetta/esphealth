@@ -22,6 +22,8 @@ import Queue
 from concurrent import futures
 from decimal import Decimal
 from traceback import format_exc
+from datetime import datetime
+from collections import namedtuple
 
 from django.db import connection
 from django.db.models import Q
@@ -211,6 +213,24 @@ def sanitize_str(s):
     @rtype:   String
     '''
     return __string_sanitizer.sub("?", s)
+
+
+def overlap (start1,end1,start2,end2):
+    '''
+    returns the number of overlapped days between two ranges of dates 
+    @param start1: datetime
+    @param start2: datetime
+    @param end1: datetime
+    @param end2: datetime
+    @rtype: number 
+    '''
+    Range = namedtuple('Range', ['start', 'end'])
+    r1 = Range(start=start1, end=end1)
+    r2 = Range(start=start2, end=end2)
+    latest_start = max(r1.start, r2.start)
+    earliest_end = min(r1.end, r2.end)
+    overlap = (earliest_end - latest_start).days + 1
+    return overlap
 
 def truncate_str(s, name, max_length):
     '''
