@@ -22,7 +22,7 @@ import Queue
 from concurrent import futures
 from decimal import Decimal
 from traceback import format_exc
-from datetime import datetime
+#from datetime import datetime
 from collections import namedtuple
 
 from django.db import connection
@@ -229,8 +229,8 @@ def overlap (start1,end1,start2,end2):
     r2 = Range(start=start2, end=end2)
     latest_start = max(r1.start, r2.start)
     earliest_end = min(r1.end, r2.end)
-    overlap = (earliest_end - latest_start).days + 1
-    return overlap
+    days = (earliest_end - latest_start).days + 1
+    return days
 
 def truncate_str(s, name, max_length):
     '''
