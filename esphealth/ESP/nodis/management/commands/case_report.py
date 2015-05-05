@@ -440,22 +440,20 @@ class hl7Batch:
             pidsec = self.casesDoc.createElement('PID.22')
             self.addSimple(pidsec,ethnicity,'CE.4')
             section.appendChild(pidsec)
-            
-        #TODO add here the hiv additional info \find out which pid.#
-        '''
-        if income_level:
-            pidsec = self.casesDoc.createElement('PID.22') 
-            self.addSimple(pidsec,income_level,'CE.4')
+        
+        if demog.income_level:
+            pidsec = self.casesDoc.createElement('PID.23') 
+            self.addSimple(pidsec,demog.income_level,'CE.4')
             section.appendChild(pidsec)
-        if housing_status:
-            pidsec = self.casesDoc.createElement('PID.22') 
-            self.addSimple(pidsec,housing_status,'CE.4')
+        if demog.housing_status:
+            pidsec = self.casesDoc.createElement('PID.24') 
+            self.addSimple(pidsec,demog.housing_status,'CE.4')
             section.appendChild(pidsec)
-        if insurance_status:
-            pidsec = self.casesDoc.createElement('PID.22') 
-            self.addSimple(pidsec,insurance_status,'CE.4')
+        if demog.insurance_status:
+            pidsec = self.casesDoc.createElement('PID.25') 
+            self.addSimple(pidsec,demog.insurance_status,'CE.4')
             section.appendChild(pidsec)
-        '''    
+           
         return section
 
     def makePCP(self, pcp=None, addressType=None, NKindx=1,NK13='PCP'):
