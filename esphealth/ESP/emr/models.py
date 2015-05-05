@@ -372,11 +372,10 @@ class Patient(BaseMedicalRecord):
     last_update_site = models.CharField('Site where patient information was last updated', max_length=100, blank=True, null=True)
     title = models.CharField('Title', max_length=50, blank=True, null=True)
     remark  = models.TextField('Remark', blank=True, null=True)
-    '''
     income_level = models.CharField('Income Level', max_length=50, blank=True, null=True)
     housing_status = models.CharField('Housing Status', max_length=50, blank=True, null=True)
     insurance_status = models.CharField('Insurance Status', max_length=50, blank=True, null=True)
-    '''
+    
     
     q_fake = Q(natural_key__startswith='FAKE')
 
