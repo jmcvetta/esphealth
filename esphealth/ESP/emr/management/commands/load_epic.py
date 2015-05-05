@@ -855,12 +855,10 @@ class PatientLoader(BaseLoader):
         'suffix',
         'title',
         'remark',
-        #TODO add these for HIV
-        '''
         'income_level' ,
         'housing_status' ,
         'insurance_status',
-    '''
+    
         ]
     
     model = Patient
@@ -906,7 +904,9 @@ class PatientLoader(BaseLoader):
         'suffix' : string_or_none(row['suffix']),
         'title' : string_or_none(row['title']),
         'remark' : string_or_none(row['remark']),
-        #TODO add here the hiv extra fields 
+        'income_level' : string_or_none(row['income_level']),
+        'housing_status' : string_or_none(row['housing_status']),
+        'insurance_status': string_or_none(row['insurance_status']),
         }
 
         try:
