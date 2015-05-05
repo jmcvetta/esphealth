@@ -22,7 +22,7 @@ create table gen_pop_tools.gpr_pat as
 SELECT 
   pat.id AS patient_id, pat.mrn, date_part('year', age(pat.date_of_birth::date)) as age, upper(substr(pat.gender,1,1)) gender, 
   case 
-     when pat.ethnicty='Y' then 'HISPANIC'::varchar(100)
+     when pat.ethnicity='Y' then 'HISPANIC'::varchar(100)
      else pat.race
   end as race, 
   case
@@ -35,6 +35,7 @@ join
 	  patient_id
 	, MAX(date) AS last_enc_date
 	FROM emr_encounter
+        WHERE date >= (current_date - interval '2 years')
 	GROUP BY patient_id) lastenc
 on pat.id=lastenc.patient_id 
 --
@@ -701,35 +702,37 @@ create table gen_pop_tools.gpr_chlamydia as
 --
 drop table if exists gen_pop_tools.gpr_smoking;
 create table gen_pop_tools.gpr_smoking as
-   select case when t1.latest='Yes' then '1'
-               when t2.yesOrQuit='Quit' then '2'
-               when t3.passive='Passive' then '4'
-               when t4.never='Never' then '3'
-               else '5' 
+   select case when t1.latest=1 then '1'
+               when t2.yesOrQuit='QUIT' then '2'
+               when t3.passive='PASSIVE' then '4'
+               when t4.never='NEVER' then '3'
+               else '5'
            end as smoking,
            t1.patient_id
    from
-     (select t00.tobacco_use as latest, t00.patient_id 
+     (select max(case when tobacco_use='YES' then 1 else 0 end) as latest, patient_id from
+     (select t00.tobacco_use, t00.patient_id
       from emr_socialhistory t00
       inner join
-      (select max(date) as maxdate, patient_id 
-       from emr_socialhistory 
+      (select max(date) as maxdate, patient_id
+       from emr_socialhistory
        where tobacco_use is not null and tobacco_use<>''
-       group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t1
+       group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t11
+       group by patient_id) t1
    left outer join
      (select max(val) as yesOrQuit, patient_id
-      from (select 'Quit'::text as val, patient_id
-            from emr_socialhistory where tobacco_use in ('Yes','Quit')) t00
+      from (select 'QUIT'::text as val, patient_id
+            from emr_socialhistory where tobacco_use in ('YES','QUIT')) t00
             group by patient_id) t2 on t1.patient_id=t2.patient_id
    left outer join
      (select max(val) as passive, patient_id
-      from (select 'Passive'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Passive') t00
+      from (select 'PASSIVE'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='PASSIVE') t00
             group by patient_id) t3 on t1.patient_id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'Never'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Never') t00
+      from (select 'NEVER'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='NEVER') t00
             group by patient_id) t4 on t1.patient_id=t4.patient_id;
 --
 -- Asthma
