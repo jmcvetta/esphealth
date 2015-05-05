@@ -422,7 +422,7 @@ class HIV(DiseaseDefinition):
         # criteria 1
         #  positive western blot or  hiv rn viral> lower lim or pos hiv cualitative pcr 
         log.info('Generating cases for HIV Definition (a), (c), (d)')
-        counter_b = 0
+        counter_a = 0
                
         #
         # FIXME: This date math works on PostgreSQL; but it's not clear that 
@@ -474,7 +474,7 @@ class HIV(DiseaseDefinition):
         for event in lxcomb_event_qs:
             lxcomb_patients.add(event.patient)
         
-        lxcomb_patient_events = {}
+        lxcomb_patient_events =  {}
         for event in lxcomb_event_qs:
             try:
                 lxcomb_patient_events[event.patient_id].append(event)
@@ -486,11 +486,11 @@ class HIV(DiseaseDefinition):
         
         patients_with_existing_cases = self.process_existing_cases(lxcomb_patients,None,lxcomb_patient_events)
         
-        #TODO debug this below.. nodis is not running 
+        
         if lxcomb_event_qs:
             self.criteria =  'Criteria 2. pos hiv elisa and pos hiv antigen/antibody'
         
-        for patient in lxcomb_patient_events - set(patients_with_existing_cases): 
+        for patient in lxcomb_patients - set(patients_with_existing_cases): 
             t, new_case = self._create_case_from_event_list(
                             condition = self.conditions[0],
                             criteria = self.criteria,
@@ -504,13 +504,12 @@ class HIV(DiseaseDefinition):
             if (counter_b % 100)==0:
                     transaction.commit() 
         
-        
         #criteria 3
         #c.    Concurrent prescriptions for 3 or more antiretrovirals for at least 3 months
         # meds to count multiple if combo + 2 or 3 or 4, 
         #  and  with negative viral load, and exclude pre-post exposure prophylaxis?? 
         
-        rx_qs = BaseEventHeuristic.get_events_by_name(name=rx1_ev_names + rx2_ev_names + rx3_4_ev_names).exclude(case__condition=self.conditions[0]).select_related()
+        rx_event_qs = BaseEventHeuristic.get_events_by_name(name=rx1_ev_names + rx2_ev_names + rx3_4_ev_names).exclude(case__condition=self.conditions[0]).select_related()
         '''rx_event_qs = Event.objects.filter( 
             name__in = rx1_ev_names + rx2_ev_names + rx3_4_ev_names, 
             #patient__event__name__in = 'lx:hiv_rna_viral:negative', TODO not needed?
@@ -518,21 +517,6 @@ class HIV(DiseaseDefinition):
             ).exclude(case__condition = self.conditions[0]).order_by('date').select_related()
         '''
         # distinct patients
-        rx_patients = set()
-        for event in rx_qs:
-            rx_patients.add(event.patient)
-         
-        rx_patient_events= {}
-        for event in rx_qs:
-            try:
-                rx_patient_events[event.patient_id].append(event)
-            except:
-                rx_patient_events[event.patient_id] = [event]
-    
-        log.info('Generating cases for HIV new Definition (c)')
-        counter_c = 0
-        
-        
         rx_patients = set()
         for event in rx_event_qs:
             rx_patients.add(event.patient)
@@ -544,19 +528,21 @@ class HIV(DiseaseDefinition):
             except:
                 rx_patient_events[event.patient_id] = [event]
                 
+        log.info('Generating cases for HIV new Definition (c)')
+        counter_c = 0
+                
         patients_with_existing_cases = self.process_existing_cases(rx_patients,None,rx_patient_events)
         
         if rx_event_qs:
             self.criteria =  'Criteria 3. 3 or more hiv concurrent prescriptions for 3 months, with negative viral rna and excluding pre or post prophylaxia exposure'
         
-        for patient in rx_patient_events - set(patients_with_existing_cases): 
-            
+        for patient in rx_patients - set(patients_with_existing_cases): 
             #take care of 3 + meds
             count = 0
             for event in rx_patient_events[patient.id]:
                 # check for concurrent for 3 months, count meds and check for the time
                 #tdelta = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-                if event.name in rx3_4_ev_names and abs((event.content_object.end_date - event.content_object.start_date).months) >= 3:
+                if event.name in rx3_4_ev_names and abs((event.content_object.end_date - event.content_object.start_date).days) >= 90:
                      # has 3 or 4 meds for 3 months
                      count =3
                      break 
@@ -597,14 +583,15 @@ class HIV(DiseaseDefinition):
                                         relevant_event_names = rx_patient_events[patient.id],
                                         )
                 if t:
-                            counter_c += 1
-                            log.info('Created new hiv  new case def e: %s' % new_case)
-                if (counter_c % 100)==0:
-                    transaction.commit() 
+                    counter_c += 1
+                    log.info('Created new hiv  new case def e: %s' % new_case)
+                    #count all                 
+            if ( counter_c % 100)==0:
+                transaction.commit() 
         
-        
-        log.debug('Generated %s new cases of HIV' % new_case_count)       
-        return counter_a + counter_b + counter_c # Count of new cases # Count of new cases
+        count = counter_a + counter_b + counter_c
+        log.debug('Generated %s new cases of HIV' % count )       
+        return count # Count of new cases # Count of new cases
     
     @transaction.commit_manually
     def generate(self):
