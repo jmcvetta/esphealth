@@ -441,18 +441,18 @@ class hl7Batch:
             self.addSimple(pidsec,ethnicity,'CE.4')
             section.appendChild(pidsec)
             
-        #TODO add here the hiv additional info \
+        #TODO add here the hiv additional info \find out which pid.#
         '''
         if income_level:
-            pidsec = self.casesDoc.createElement('PID.22') ??
+            pidsec = self.casesDoc.createElement('PID.22') 
             self.addSimple(pidsec,income_level,'CE.4')
             section.appendChild(pidsec)
         if housing_status:
-            pidsec = self.casesDoc.createElement('PID.22') ??
+            pidsec = self.casesDoc.createElement('PID.22') 
             self.addSimple(pidsec,housing_status,'CE.4')
             section.appendChild(pidsec)
         if insurance_status:
-            pidsec = self.casesDoc.createElement('PID.22') ??
+            pidsec = self.casesDoc.createElement('PID.22') 
             self.addSimple(pidsec,insurance_status,'CE.4')
             section.appendChild(pidsec)
         '''    
