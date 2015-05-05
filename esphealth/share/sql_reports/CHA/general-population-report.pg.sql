@@ -81,6 +81,7 @@ SELECT
 , gpr_asthma.asthma
 , gpr_smoking.smoking
 , gpr_enc.nvis
+, gpr_depression.depression
 FROM gen_pop_tools.gpr_pat 
 --
 -- Max blood pressure between two and three years
@@ -256,8 +257,14 @@ LEFT JOIN gen_pop_tools.gpr_asthma
         on gpr_asthma.patient_id = gpr_pat.patient_id
 --
 -- n visits
+--
 LEFT JOIN gen_pop_tools.gpr_enc
         on gpr_enc.patient_id = gpr_pat.patient_id
+--
+-- depression
+--
+LEFT JOIN gen_pop_tools.gpr_depression
+        on gpr_depression.patient_id = gpr_pat.patient_id
 --
 -- Ordering
 --

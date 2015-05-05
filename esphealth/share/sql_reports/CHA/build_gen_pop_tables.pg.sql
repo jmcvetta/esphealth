@@ -754,5 +754,12 @@ create table gen_pop_tools.gpr_enc as
   patient_id
   from emr_encounter
   where date>=current_date - interval '1 year'
-  group by patient_id;        
-
+  group by patient_id; 
+       
+drop table if exists gen_pop_tools.gpr_depression;
+create table gen_pop_tools.gpr_depression as
+  select case when count(*) > 0 then 1 else 2 end as depression,
+  patient_id
+from nodis_case
+where condition='depression' and date > current_date - interval '1 year';
+group by patient_id;
