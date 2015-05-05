@@ -359,17 +359,17 @@ class HIV(DiseaseDefinition):
        
         #dx_ev_names = ['dx:hiv','op-infection']
         rx2_ev_names = [
-            'rx:lopinavir-ritonavir',
-            'rx:abacavir-lamivudine',
-            'rx:zidovudine-lamivudine',
-            'rx:tenofovir-emtricitabine',
+            'rx:lopinavir-ritonavir:trade',
+            'rx:abacavir-lamivudine:trade',
+            'rx:zidovudine-lamivudine:trade',
+            'rx:tenofovir-emtricitabine:trade',
             ]
         rx3_4_ev_names = [
-            'rx:abacavir-lamivudine-zidovudine',
-            'rx:efavirenz-tenofovir-emtricitabine',
-            'rx:rilpivirine-tenofovir-emtricitabine',
-            'rx:dolutegravir-abacavir-lamivudine ',
-            'rx:elvitegravir-cobicistat-tenofovir-emtricitabine',
+            'rx:abacavir-lamivudine-zidovudine:trade',
+            'rx:efavirenz-tenofovir-emtricitabine:trade',
+            'rx:rilpivirine-tenofovir-emtricitabine:trade',
+            'rx:dolutegravir-abacavir-lamivudine:trade',
+            'rx:elvitegravir-cobicistat-tenofovir-emtricitabine:trade',
             ]
         rx1_ev_names = [
             'rx:zidovudine',
@@ -466,20 +466,27 @@ class HIV(DiseaseDefinition):
         #criteria 2
         # (pos hiv antigen/antibody and pos hiv elisa)
         lxcomb_event_qs = Event.objects.filter(
-            name__in = 'lx:hiv_ag_ab:positive',
-            patient__event__name__in = 'lx:hiv_elisa:positive', 
+            name__in = ['lx:hiv_ag_ab:positive'], 
+            patient__event__name__in = ['lx:hiv_elisa:positive'], 
             ).exclude(case__condition=self.conditions[0]).order_by('date').select_related()
         
+        #get the elisa events
+        lxelisa_event_qs = Event.objects.filter(
+            name__in = ['lx:hiv_elisa:positive'], 
+            patient__event__name__in =['lx:hiv_ag_ab:positive'],  
+            ).exclude(case__condition=self.conditions[0]).order_by('date').select_related()
+            
         lxcomb_patients = set()
         for event in lxcomb_event_qs:
             lxcomb_patients.add(event.patient)
         
         lxcomb_patient_events =  {}
-        for event in lxcomb_event_qs:
+        for event in lxcomb_event_qs|lxelisa_event_qs:
             try:
                 lxcomb_patient_events[event.patient_id].append(event)
             except:
                 lxcomb_patient_events[event.patient_id] = [event]
+                
                       
         log.info('Generating cases for HIV definition (b)')
         counter_b = 0
@@ -554,8 +561,8 @@ class HIV(DiseaseDefinition):
                         for event2 in rx_patient_events[patient.id]:
                             #calculate concurrency with any of the other meds??
                             if event2.id != event.id: # exclude 
-                                overlap = overlap (event.content_object.start_date,event.content_object.end_date,event2.content_object.start_date, event2.content_object.end_date )
-                                if overlap >= 90:
+                                concurrent = overlap (event.content_object.start_date,event.content_object.end_date,event2.content_object.start_date, event2.content_object.end_date )
+                                if concurrent >= 90:
                                     count = 3
                                     break #inner loop
                         if count == 3: break #outter for 
@@ -568,8 +575,8 @@ class HIV(DiseaseDefinition):
                             if (event.name in rx1_ev_names):
                                 for event2 in rx_patient_events[patient.id]: 
                                     if event2.id != event.id and event2.name in rx1_ev_names: # exclude 
-                                        overlap = overlap (event.content_object.start_date,event.content_object.end_date,event2.content_object.start_date, event2.content_object.end_date )
-                                        if overlap >= 90:
+                                        concurrent = overlap (event.content_object.start_date,event.content_object.end_date,event2.content_object.start_date, event2.content_object.end_date )
+                                        if concurrent >= 90:
                                             count +=1
                                         if count ==3: break  
                                 if count == 3: break                                
