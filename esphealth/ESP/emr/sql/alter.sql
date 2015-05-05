@@ -611,3 +611,11 @@ ALTER TABLE emr_prescription
 -- depression-hiv meds
 COPY static_drugsynonym FROM 'drugsynonyms.csv' WITH CSV HEADER;
 
+-- 2015 may 5
+--hiv hl7 changes
+ALTER TABLE emr_patient
+  ADD COLUMN income_level character varying(50);
+ALTER TABLE emr_patient
+  ADD COLUMN housing_status character varying(50);
+ALTER TABLE emr_patient
+  ADD COLUMN insurance_status character varying(50);
