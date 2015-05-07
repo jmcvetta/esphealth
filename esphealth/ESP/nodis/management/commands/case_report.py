@@ -440,7 +440,8 @@ class hl7Batch:
             pidsec = self.casesDoc.createElement('PID.22')
             self.addSimple(pidsec,ethnicity,'CE.4')
             section.appendChild(pidsec)
-        
+            
+        #TODO please correct the PID 23, 24, 25 need to be changed 
         if demog.income_level:
             pidsec = self.casesDoc.createElement('PID.23') 
             self.addSimple(pidsec,demog.income_level,'CE.4')
