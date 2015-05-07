@@ -61,65 +61,7 @@ class HIV(DiseaseDefinition):
     @property
     def event_heuristics(self):
         heuristic_list = []
-        #
-
-        # Diagnosis Codes
-        #
-        '''
-        heuristic_list.append( DiagnosisHeuristic(
-            name = 'hiv',
-            dx_code_queries = [
-                Dx_CodeQuery(starts_with='042', type='icd9'),
-                Dx_CodeQuery(starts_with='V08', type='icd9'),
-                Dx_CodeQuery(starts_with='B20', type='icd10'),
-                Dx_CodeQuery(starts_with='B21', type='icd10'),
-                Dx_CodeQuery(starts_with='B22', type='icd10'),
-                Dx_CodeQuery(starts_with='B23', type='icd10'),
-                Dx_CodeQuery(starts_with='B24', type='icd10'),
-                Dx_CodeQuery(starts_with='Z21', type='icd10'),
-                Dx_CodeQuery(starts_with='098.7', type='icd10'),
-                
-                ]
-            ))
-        #opportunistic infection
-        heuristic_list.append( DiagnosisHeuristic(
-            name = 'op-infection',
-            dx_code_queries = [
-                Dx_CodeQuery(starts_with='136.3', type='icd9'),
-                Dx_CodeQuery(starts_with='130', type='icd9'),
-                Dx_CodeQuery(starts_with='B59', type='icd10'),
-                Dx_CodeQuery(starts_with='B58', type='icd10'),
-                Dx_CodeQuery(starts_with='117.5', type='icd9'),
-                Dx_CodeQuery(starts_with='321.0', type='icd9'),
-                Dx_CodeQuery(starts_with='B45.0', type='icd10'),
-                Dx_CodeQuery(starts_with='B45.1', type='icd10'),
-                Dx_CodeQuery(starts_with='B45.7', type='icd10'),
-                Dx_CodeQuery(starts_with='B45.9', type='icd10'),
-                Dx_CodeQuery(starts_with='007.4', type='icd9'),
-                Dx_CodeQuery(starts_with='A07.2', type='icd10'),
-                Dx_CodeQuery(starts_with='010', type='icd9'),
-                Dx_CodeQuery(starts_with='011', type='icd9'),
-                Dx_CodeQuery(starts_with='012', type='icd9'),
-                Dx_CodeQuery(starts_with='013', type='icd9'),
-                Dx_CodeQuery(starts_with='014', type='icd9'),
-                Dx_CodeQuery(starts_with='015', type='icd9'),
-                Dx_CodeQuery(starts_with='016', type='icd9'),
-                Dx_CodeQuery(starts_with='017', type='icd9'),
-                Dx_CodeQuery(starts_with='018', type='icd9'),
-                Dx_CodeQuery(starts_with='A15', type='icd10'),
-                Dx_CodeQuery(starts_with='A16', type='icd10'),
-                Dx_CodeQuery(starts_with='A17', type='icd10'),
-                Dx_CodeQuery(starts_with='A18', type='icd10'),
-                Dx_CodeQuery(starts_with='A19', type='icd10'),
-                Dx_CodeQuery(starts_with='112', type='icd9'),
-                Dx_CodeQuery(starts_with='B37', type='icd10'),
-                Dx_CodeQuery(starts_with='031.2', type='icd9'),
-                Dx_CodeQuery(starts_with='A31.2', type='icd10'),
-                Dx_CodeQuery(starts_with='046.3', type='icd9'),
-                Dx_CodeQuery(starts_with='A81.2', type='icd10'),
-                ]
-            ))
-        '''
+        
         #
         # Lab Results
         #
@@ -136,7 +78,7 @@ class HIV(DiseaseDefinition):
             test_name = 'hiv_wb',
             
             ))
-        # TODO fix this lab
+        
         heuristic_list.append( LabResultPositiveHeuristic( 
             test_name = 'hiv_rna_viral',
             
@@ -147,7 +89,8 @@ class HIV(DiseaseDefinition):
         #
         for test_name, match_type, threshold in [
                        
-            # the lower limit of detection varies depending on which generation test is being used. 
+            # TODO may need to be revised
+            #the lower limit of detection varies depending on which generation test is being used. 
             # Historically it used to be 400 copies/ml. More recently it's 48 or 40 copies/ml.
             #What I think we want to do is assess whether the tests have a normal range associated 
             #with them or not.  If not, then would generate lists of the unique results from each test
@@ -155,9 +98,9 @@ class HIV(DiseaseDefinition):
             #"below the limit of detection" or something to that effect.
             # If we confirm that this is the convention with Mass League as well then we'd simply say
             #that any numeric result without a preceding "<" is positive. ???
-            ('hiv_rna_viral', 'gte', 400), 
             ('hiv_rna_viral', 'gte', 40),
-            ('hiv_rna_viral', 'gte', 48),
+            #('hiv_rna_viral', 'gte', 400), 
+            #('hiv_rna_viral', 'gte', 48),
             ]:
             h = LabResultFixedThresholdHeuristic(
                 test_name = 'hiv_rna_viral',
@@ -183,7 +126,7 @@ class HIV(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Stavudine']),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Lamivudine',
+            name = 'lamivudine',
             drugs =  DrugSynonym.generics_plus_synonyms(['Lamivudine','Epivir']),
             ))    
         heuristic_list.append( PrescriptionHeuristic(
@@ -248,7 +191,6 @@ class HIV(DiseaseDefinition):
             name = 'ritonavir',
             drugs =  DrugSynonym.generics_plus_synonyms(['Ritonavir','Norvir']),
             ))
-    
         heuristic_list.append( PrescriptionHeuristic(
                 name = 'indinavir',
                 drugs =  DrugSynonym.generics_plus_synonyms(['Indinavir','Crixivan']),
@@ -270,15 +212,7 @@ class HIV(DiseaseDefinition):
                 drugs =  DrugSynonym.generics_plus_synonyms(['Nelfinavir','Viracept']),
                 ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Fosamprenavir',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Fosamprenavir','Lexiva']),
-            ))
-        heuristic_list.append( PrescriptionHeuristic(
-            name = 'Fosamprenavir',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Fosamprenavir','Lexiva']),
-            ))
-        heuristic_list.append( PrescriptionHeuristic(
-            name = 'Fosamprenavir',
+            name = 'fosamprenavir',
             drugs =  DrugSynonym.generics_plus_synonyms(['Fosamprenavir','Lexiva']),
             ))
         heuristic_list.append( PrescriptionHeuristic(
@@ -433,17 +367,14 @@ class HIV(DiseaseDefinition):
             ).exclude(case__condition=self.conditions[0]).order_by('date').select_related()
         
         lx_patients = set()
-        for event in lx_event_qs:
-            lx_patients.add(event.patient)
-        
         lx_patient_events = {}
         for event in lx_event_qs:
+            lx_patients.add(event.patient)
             try:
                 lx_patient_events[event.patient_id].append(event)
             except:
-                lx_patient_events[event.patient_id] = [event]
+                lx_patient_events[event.patient_id] = [event]    
                  
-        
         patients_with_existing_cases = self.process_existing_cases(lx_patients,None,lx_patient_events)
         
         if lx_event_qs:
@@ -487,12 +418,10 @@ class HIV(DiseaseDefinition):
             except:
                 lxcomb_patient_events[event.patient_id] = [event]
                 
-                      
         log.info('Generating cases for HIV definition (b)')
         counter_b = 0
         
         patients_with_existing_cases = self.process_existing_cases(lxcomb_patients,None,lxcomb_patient_events)
-        
         
         if lxcomb_event_qs:
             self.criteria =  'Criteria 2. pos hiv elisa and pos hiv antigen/antibody'
@@ -516,13 +445,9 @@ class HIV(DiseaseDefinition):
         # meds to count multiple if combo + 2 or 3 or 4, 
         #  and  with negative viral load, and exclude pre-post exposure prophylaxis?? 
         
-        rx_event_qs = BaseEventHeuristic.get_events_by_name(name=rx1_ev_names + rx2_ev_names + rx3_4_ev_names).exclude(case__condition=self.conditions[0]).select_related()
-        '''rx_event_qs = Event.objects.filter( 
-            name__in = rx1_ev_names + rx2_ev_names + rx3_4_ev_names, 
-            #patient__event__name__in = 'lx:hiv_rna_viral:negative', TODO not needed?
-            # exclude hep 
-            ).exclude(case__condition = self.conditions[0]).order_by('date').select_related()
-        '''
+        #TODO filter by 90 days ????
+        rx_event_qs = BaseEventHeuristic.get_events_by_name(name=rx1_ev_names + rx2_ev_names + rx3_4_ev_names).exclude(case__condition=self.conditions[0]).order_by('date').select_related()
+      
         # distinct patients
         rx_patients = set()
         for event in rx_event_qs:
@@ -549,12 +474,13 @@ class HIV(DiseaseDefinition):
             for event in rx_patient_events[patient.id]:
                 # check for concurrent for 3 months, count meds and check for the time
                 #tdelta = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-                if event.name in rx3_4_ev_names and abs((event.content_object.end_date - event.content_object.start_date).days) >= 90:
+                if event.name in rx3_4_ev_names and abs((event.content_object.end_date - event.content_object.start_date).days) >= 90 :
+                                       #or event.content_object.end_date + datetime.timedelta(days=event.content_object.???frequency))>=90):
                      # has 3 or 4 meds for 3 months
                      count =3
                      break 
             
-            if count <3:
+            if count <3: #TODO fix the double counting 
                 #take care of meds <3 or 4
                 for event in rx_patient_events[patient.id]:
                     if (event.name in rx2_ev_names and len(rx_patient_events[patient.id]) >=2)  :#has 2 and 1s
@@ -569,6 +495,7 @@ class HIV(DiseaseDefinition):
                 
                 if count<3:
                     # take care of single drugs 
+                    #TODO fix the double counting 
                     if len(rx_patient_events[patient.id]) >=3 : # has only ones
                         for event in rx_patient_events[patient.id]:        
                         # for event2 in rx_patient_events[patient.id]:
