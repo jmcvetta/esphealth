@@ -224,6 +224,7 @@ def overlap (start1,end1,start2,end2):
     @param end2: datetime
     @rtype: number 
     '''
+    #TODO null dates handling, use the start and duration to calculate the end. 
     Range = namedtuple('Range', ['start', 'end'])
     r1 = Range(start=start1, end=end1)
     r2 = Range(start=start2, end=end2)
