@@ -10,37 +10,38 @@ select current_timestamp, 0;
 drop view if exists esp_demographic_v;
 drop table if exists esp_temp_smoking;
 create table esp_temp_smoking as
-   select distinct case when t1.latest='Yes' then 'Current'
-               when t2.yesOrQuit='Quit' then 'Former'
-               when t3.passive='Passive' then 'Passive'
-               when t4.never='Never' then 'Never'
+   select distinct case when upper(t1.latest)='YES' then 'Current'
+               when upper(t2.yesOrQuit)='QUIT' then 'Former'
+               when upper(t3.passive)='PASSIVE' then 'Passive'
+               when iupper(t4.never)='NEVER' then 'Never'
                else 'Not available' 
            end as smoking, 
            t0.natural_key as patid
    from
      emr_patient t0
    left outer join 
-     (select t00.tobacco_use as latest, t00.patient_id 
+     (select patient_id, case when bool_or(upper(latest)='YES') then 'YES' else 'NO' end as latest from
+      (select t00.tobacco_use as latest, t00.patient_id 
       from emr_socialhistory t00
       inner join
       (select max(date) as maxdate, patient_id 
        from emr_socialhistory 
        where tobacco_use is not null and tobacco_use<>''
-       group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t1 on t0.id=t1.patient_id
+       group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t11 group by patient_id) t1 on t0.id=t1.patient_id
    left outer join
      (select max(val) as yesOrQuit, patient_id
-      from (select 'Quit'::text as val, patient_id
-            from emr_socialhistory where tobacco_use in ('Yes','Quit')) t00
+      from (select 'QUIT'::text as val, patient_id
+            from emr_socialhistory where upper(tobacco_use) in ('YES','QUIT')) t00
             group by patient_id) t2 on t0.id=t2.patient_id
    left outer join
      (select max(val) as passive, patient_id
-      from (select 'Passive'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Passive') t00
+      from (select 'PASSIVE'::text as val, patient_id
+            from emr_socialhistory where upper(tobacco_use) ='PASSIVE') t00
             group by patient_id) t3 on t0.id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'never'::text as val, patient_id
-            from emr_socialhistory where tobacco_use ='Never') t00
+      from (select 'NEVER'::text as val, patient_id
+            from emr_socialhistory where upper(tobacco_use) ='NEVER') t00
             group by patient_id) t4 on t0.id=t4.patient_id;
 alter table esp_temp_smoking add primary key (patid);
 CREATE OR REPLACE VIEW esp_demographic_v AS
@@ -139,8 +140,8 @@ SELECT '1'::varchar(1) as centerid,
          INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
          INNER JOIN (select * from public.emr_encounter_dx_codes 
-                     where strpos(trim(dx_code_id),'.')<>3
-                       and length(trim(dx_code_id))>=3 ) diag ON enc.id = diag.encounter_id
+                     where strpos(trim(dx_code_id),'.')<>8
+                       and length(trim(dx_code_id))>=8 ) diag ON enc.id = diag.encounter_id
          LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
   WHERE prvn.source ilike 'epicmem%';
 
