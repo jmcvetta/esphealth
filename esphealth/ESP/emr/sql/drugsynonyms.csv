@@ -1,4 +1,154 @@
 drugynonym_id,generic_name,other_name,comment
+287,Test Strips,Test Strips,Self
+286,Fluvoxamine,Fluvoxamine,Self
+266,Fluvoxamine,Luvox,
+277,Venlafaxine,Effexor,
+271,Sertraline,Zoloft,
+268,Paroxetine,Paxil,
+269,Paroxetine,Pexeva,
+284,Mirtazapine,Remeron,
+275,Duloxetine,Cymbalta,
+273,Desvenlafaxine,Pristiq,
+279,Bupropion,Wellbutrin,
+288,Zidovudine,Zidovudine,Self
+290,Didanosine,Didanosine,Self
+292,Stavudine,Stavudine,Self
+293,Lamivudine,Lamivudine,Self
+295,Emtricitabine,Emtricitabine,Self
+297,Tenofovir,Tenofovir,Self
+299,Abacavir,Abacavir,Self
+301,Truvada,Truvada,Self
+302,Combivir,Combivir,Self
+303,Epzicom,Epzicom,Self
+304,Trizivir,Trizivir,Self
+305,Efavirenz,Efavirenz,Self
+307,Nivarapine,Nivarapine,Self
+309,Rilpivirine,Rilpivirine,Self
+311,Etravirine,Etravirine,Self
+313,Delavirdine,Delavirdine,Self
+281,Bupropion,Zyban,
+282,Bupropion,Buproban,
+280,Bupropion,Aplenzin,
+252,Escitalopram,Cipralex,
+254,Fluoxetine,Prozac,
+255,Fluoxetine,Sarafem,
+225,Amitryptyline,Amitryptyline,Self
+227,Clomipramine,Clomipramine,Self
+229,Desipramine,Desipramine,Self
+315,Raltegravir,Raltegravir,Self
+231,Doxepin,Doxepin,Self
+233,Imipramine,Imipramine,Self
+235,Nortriptyline,Nortriptyline,Self
+226,Amitryptyline,Elavil,
+228,Clomipramine,Anafranil,
+230,Desipramine,Norpramin,
+232,Doxepin,Sinequan,
+234,Imipramine,Tofranil,
+236,Nortriptyline,Aventyl,
+241,Isocarboxazid,Marplan,
+237,Nortriptyline,Pamelor,
+243,Phenelzine,Nardil,
+245,Selegiline,Emsam,
+247,Tranylcypromine,Parnate,
+249,Citalopram,Celexa,
+251,Escitalopram,Lexapro,
+238,Protriptyline,Protriptyline,Self
+240,Isocarboxazid,Isocarboxazid,Self
+242,Phenelzine,Phenelzine,Self
+244,Selegiline,Selegiline,Self
+246,Tranylcypromine,Tranylcypromine,Self
+248,Citalopram,Citalopram,Self
+239,Protriptyline,Vivactil,
+317,Dolutegravir,Dolutegravir,Self
+319,Elvitegravir,Elvitegravir,Self
+250,Escitalopram,Escitalopram,Self
+320,Enfuvirtide,Enfuvirtide,Self
+253,Fluoxetine,Fluoxetine,Self
+267,Paroxetine,Paroxetine,Self
+322,Maraviroc,Maraviroc,Self
+270,Sertraline,Sertraline,Self
+272,Desvenlafaxine,Desvenlafaxine,Self
+324,Tipranavir,Tipranavir,Self
+326,Ritonavir,Ritonavir,Self
+274,Duloxetine,Duloxetine,Self
+328,Indinavir,Indinavir,Self
+276,Venlafaxine,Venlafaxine,Self
+278,Bupropion,Bupropion,Self
+283,Mirtazapine,Mirtazapine,Self
+285,Trazodone,Trazodone,Self
+105,EXENATIDE,EXENATIDE,Self
+72,GLYBURIDE,Diabeta,	
+73,GLYBURIDE,Glycron,	
+74,GLYBURIDE,Glynase,	
+330,Darunavir,Darunavir,Self
+332,Saquinavir,Saquinavir,Self
+334,Atazanavir,Atazanavir,Self
+336,Nelfinavir,Nelfinavir,Self
+338,Fosamprenavir,Fosamprenavir,Self
+340,Kaletra,Kaletra,Self
+341,Atripla,Atripla,Self
+342,Complera,Complera,Self
+343,Triumeq,Triumeq,Self
+344,Stribild,Stribild,Self
+346,Dapsone,Dapsone,Self
+347,Pyrimethamine,Pyrimethamine,Self
+349,Atovaquone,Atovaquone,Self
+351,Pentamidine,Pentamidine,Self
+353,Pentam 300,Pentam 300,Self
+354,TMP-SMX,TMP-SMX,Self
+355,Dapsone,Dapsone,Self
+356,Pyrimethamine,Pyrimethamine,Self
+357,Azithromycin,Azithromycin,Self
+359,Zmax,Zmax,Self
+289,Zidovudine,Retrovir,
+291,Didanosine,Videx,
+294,Lamivudine,Epivir,
+296,Emtricitabine,Emtriva,
+298,Tenofovir,Viread,
+300,Abacavir,Ziagen,
+306,Efavirenz,Sustiva,
+308,Nivarapine,Viramune,
+310,Rilpivirine,Edurant,
+312,Etravirine,Intelence,
+314,Delavirdine,Rescriptor,
+316,Raltegravir,Isentress,
+318,Dolutegravir,Tivicay,
+321,Enfuvirtide,Fuzeon,
+323,Maraviroc,Selzentry,
+325,Tipranavir,Aptivus,
+327,Ritonavir,Norvir,
+329,Indinavir,Crixivan,
+331,Darunavir,Prezista,
+333,Saquinavir,Invirase,
+335,Atazanavir,Reyataz,
+337,Nelfinavir,Viracept,
+339,Fosamprenavir,Lexiva,
+345,TMP-SMX,Bactrim,
+348,Pyrimethamine,Daraprim,
+350,Atovaquone,Mepron,
+352,Pentamidine,Nebupent,
+358,Azithromycin,Zithromax,
+75,GLYBURIDE,Micronase,	
+76,GLYBURIDE,Glucovance,Glyburide and Metformin
+30,Cycloserine,Seromycin,	
+38,Erythromycin,PCE	,
+77,GLICLAZIDE,GLICLAZIDE,Self
+78,GLICLAZIDE,********,Not marketed in U.S.
+79,GLIPIZIDE,GLIPIZIDE,Self
+80,GLIPIZIDE,Glucotrol,	
+81,GLIPIZIDE,Metaglip,Glipizide and Metformin
+82,GLIMEPIRIDE,GLIMEPIRIDE,Self
+106,EXENATIDE,Byetta,	
+107,EXENATIDE,Bydureon,	
+108,PRAMLINTIDE,PRAMLINTIDE,Self
+109,PRAMLINTIDE,Symlin,	
+110,Metformin,Metformin,Self
+111,Metformin,Fortamet,	
+112,Metformin,Glucophage,	
+152,Amoxicillin,Moxilin,	
+153,Amoxicillin,Trimox,	
+154,Amoxicillin,Amoclan,Amoxicillin and Clavulanate
+203,Arformoterol,Arformoterol,Self
 70,CEFTRIAXONE,Rocephin,	
 71,GLYBURIDE,GLYBURIDE,Self
 181,Pulmicort,Pulmicort,Self
@@ -19,8 +169,6 @@ drugynonym_id,generic_name,other_name,comment
 219,Combivent,Combivent,Self
 4,Isoniazid,Tubizid	,
 90,ROSIGLITAZONE,ROSIGLITAZONE,Self
-92,ROSIGLITAZONE,Avandamet,Rosiglitazone and Metformin
-93,ROSIGLITAZONE,Avandaryl,Rosiglitazone and Glimepiride
 94,REPAGLINIDE,REPAGLINIDE,Self
 95,REPAGLINIDE,Prandin,	
 96,REPAGLINIDE,PrandiMet,Repaglinide and Metformin
@@ -30,10 +178,12 @@ drugynonym_id,generic_name,other_name,comment
 100,MEGLITINIDE,********,Meglitinide appears to be a drug class
 101,SITAGLIPTIN,SITAGLIPTIN,Self
 102,SITAGLIPTIN,Januvia,	
-103,SITAGLIPTIN,Janumet,Sitagliptin and Metformin
-104,SITAGLIPTIN,Juvisync,Sitagliptin and Simvastatin
-105,EXENATIDE,EXENATIDE,Self
 183,Aerobid,Aerospan,
+104,SITAGLIPTIN,Juvisync,
+103,SITAGLIPTIN,Janumet,
+93,ROSIGLITAZONE,Avandaryl,
+92,ROSIGLITAZONE,Avandamet,
+128,Saxagliptin,Kombiglyze,
 184,Flovent,Flovent,Self
 185,Asmanex,Asmanex,Self
 191,Intal,Intal,Self
@@ -51,7 +201,6 @@ drugynonym_id,generic_name,other_name,comment
 121,Metformin,Glucovance,Glyburide and Metformin
 122,Metformin,Jentadueto,Linagliptin and Metformin
 124,Linagliptin,Tradjenta	,
-128,Saxagliptin,Kombiglyze,Saxagliptin and Metformin
 130,Miglitol,Glyset,	
 131,Glucagon,Glucagon,Self
 132,Glucagon,Glucagen,	
@@ -98,7 +247,6 @@ drugynonym_id,generic_name,other_name,comment
 160,Cefotaxime,Claforan,	
 161,ACARBOSE,ACARBOSE,Self
 162,ACARBOSE,Precose,	
-223,Budesonide,Budesonide,Self
 224,Alvesco,Alvesco,Self
 64,DOXYCYCLINE,Monodox,	
 65,DOXYCYCLINE,Oracea,	
@@ -154,28 +302,6 @@ drugynonym_id,generic_name,other_name,comment
 61,DOXYCYCLINE,Adoxa,	
 62,DOXYCYCLINE,Alodox,	
 63,DOXYCYCLINE,Doryx,	
-72,GLYBURIDE,Diabeta,	
-73,GLYBURIDE,Glycron,	
-74,GLYBURIDE,Glynase,	
-75,GLYBURIDE,Micronase,	
-76,GLYBURIDE,Glucovance,Glyburide and Metformin
-77,GLICLAZIDE,GLICLAZIDE,Self
-78,GLICLAZIDE,********,Not marketed in U.S.
-79,GLIPIZIDE,GLIPIZIDE,Self
-80,GLIPIZIDE,Glucotrol,	
-81,GLIPIZIDE,Metaglip,Glipizide and Metformin
-82,GLIMEPIRIDE,GLIMEPIRIDE,Self
-106,EXENATIDE,Byetta,	
-107,EXENATIDE,Bydureon,	
-108,PRAMLINTIDE,PRAMLINTIDE,Self
-109,PRAMLINTIDE,Symlin,	
-110,Metformin,Metformin,Self
-111,Metformin,Fortamet,	
-112,Metformin,Glucophage,	
-152,Amoxicillin,Moxilin,	
-153,Amoxicillin,Trimox,	
-154,Amoxicillin,Amoclan,Amoxicillin and Clavulanate
-203,Arformoterol,Arformoterol,Self
 206,Salmeterol,Salmeterol,Self
 205,Indacaterol,Indacaterol,Self
 207,Beclomethasone,Beclomethasone,Self
@@ -200,11 +326,8 @@ drugynonym_id,generic_name,other_name,comment
 9,Ethambutol,Ethambutol,Self
 10,Ethambutol,Myambutol,	
 11,Rifampin,Rifampin,Self
-12,Rifampin,Rifampicin,Alternate generic name
 13,Rifampin,Rifadin	,
 14,Rifampin,Rimactane,	
-15,Rifampin,IsonaRif,Rifampin and Isoniazid
-16,Rifampin,Rifamate,Rifampin and Isoniazid
 17,Rifampin,Rifater,"Isoniazid, Pyrazinamide, Rifampin"
 18,Rifabutin,Rifabutin,Self
 19,Rifabutin,Mycobutin,	
@@ -218,5 +341,6 @@ drugynonym_id,generic_name,other_name,comment
 27,Capreomycin,Capreomycin,Self
 28,Capreomycin,Capastat,	
 29,Cycloserine,Cycloserine,Self
-30,Cycloserine,Seromycin,	
-38,Erythromycin,PCE	,
+12,Rifampin,Rifampicin,
+16,Rifampin,Rifamate,
+15,Rifampin,IsonaRif,
