@@ -44,6 +44,24 @@ create table esp_temp_smoking as
             from emr_socialhistory where upper(tobacco_use) ='NEVER') t00
             group by patient_id) t4 on t0.id=t4.patient_id;
 alter table esp_temp_smoking add primary key (patid);
+
+DROP TABLE if exists esp_current_asthma_cases cascade;
+CREATE TABLE esp_current_asthma_cases AS
+	select id, patient_id from
+	(select max(public.hef_event.date) as MAXEVTDT, public.nodis_case.patient_id, public.nodis_case.id from hef_event, public.nodis_case where 
+	condition = 'asthma'
+	and
+	public.hef_event.patient_id = public.nodis_case.patient_id
+	and public.hef_event.name in ('dx:asthma', 'rx:albuterol', 'rx:alvesco', 'rx:pulmicort', 'rx:flovent', 'rx:asmanex', 'rx:aerobid', 'rx:montelukast','rx:intal','rx:zafirlukast', 'rx:zileuton', 'rx:ipratropium','rx:tiotropium','rx:omalizumab', 'rx:fluticasone-inh', 'rx:mometasone-inh','rx:budesonide-inh','rx:ciclesonide-inh','rx:flunisolide-inh','rx:cromolyn-inh','rx:pirbuterol','rx:levalbuterol','rx:arformoterol','rx:formeterol','rx:indacaterol','rx:salmeterol',
+'rx:beclomethasone','rx:fluticasone-salmeterol:generic','rx:albuterol-ipratropium:generic','rx:mometasone-formeterol:generic',
+'rx:budesonide-formeterol:generic', 'rx:fluticasone-salmeterol:trade','rx:albuterol-ipratropium:trade','rx:mometasone-formeterol:trade','rx:budesonide-formeterol:trade') group by public.nodis_case.patient_id, public.nodis_case.id) A 
+	where
+	current_date - MAXEVTDT <= (365.25*2);
+CREATE INDEX esp_current_asthma_cases_caseid_idx on esp_current_asthma_cases (id);
+VACUUM ANALYZE esp_current_asthma_cases;
+ALTER TABLE esp_current_asthma_cases add primary key (patient_id);
+
+
 CREATE OR REPLACE VIEW esp_demographic_v AS
 SELECT '1'::varchar(1) as centerid,
        pat.natural_key as patid,
@@ -161,8 +179,9 @@ SELECT '1'::varchar(1) as centerid,
   FROM public.nodis_case disease
          INNER JOIN public.emr_patient pat ON disease.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
-  WHERE prvn.source ilike 'epicmem%';
-
+  WHERE prvn.source ilike 'epicmem%'
+        and (disease.condition in ('ili', 'diabetes:type-1', 'diabetes:type-2', 'diabetes:gestational', 'diabetes:prediabetes')
+        or disease.id in (select id from esp_current_asthma_cases));
 
 -- Instantiate tables from previously created views
 drop table if exists esp_demographic_r cascade;
