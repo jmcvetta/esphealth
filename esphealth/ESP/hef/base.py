@@ -41,6 +41,7 @@ from ESP.utils.utils import EquivalencyMixin
 from django.db.models import F, Q
 from django.utils.encoding import force_unicode, smart_str
 from pkg_resources import iter_entry_points
+from datetime import datetime
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
 NEGATIVE_STRINGS = ['non', 'neg', 'not det', 'nr']
@@ -761,7 +762,11 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
             #for lab in positive_labs.iterator():
             
             for lab in queryset_iterator(positive_labs):
-                if self.date_field == 'order':
+                #Delay hef event generation if we don't have a provider
+                date_delta = (datetime.now() - lab.created_timestamp)
+                if (lab.provider_id == 1 and date_delta.days < 5):
+                    continue
+                elif self.date_field == 'order':
                     lab_date = lab.date
                 elif self.date_field == 'result':
                     lab_date = lab.result_date
@@ -782,7 +787,10 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
             negative_labs = self.unbound_labs.filter(negative_q)
             
             for lab in queryset_iterator(negative_labs):
-                if self.date_field == 'order':
+                date_delta = (datetime.now() - lab.created_timestamp)
+                if (lab.provider_id == 1 and date_delta.days < 5):
+                    continue
+                elif self.date_field == 'order':
                     lab_date = lab.date
                 elif self.date_field == 'result':
                     lab_date = lab.result_date
@@ -803,7 +811,10 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
             
             indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
             for lab in queryset_iterator(indeterminate_labs):
-                if self.date_field == 'order':
+                date_delta = (datetime.now() - lab.created_timestamp)
+                if (lab.provider_id == 1 and date_delta.days < 5):
+                    continue
+                elif self.date_field == 'order':
                     lab_date = lab.date
                 elif self.date_field == 'result':
                     lab_date = lab.result_date
