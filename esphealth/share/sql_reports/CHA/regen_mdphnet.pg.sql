@@ -13,7 +13,7 @@ create table esp_temp_smoking as
    select distinct case when upper(t1.latest)='YES' then 'Current'
                when upper(t2.yesOrQuit)='QUIT' then 'Former'
                when upper(t3.passive)='PASSIVE' then 'Passive'
-               when iupper(t4.never)='NEVER' then 'Never'
+               when upper(t4.never)='NEVER' then 'Never'
                else 'Not available' 
            end as smoking, 
            t0.natural_key as patid
