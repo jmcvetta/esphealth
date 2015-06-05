@@ -972,21 +972,21 @@ class hl7Batch:
                 ind_q = ResultString.get_q_by_indication('ind')
                 if map_obj.extra_positive_strings.all() \
                     or map_obj.excluded_positive_strings.all():
-                    pos_q &= map_obj.positive_string_q_obj
+                    pos_q |= map_obj.positive_string_q_obj
                 if LabResult.objects.filter(Q(id=lxRec.id),pos_q).exists():
                     snomed=snomedposi
                     finding='pos'
                     return snomed, snomed2, titer_dilution, finding
                 if map_obj.extra_negative_strings.all() \
                     or map_obj.excluded_negative_strings.all():
-                    neg_q &= map_obj.negative_string_q_obj
+                    neg_q |= map_obj.negative_string_q_obj
                 if LabResult.objects.filter(Q(id=lxRec.id),neg_q).exists():
                     snomed=snomednega
                     finding='neg'
                     return snomed, snomed2, titer_dilution, finding
                 if map_obj.extra_indeterminate_strings.all() \
                     or map_obj.excluded_indeterminate_strings.all():
-                    ind_q &= map_obj.indeterminate_string_q_obj
+                    ind_q |= map_obj.indeterminate_string_q_obj
                 if LabResult.objects.filter(Q(id=lxRec.id),ind_q).exists():
                     snomed=snomedinter
                     finding='ind'
@@ -1578,7 +1578,7 @@ class Command(BaseCommand):
                 #
                 if options.transmit: 
                     success = True #TODO for testing and comment out the line below
-                    success = self.transmit(options, filepath)
+                    #success = self.transmit(options, filepath)
                     if success:
                         if options.mark_sent:
                             for case in batch_cases:
