@@ -748,4 +748,17 @@ create table gpr_enc as
   from emr_encounter
   where date>=current_date - interval '1 year'
   group by patient_id;        
-
+--
+-- Depression
+--
+drop table if exists gpr_depression;
+create table gpr_depression as
+  select
+  case when count(*) > 0 then 1 else 2 end as depression,
+  nodis.patient_id
+from nodis_case nodis 
+  join nodis_case_events nce on nce.case_id=nodis.id
+  join hef_event hef on hef.id=nce.event_id
+where condition='depression'
+group by nodis.patient_id
+having max(hef.date) >= now() - interval '1 year';
