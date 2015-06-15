@@ -1,0 +1,25 @@
+111_TEST000123A_OBS_1_RES_1^=^9.2^^^0.0 - 5.0^^^^^
+211_PN-F20120325-1_OBS_1_RES_1^^27.0^^^0.5-2.0 ug/L^^^^^
+311_ORD723222-4_OBS_1_RES_1^^^^^^Campylobacter jejuni^Campylobacter jejuni^1^^
+311_ORD723222-4_OBS_1_RES_2^^^^^^Shigella flexneri^Shigella flexneri^2^^
+411_ORD723222-4_OBS_1_RES_1^^^^^^Shigella flexneri 2^Shigella flexneri^^^
+411_ORD723222-4_OBS_2_RES_2^=^16^^^^^^^^
+411_ORD723222-4_OBS_2_RES_3^=^8^/^152^^^^^^
+411_ORD723222-4_OBS_2_RES_4^<=^0.06^^^^^^^^
+5A11_ORD723222_OBS_1_RES_1^^^^^Negative^Negative (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_2^^^^^Negative^Negative (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_3^^^^^Negative^Negative (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_4^^^^^Negative^Positive (qualifier value)^^^^
+5A11_ORD723222_OBS_1_RES_5^^10.8^^^0.0-0.9 s/co^^^^^
+5A11_ORD723222_OBS_1_RES_6^^7611200^^^<43 IU/mL^^^^^
+5B11_ORD723222_OBS_1_RES_1^^^^^Negative^Negative (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_2^^^^^Negative^Negative (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_3^^^^^Negative^Negative (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_4^^^^^Negative^Positive (qualifier value)^^^^
+5B11_ORD723222_OBS_1_RES_5^^10.8^^^0.0-0.9 s/co^^^^^
+5B11_ORD723222_OBS_2_RES_1^^7611200^^^<43 IU/mL^^^^^
+611_OR980768901-1_RES_1^^1^:^256^<1:64^^^^^
+711_O12-897451-23_RES_1^^^^^^Positive2^Positive^^R^L
+811_Ord89017782_RES_1^^^^^^Positive3^Positive^^^
+811_Ord89017782_RES_2^^^^^^Positive3^Positive^^^
+911_Ord123499_RES_1^^^^^^Corynebacterium diphtheriae^Corynebacterium diphtheriae isolated^^R^L

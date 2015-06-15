@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load url from future %} {# https://docs.djangoproject.com/en/dev/releases/1.3/#changes-to-url-and-ssi #}
+{% load templatefilters %}
+
+{% block extrascript %}
+    
+    <script type="text/javascript" src="{{ site_javascript_folder }}dropdown-check-list.1.1/js/ui.dropdownchecklist-1.1-min.js"></script>
+    <link type="text/css" rel="stylesheet" media="screen" href="{{ site_javascript_folder }}dropdown-check-list.1.1/css/ui.dropdownchecklist.standalone.css" />
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $.datepicker.setDefaults({
+                changeMonth: true,
+                changeYear: true,
+            });
+            $('#id_date_after').datepicker();
+            $('#id_date_before').datepicker();
+            $('#id_status').dropdownchecklist({ width: 300, emptyText: "Select..." });
+            $('#id_condition').dropdownchecklist({ width: 300, emptyText: "Select..." });
+            $('#id_provider_dept').dropdownchecklist({ width: 300, maxDropHeight: 350, emptyText: "Select..." });
+        });
+    </script>
+{% endblock %}
+
+{% block extrastyle %}
+
+<style type="text/css" media="all"> 
+    form ol {
+        list-style: none;
+    }
+    #search_div {
+        float: left;
+    }
+    #summary_div {
+        float: right;
+    }
+    #form_table {
+        border: 0;
+    }
+    #form_table th {
+        text-align: right;
+        border: 0;
+    }
+    #form_table td {
+        text-align: left;
+        border: 0;
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+<div id="search_div">
+    <h2>Filter</h2>
+    <form id="search_form" method="GET" action="{% url 'nodis_cases_all' %}">
+        <table id="form_table">
+            {{ search_form.as_table }}
+        </table>
+        <p>
+            <input type="submit" value="Update Results" />
+            <a href="{{ clear_search_path }}">Reset Filter</a>
+        <p>
+            <a href="{{ full_path }}&export_csv=case_list">Export case list to CSV file</a>
+        <p>
+    </form>
+</div>
+
+<div style="clear:both;" />
+
+<h2>Cases by Patient</h2>
+
+<table id="case_patient_table">
+    <tr>
+        <th>&nbsp;</th>
+        {% for column in table.columns %}
+            {% if column.sortable %}
+                <th><a href="{{ full_path }}&sort={{ column.name_toggled }}">{{ column }}</a></th>
+            {% else %}
+                <th>{{ column }}</th>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% for row in page.object_list %}
+        <tr>
+    	{% with cond_url=row.condition|get_url  %}
+        <td><a href="{% url cond_url row.id %}">view</a></td>
+		{% endwith %}
+        {% for value in row %}
+            <td>{{ value }}</td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+
+<div class="pagination">
+    <p>
+    {{ page.paginator.count }} cases matching query.
+    </p>
+    <p>
+    <span class="step-links">
+        {% if page.has_previous %}
+            <a href="{{ full_path }}&page={{ page.previous_page_number }}">previous</a> |
+        {% endif %}
+
+
+        <span class="current">
+            Page {{ page.number }} of {{ page.paginator.num_pages }}
+        </span>
+
+        {% if page.has_next %}
+            | <a href="{{ full_path }}&page={{ page.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+    </p>
+</div>
+
+
+
+{% endblock%}

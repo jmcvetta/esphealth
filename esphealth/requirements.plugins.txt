@@ -1,0 +1,58 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#                    Electronic Support for Public Health
+#                              PIP Requirements
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+#-------------------------------------------------------------------------------
+#
+# ESP Modules
+#
+#-------------------------------------------------------------------------------
+
+# Diabetes
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
+# Pregnancy
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=heuristic-pregnancy
+# Combined random/fasting glucose lab test
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf
+# Chlamydia
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia#egg=disease-chlamydia
+# Gonorrhea
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea#egg=disease-gonorrhea
+# Syphilis
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis#egg=disease-syphilis
+# Pelvic Inflammatory Disease
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease#egg=disease-pelvic-inflammatory-disease
+# Lyme Disease
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme#egg=disease-lyme
+# Hepatitis A/B/C
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined#egg=disease-hepatitis-combined
+# Pertussis 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis#egg=disease-pertussis
+# Giardiasis 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis#egg=disease-giardiasis
+# Tuberculosis 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis#egg=disease-tuberculosis
+# Metrohealth encountertypemap
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth#egg=esphealth_encountertypemap_metrohealth
+# Influenza like illness 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili#egg=disease-ili
+# Electronic lab reporting 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
+# Asthma
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma#egg=disease-asthma
+# Hepatitis C New
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new#egg=disease-hepatitis-new
+# Asthma-new improved performance
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma-new#egg=disease-asthma-new
+# Smoking
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-smoking#egg=disease-smoking
+# Depression
+#-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-depression#egg=disease-depression
+# Hep c New 2
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-new2#egg=disease-hepatitis-new2
+
+
