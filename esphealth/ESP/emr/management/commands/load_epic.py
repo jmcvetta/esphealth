@@ -17,6 +17,7 @@ EPIC_ENCODING = 'iso-8859-15'
 
 import csv
 import sys
+import traceback
 import os
 import socket
 import datetime
@@ -123,7 +124,7 @@ csv.register_dialect("epic", EpicDialect)
 csv.field_size_limit(1000000000) # <-- arbitrary big number
 
 
-class LoadException(BaseException):
+class LoadException(Exception):
     '''
     Raised when there is a problem loading data into db
     '''
@@ -202,7 +203,8 @@ class BaseLoader(object):
         self.updated = 0
         self.control = 0
         self.options = options
-    
+        self.loading_errors = []
+
     def get_patient(self, natural_key):
         if not natural_key:
             raise LoadException('Called get_patient() with empty patient_id')
@@ -307,7 +309,6 @@ class BaseLoader(object):
         except IntegrityError as e:
             #this integrity error we hope is due to a previously loaded record being updated, so now we try to update
             transaction.savepoint_rollback(sid)
-            
             keys = {}
             for field_name in key_fields:
                 keys[field_name] = field_values[field_name]
@@ -325,7 +326,8 @@ class BaseLoader(object):
                 #most likely missing a non-null field
                 transaction.savepoint_rollback(sid)
                 log.warning('Record could not be saved')
-                raise Exception('Record could not be saved.  System error was: %s ' % e) 
+                raise
+            
         if created:
             self.inserted += 1
         else:
@@ -388,54 +390,61 @@ class BaseLoader(object):
             if not dx_code in cache:
                 i, created = Dx_code.objects.get_or_create(combotypecode__exact=dx_code, defaults={
                      'combotypecode':dx_code, 'type':code_type,'code': code,'name':name + ' (Added by load_epic.py)'})
-    
+
                 if created:
                     log.warning('Could not find dx code "%s" - creating new dx_code entry.' % dx_code  )
                 cache[dx_code] = i
-                
+
             return cache[dx_code]
         else:
             log.info('Could not extract dx code: "%s"' % code)
             return None
-    
-    @transaction.commit_manually
+
+
     def load(self):
-        # 
-        # We can put error control here as it becomes necessary
-        #
-        log.info('Loading file "%s" with %s' % (self.filepath, self.__class__))
-        cur_row = 0 # Row counter
-        valid = 0 # Number of valid records loaded
-        errors = 0 # Number of errors encountered
+        try:
+            log.info('Loading file "%s" with %s' % (self.filepath, self.__class__))
+            self.load_file()
+            self.provenance.status = 'loaded' if not self.loading_errors else 'errors'
+            self.provenance.valid_rec_count = self.line_count - (len(self.loading_errors) + self.control)
+            self.provenance.error_count = len(self.loading_errors)
+            self.provenance.post_load_count = self.prov_count()
+    
+            log.info('File %s loaded %s records with %s errors.' % (self.filepath, 
+                                                                    self.provenance.valid_rec_count, 
+                                                                    len(self.loading_errors)))
+        except LoadException:
+            log.critical('Exception loading file "%s":' % self.filepath)
+            log.critical('\t%s' % traceback.format_exc())
+            self.provenance.status = 'failure'
+            self.provenance.comment = traceback.format_exc()
+    
+        self.provenance.save()
+        for err in self.loading_errors:
+            err.save()
+
+        return "success" if self.provenance.status == 'loaded' else self.provenance.status
+
+    @transaction.commit_on_success
+    def load_file(self):
         self.control = 0 # for control records
         start_time = datetime.datetime.now()
-        for row in self.reader:
-            sid = transaction.savepoint()
-            cur_row += 1            
+        for cur_row, row in enumerate(self.reader, start=1):
             # skip the footer, if present, at the end of the file
             if cur_row == self.line_count and row[self.fields[0]].upper() == 'CONTROL TOTALS':
                 self.control += 1
                 break
-            if cur_row > self.line_count:
-                break
-            if self.fields.__len__() < row.__len__():
-                errors += 1
-                e = 'Skipping row. More items in row than fields'  
-                err = EtlError()
-                err.provenance = self.provenance
-                err.line = cur_row
-                err.err_msg = e
-                err.data = pprint.pformat(row)
-                try:
-                    err.save()
-                    transaction.commit()
-                except:
-                    transaction.savepoint_rollback(sid)
-                    raise
-                log.error('Skipping row %s. More than %s items in row.  Item count: %s ' 
-                    % (cur_row, self.fields.__len__() , row.__len__() ))
+            if len(self.fields) < len(row):
+                e = 'Skipping row. More items in row than fields'
+                self.loading_errors.append(EtlError(provenance = self.provenance,
+                                                   line = cur_row,
+                                                   err_msg = e,
+                                                   data = pprint.pformat(row),
+                                                   timestamp = datetime.datetime.now()))
+                log.error('Skipping row %s. More than %s items in row.  Item count: %s '
+                    % (cur_row, len(self.fields) , len(row) ))
                 if not self.options['load_with_errors']:
-                    raise BaseException(e)
+                    raise LoadException(e)
                 continue
             if not row:
                 continue # Skip None objects
@@ -443,23 +452,16 @@ class BaseLoader(object):
                 if row[key]:
                     try:
                         if not key:
-                            # Not sure how this error could ever trigger since we've already checked for self.fields.__len__() < row.__len__()
-                            errors += 1
-                            e = ('There is a value that does not correspond to any field in line: %s for value: %s' % (cur_row,row[key]))  
-                            err = EtlError()
-                            err.provenance = self.provenance
-                            err.line = cur_row
-                            err.err_msg = e
-                            err.data = pprint.pformat(row)
-                            try:
-                                err.save()
-                                transaction.commit()
-                            except:
-                                transaction.savepoint_rollback(sid)
-                                raise
+                            # Not sure how this error could ever trigger since we've already checked for len(self.fields) < len(row)
+                            e = ('There is a value that does not correspond to any field in line: %s for value: %s' % (cur_row,row[key]))
+                            self.loading_errors.append(EtlError(provenance = self.provenance,
+                                                               line = cur_row,
+                                                               err_msg = e,
+                                                               data = pprint.pformat(row),
+                                                               timestamp = datetime.datetime.now()))
                             log.error(e)
                             if not self.options['load_with_errors']:
-                                raise BaseException(e)
+                                raise LoadException(e)
                             continue
                         else:
                             row[key] = sanitize_str( row[key].strip() )
@@ -467,99 +469,52 @@ class BaseLoader(object):
                         #
                         # Log character set errors to db
                         #
-                        err = EtlError()
-                        err.provenance = self.provenance
-                        err.line = cur_row
-                        err.err_msg = str(e)[:512]
-                        err.data = pprint.pformat(row)
-                        try:
-                            err.save()
-                            transaction.commit()
-                        except:
-                            transaction.savepoint_rollback(sid)
-                            raise
+                        self.loading_errors.append(EtlError(provenance = self.provenance,
+                                                           line = cur_row,
+                                                           err_msg = str(e)[:512],
+                                                           data = pprint.pformat(row),
+                                                           timestamp = datetime.datetime.now()))
+
                         if not self.options['load_with_errors']:
-                            raise e
+                            raise LoadException(e)
                         continue
             # Load the data, with error handling
             try:
                 self.load_row(row)
-                valid += 1
-            except KeyboardInterrupt, e:
-                #Allow keyboard interrupt to rise to next catch in main()
-                raise e
-            except:
-                log.error('Caught Exception:')
-                log.error('  File: %s' % self.filename)
-                log.error('  Line: %s' % cur_row)
-                log.error('  Exception: \n%s' % sys.exc_info()[1])
-                log.error(pprint.pformat(row))
-                errors += 1
+            except Exception, e:
                 #
                 # Log ETL errors to db
                 #
-                err = EtlError()
-                err.provenance = self.provenance
-                err.line = cur_row
-                err.err_msg = sys.exc_info()[1]
-                err.data = pprint.pformat(row)
-                err.timestamp = datetime.datetime.now()
-                try:
-                    err.save()
-                    transaction.commit()
-                except:
-                    transaction.savepoint_rollback(sid)
-                    raise
+                self.loading_errors.append(EtlError(provenance = self.provenance,
+                                                   line = cur_row,
+                                                   err_msg = str(e)[:512],
+                                                   data = pprint.pformat(row),
+                                                   timestamp = datetime.datetime.now()))
                 if not self.options['load_with_errors']:
-                    raise
+                    raise LoadException(e)
+                log.error('Caught Exception:')
+                log.error('  File: %s' % self.filename)
+                log.error('  Line: %s' % cur_row)
+                log.error('  Exception: \n%s' % traceback.format_exc())
+                log.error(pprint.pformat(row))
                 continue
-            if (ROW_LOG_COUNT == -1) or (ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT) ):
+            if (ROW_LOG_COUNT == -1) or (ROW_LOG_COUNT and (cur_row % ROW_LOG_COUNT == 0) ):
                 now = datetime.datetime.now()
                 elapsed_time = now - start_time
                 elapsed_seconds = elapsed_time.seconds or 1 # Avoid divide by zero on first few records if startup is quick
                 rows_per_sec = float(cur_row) / elapsed_seconds
                 log.info('Loaded %s of %s rows:  %s %s (%.2f rows/sec)' % (cur_row, self.line_count, now, self.filename, rows_per_sec))
-            if (valid % TRANSACTION_ROW_LIMIT) == 0:
-                #commit when the row limit is reached
-                transaction.commit()
-        #commit at the end
-        transaction.commit()
-        log.info('Loaded %s records with %s errors.' % (valid, errors))
 
-        self.provenance.status = 'loaded' if not errors else 'errors'
-        self.provenance.valid_rec_count = valid
-        self.provenance.error_count = errors
-        self.provenance.post_load_count = self.prov_count()
-        try:
-            self.provenance.save()
-            transaction.commit()
-        except:
-            transaction.rollback()
-            raise
-        return (valid, errors)
-    
+
     def prov_count(self):
         '''
         For a given provenance ID
         provides a count of records in the primary target table with that ID.
         NB: This is expensive for large DB tables.
         '''
-        prov_qs = self.model.objects.filter(provenance=self.provenance.provenance_id)
-        counts = prov_qs.count()
-        return counts
-    
-    def prov_delete(self):
-        '''
-        Delete all records associated with a given provenance_id 
-        EXCEPT the provenance record
-        '''
-        prov_qs = self.model.objects.filter(provenance=self.provenance.provenance_id)
-        try:
-            prov_qs.delete()
-            return True
-        except:
-            return False
-        
+        return self.model.objects.filter(provenance=self.provenance.provenance_id).count()
+
+
     def load_summary(self):
         '''
         Writes and optionally Emails a set of summary info for each file
@@ -713,12 +668,10 @@ class ProviderLoader(BaseLoader):
         'clin_addr_type' : row['clin_addr_type'],
         }
 
-        try:
-            p, created = self.insert_or_update(Provider, values, ['natural_key'])
-            log.debug('Saved provider object: %s' % p)
-            p = self.get_provider(natural_key)
-        except:
-            raise     
+        p, created = self.insert_or_update(Provider, values, ['natural_key'])
+        log.debug('Saved provider object: %s' % p)
+        p = self.get_provider(natural_key)
+
 
 class ProviderIdInfoLoader(BaseLoader):
     fields = [
@@ -765,15 +718,9 @@ class ProviderIdInfoLoader(BaseLoader):
             'facname_auth_id' : string_or_none(row['facname_auth_id']),
             }
        
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Provider_idInfo, values, ['provider_natural_key'])
-            log.debug('Saved Provider inInfo object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Provider_idInfo, values, ['provider_natural_key'])
+        log.debug('Saved Provider inInfo object: %s' % s)
 
 class ProviderPhonesLoader(BaseLoader):
     fields = [
@@ -808,15 +755,9 @@ class ProviderPhonesLoader(BaseLoader):
             'tel_info' : string_or_none(row['tel_info']),
             }
        
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Provider_phones, values, ['provider_natural_key','provider_phone_id'])
-            log.debug('Saved Provider phone object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Provider_phones, values, ['provider_natural_key','provider_phone_id'])
+        log.debug('Saved Provider phone object: %s' % s)
 
 class PatientLoader(BaseLoader):
     
@@ -901,14 +842,11 @@ class PatientLoader(BaseLoader):
         'remark' : string_or_none(row['remark']),
         }
 
-        try:
-            p, created = self.insert_or_update(Patient, values, ['natural_key'])
-            p.zip5 = p._calculate_zip5()
-            p.save()
-            log.debug('Saved patient object: %s' % p)
-            p = self.get_patient(natural_key)
-        except:
-            raise
+        p, created = self.insert_or_update(Patient, values, ['natural_key'])
+        p.zip5 = p._calculate_zip5()
+        p.save()
+        log.debug('Saved patient object: %s' % p)
+        p = self.get_patient(natural_key)
         
 
 class PatientGuardianLoader(BaseLoader):
@@ -988,16 +926,10 @@ class PatientGuardianLoader(BaseLoader):
             'org_id' : string_or_none(row['org_id']),
             }
        
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Patient_Guardian, values, ['natural_key'])
-            #TODO: zip5
-            log.debug('Saved pat guardian object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Patient_Guardian, values, ['natural_key'])
+        #TODO: zip5
+        log.debug('Saved pat guardian object: %s' % s)
 
 class PatientAddrLoader(BaseLoader):
     fields = [
@@ -1049,17 +981,10 @@ class PatientAddrLoader(BaseLoader):
             'use' : row['use'],
             'eqptype' : row['eqptype'],
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Patient_Addr, values, ['natural_key'])
-            #TODO: zip5
-            log.debug('Saved pat addr object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Patient_Addr, values, ['natural_key'])
+        #TODO: zip5
+        log.debug('Saved pat addr object: %s' % s)
 
 class PatientExtraLoader(BaseLoader):
     fields = [
@@ -1102,16 +1027,10 @@ class PatientExtraLoader(BaseLoader):
             'lsu_uidtype' : row['lsu_uidtype'],
             'species' : row['species'],
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Patient_ExtraData, values, ['natural_key'])
-            log.debug('Saved pat idInfo object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Patient_ExtraData, values, ['natural_key'])
+        log.debug('Saved pat idInfo object: %s' % s)
+
 
 class LabInfoLoader(BaseLoader):
     fields = [
@@ -1184,17 +1103,11 @@ class LabInfoLoader(BaseLoader):
             'addr_type' : row['addr_type'],
             'county_code' : row['county_code'],
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(LabInfo, values, row['CLIA_ID'])
-            #TODO: zip5
-            log.debug('Saved LabInfo object with CLIA ID: %s' % str(s))
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(LabInfo, values, row['CLIA_ID'])
+        #TODO: zip5
+        log.debug('Saved LabInfo object with CLIA ID: %s' % str(s))
+
 
 class LabResultLoader(BaseLoader):
     
@@ -1334,11 +1247,10 @@ class LabResultLoader(BaseLoader):
         'CLIA_ID' : self.get_LabCLIA(row['CLIA_ID']),
         'lab_method' : string_or_none(row['lab_method']),
          }
-        try:
-            lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
-            log.debug('Saved Lab Result object: %s' % lx)
-        except:
-            raise 
+
+        lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
+        log.debug('Saved Lab Result object: %s' % lx)
+
         
 
 class LabDetailLoader(BaseLoader):
@@ -1374,16 +1286,10 @@ class LabDetailLoader(BaseLoader):
             'comment_type' : string_or_none(row['comment_type']),
             'comment_source' : string_or_none(row['comment_source']),
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Labresult_Details, values, ['labresult_natural_key'])
-            log.debug('Saved lab result numeric detail object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Labresult_Details, values, ['labresult_natural_key'])
+        log.debug('Saved lab result numeric detail object: %s' % s)
+
 
 class SpecimenLoader(BaseLoader):
     fields = [
@@ -1436,16 +1342,10 @@ class SpecimenLoader(BaseLoader):
             'analysis_date' : self.date_or_none(row['analysis_date']),
             'canalysis_date' : row['analysis_date'],
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Specimen, values, ['order_natural_key','specimen_num'])
-            log.debug('Saved Specimen object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Specimen, values, ['order_natural_key','specimen_num'])
+        log.debug('Saved Specimen object: %s' % s)
+
 
 class SpecObsLoader(BaseLoader):
     fields = [
@@ -1470,15 +1370,9 @@ class SpecObsLoader(BaseLoader):
             'unit' : row['unit'],
             }
        
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(SpecObs, values, ['specimen_num', 'order_natural_key'])
-            log.debug('Saved Specimen observation: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(SpecObs, values, ['specimen_num', 'order_natural_key'])
+        log.debug('Saved Specimen observation: %s' % s)
 
 class LabOrderLoader(BaseLoader):    
     fields = [
@@ -1555,11 +1449,10 @@ class LabOrderLoader(BaseLoader):
             'remark' : string_or_none(row['remark']),
             'parent_res' : string_or_none(row['parent_res']),
             }
-        try:
-            lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
-            log.debug('Saved LabOrder object: %s' % lxo)
-        except:
-            raise
+
+        lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
+        log.debug('Saved LabOrder object: %s' % lxo)
+
 
 class OrderExtLoader(BaseLoader):
     fields = [
@@ -1588,16 +1481,9 @@ class OrderExtLoader(BaseLoader):
             'answer': string_or_none(row['answer']),    
                   }
         
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Order_Extension, values, ['order_natural_key','question','answer'])
-            log.debug('Saved order extension object: %s' % s)
-        except ex_to_catch, e:
-            raise e
-        
+
+        s, created = self.insert_or_update(Order_Extension, values, ['order_natural_key','question','answer'])
+        log.debug('Saved order extension object: %s' % s)
 
 
 class OrderIdInfoLoader(BaseLoader):
@@ -1638,16 +1524,10 @@ class OrderIdInfoLoader(BaseLoader):
             'placer_grp_uid' : string_or_none(row['placer_grp_uid']),
             'placer_grp_uid_type' : string_or_none(row['placer_grp_uid_type']),
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(Order_idInfo, values, ['order_natural_key'])
-            log.debug('Saved order idInfo object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(Order_idInfo, values, ['order_natural_key'])
+        log.debug('Saved order idInfo object: %s' % s)
+
 
 class EncounterLoader(BaseLoader):
     
@@ -1755,11 +1635,9 @@ class EncounterLoader(BaseLoader):
             }
         if values['edd']:  
             values['pregnant'] = True
-        try:
-            e, created = self.insert_or_update(Encounter, values, ['natural_key'])
-        except:
-            #pass it on up
-            raise
+
+        e, created = self.insert_or_update(Encounter, values, ['natural_key'])
+
         e.bmi = e._calculate_bmi() # No need to save until we finish dx codes
         #fill out encounter_type and priority from mapping table if it has a value
         if  row['event_type'] and not option_site:
@@ -1788,7 +1666,7 @@ class EncounterLoader(BaseLoader):
                 code_type = code_string[:type].strip().lower()
                 if  code_type == 'icd10' and not ICD10_SUPPORT :
                     log.error('ICD10 codes are not allowed code %s' % code_string )
-                    raise BaseException(e)
+                    raise LoadException('ICD10 codes are not allowed code %s' % code_string)
             
                 if code_type in ['icd9','icd10']:
                     firstspace = code_string.find(' ',type)
@@ -1815,14 +1693,9 @@ class EncounterLoader(BaseLoader):
                     diagnosis_text = ''
                     
             if len(code) >= 1 :
-                e.dx_codes.add(self.get_dx_code(code, code_type, diagnosis_text, self._BaseLoader__dx_code_cache))  
-        try:
-            e.save()
-            log.debug('Saved encounter object: %s' % e)
-        except AttributeError as describe:
-            log.warning('Could not save encounter object: %s' % e)
-            log.warning('Error is: %s ' % describe)
-            raise
+                e.dx_codes.add(self.get_dx_code(code, code_type, diagnosis_text, self._BaseLoader__dx_code_cache))
+        e.save()
+        log.debug('Saved encounter object: %s' % e)
 
 class PrescriptionLoader(BaseLoader):
 
@@ -1898,11 +1771,10 @@ class PrescriptionLoader(BaseLoader):
         'patient_status' : string_or_none(row['patient_status']),
         
         }
-        try:
-            p, created = self.insert_or_update(Prescription, values, ['natural_key'])
-            log.debug('Saved prescription object: %s' % p)
-        except:
-            raise
+
+        p, created = self.insert_or_update(Prescription, values, ['natural_key'])
+        log.debug('Saved prescription object: %s' % p)
+
 
 # this object was added for version 3 of esp
 class PregnancyLoader(BaseLoader):
@@ -1959,30 +1831,26 @@ class PregnancyLoader(BaseLoader):
             'delivery' : string_or_none(row['delivery']),
             'pre_eclampsia' : row['pre_eclampsia'],
             }
-        try:
-            p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
-            p.births = 0        
-            if not created: # If updating the record, purge old birth weights
-                p.birth_weight = None
-                p.birth_weight2 = None
-                p.birth_weight3 = None
-                
-            for birth in birth_weights.strip().split(';'):
-                birth = birth.strip()
-                if birth != '':
-                    p.births += 1
-                    #get the weight     
-                    if p.births == 1: 
-                        p.birth_weight = weight_str_to_kg(birth)
-                    elif  p.births == 2:  
-                        p.birth_weight2 = weight_str_to_kg(birth)
-                    elif  p.births ==3:  
-                        p.birth_weight3 = weight_str_to_kg(birth)                   
-            p.save()                
-        except:
-            #pass it on up
-            raise
-        
+
+        p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
+        p.births = 0
+        if not created: # If updating the record, purge old birth weights
+            p.birth_weight = None
+            p.birth_weight2 = None
+            p.birth_weight3 = None
+
+        for birth in birth_weights.strip().split(';'):
+            birth = birth.strip()
+            if birth != '':
+                p.births += 1
+                #get the weight
+                if p.births == 1:
+                    p.birth_weight = weight_str_to_kg(birth)
+                elif  p.births == 2:
+                    p.birth_weight2 = weight_str_to_kg(birth)
+                elif  p.births ==3:
+                    p.birth_weight3 = weight_str_to_kg(birth)
+        p.save()
         log.debug('Saved pregnancy object: %s' % p)
 
 class ImmunizationLoader(BaseLoader):
@@ -2032,20 +1900,14 @@ class ImmunizationLoader(BaseLoader):
             log.info('Empty date not allowed, using date from the ETL file name')
             values['date'] = datetime.datetime.strptime(datestring_from_filepath(self.filename), "%Y%m%d").strftime("%Y-%m-%d") 
 
-        try:
-            i, created = self.insert_or_update(Immunization, values, ['natural_key'])
-            log.debug('Saved immunization object: %s' % i)
-        except:
-            raise
-        
-        try:
-            nativevax, new = VaccineCodeMap.objects.get_or_create(
-                    native_code=string_or_none(row['type']), native_name=string_or_none(row['name']))
-            if new:
-                log.debug('Saved new VaccineCodeMap entry: %s' %nativevax)
-        except:
-            log.debug('Could not save VaccineCodeMap entry: %s' %string_or_none(row['name']))
-            raise
+
+        i, created = self.insert_or_update(Immunization, values, ['natural_key'])
+        log.debug('Saved immunization object: %s' % i)
+
+        nativevax, vax_created = VaccineCodeMap.objects.get_or_create(
+                native_code=string_or_none(row['type']), native_name=string_or_none(row['name']))
+        if vax_created:
+            log.debug('Saved new VaccineCodeMap entry: %s' %nativevax)
 
 
 class SocialHistoryLoader(BaseLoader):
@@ -2084,16 +1946,10 @@ class SocialHistoryLoader(BaseLoader):
             'alcohol_use' : row['alcohol_use'],
             'provider' : self.get_provider(row['provider_id']),
             }
-       
-        if DEBUG:
-            ex_to_catch = []
-        else:
-            ex_to_catch = [BaseException]
-        try:
-            s, created = self.insert_or_update(SocialHistory, values, ['natural_key'])
-            log.debug('Saved provider object: %s' % s)
-        except ex_to_catch, e:
-            raise e
+
+        s, created = self.insert_or_update(SocialHistory, values, ['natural_key'])
+        log.debug('Saved provider object: %s' % s)
+
 
 class AllergyLoader(BaseLoader):
     fields = [
@@ -2149,13 +2005,10 @@ class AllergyLoader(BaseLoader):
             'mrn' : row['mrn'],
             'provider' : self.get_provider(row['provider_id']),
         }
-        try:
-            a, created = self.insert_or_update(Allergy, values, ['natural_key'])
-            log.debug('Saved Allergy object: %s' % a)
-        except:
-            #pass it on up
-            raise
-            
+
+        a, created = self.insert_or_update(Allergy, values, ['natural_key'])
+        log.debug('Saved Allergy object: %s' % a)
+
         
 class ProblemLoader(BaseLoader):
     fields = [
@@ -2194,12 +2047,10 @@ class ProblemLoader(BaseLoader):
             'provider' : self.get_provider(row['provider_id']),
             'hospital_pl_yn' : string_or_none(row['hospital_pl_yn'])
             }
-        
-        try:
-            p, created = self.insert_or_update(Problem, values, ['natural_key'])    
-            log.debug('Saved Problem object: %s' % p)
-        except:
-            raise
+
+        p, created = self.insert_or_update(Problem, values, ['natural_key'])
+        log.debug('Saved Problem object: %s' % p)
+
 
 class HospProblemLoader(BaseLoader):
     fields = [
@@ -2243,17 +2094,14 @@ class HospProblemLoader(BaseLoader):
             'overview' : string_or_none(row['overview']),
             'provider' : self.get_provider(row['provider_id'])
             }
-        
-        try:
-            hp, created = self.insert_or_update(Hospital_Problem, values, ['natural_key'])
-            if option_site:
-                site = SiteDefinition.get_by_short_name(option_site)
-                hp.principal_prob, hp.present_on_adm, hp.priority = site.set_hospprobs(hp)
-            hp.save()
-            log.debug('Saved Problem object: %s' % hp)
-        except:
-            raise
-                
+
+        hp, created = self.insert_or_update(Hospital_Problem, values, ['natural_key'])
+        if option_site:
+            site = SiteDefinition.get_by_short_name(option_site)
+            hp.principal_prob, hp.present_on_adm, hp.priority = site.set_hospprobs(hp)
+        hp.save()
+        log.debug('Saved Problem object: %s' % hp)
+
 
 class Command(LoaderCommand):
     #
@@ -2352,36 +2200,16 @@ class Command(LoaderCommand):
             filepath_list.sort(key=lambda filepath: date_from_filepath(filepath))
             for filepath in filepath_list:
                 loader_class = loader[ft]
-                l = loader_class(filepath, options) # BaseLoader child instance
-                try:
-                    valid, error = l.load()
-                    valid_count[ft] += valid
-                    error_count[ft] += error
-                    if error:
-                        log.info('File "%s" loaded with %s errors' % (filepath, error))
-                        disposition = 'errors'
-                    else:
-                        log.info('File "%s" loaded successfully.' % filepath)
-                        disposition = 'success'
-                except KeyboardInterrupt:
-                    log.critical('Keyboard interrupt: exiting.')
-                    if not l.prov_delete():
-                        log.error('Could not clear out data for stopped load of PROVENANCE ID %s: ' % l.provenance.provenance_id)
-                    sys.exit(-255)
-                except: # Unhandled exception!
-                    log.critical('Exception loading file "%s":' % filepath)
-                    log.critical('\t%s' % sys.exc_info()[1])
-                    l.provenance.status = 'failure'
-                    l.provenance.comment = sys.exc_info()[1]
-                    l.provenance.save()
-                    if not l.prov_delete():
-                        log.error('Could not clear out data for failed load of PROVENANCE ID %s: ' % l.provenance.provenance_id)
-                    disposition = 'failure'
-                    transaction.commit()
+                l = loader_class(filepath, options) # BaseLoader child instance\
+                disposition = l.load()
+
+                valid_count[ft] += l.provenance.valid_rec_count
+                error_count[ft] += l.provenance.error_count
+
                 self.archive(options, filepath, disposition)
                 if disposition == 'failure':
-                    sys.exit()               
-                l.load_summary() 
+                    sys.exit()
+                l.load_summary()
         #
         # Print job summary
         #
