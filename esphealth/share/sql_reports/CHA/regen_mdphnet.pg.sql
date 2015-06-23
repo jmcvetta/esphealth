@@ -180,7 +180,7 @@ SELECT '1'::varchar(1) as centerid,
          INNER JOIN public.emr_patient pat ON disease.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
   WHERE prvn.source ilike 'epicmem%'
-        and (disease.condition in ('ili', 'diabetes:type-1', 'diabetes:type-2', 'diabetes:gestational', 'diabetes:prediabetes')
+        and (disease.condition in ('depression', 'ili', 'diabetes:type-1', 'diabetes:type-2', 'diabetes:gestational', 'diabetes:prediabetes')
         or disease.id in (select id from esp_current_asthma_cases));
 
 -- Instantiate tables from previously created views
