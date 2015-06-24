@@ -758,13 +758,29 @@ create table gen_pop_tools.gpr_enc as
        
 drop table if exists gpr_depression;
 create table gpr_depression as
-  select
-  case when count(*) > 0 then 1 else 2 end as depression,
-  nodis.patient_id
-from nodis_case nodis 
+        SELECT
+          hef.patient_id
+        , case
+            when hef.date >= ( now() - interval '1 year' ) then '1'
+            when hef.date >= ( now() - interval '2 years' ) then '2'
+            else '3'
+          end  AS depression
+from nodis_case nodis
   join nodis_case_events nce on nce.case_id=nodis.id
   join hef_event hef on hef.id=nce.event_id
+  JOIN (
+        SELECT
+          hf.patient_id
+         , MAX(hf.date) AS date
+        FROM nodis_case nds
+          join nodis_case_events nce on nce.case_id=nds.id
+          join hef_event hf on hf.id=nce.event_id
+                where nds.condition = 'depression'
+                GROUP BY
+                  hf.patient_id
+        ) u0
+                ON u0.patient_id = hef.patient_id
+                AND u0.date = hef.date
 where condition='depression'
-group by nodis.patient_id
-having max(hef.date) >= now() - interval '1 year';
-
+        GROUP BY
+          hef.patient_id, hef.date;
