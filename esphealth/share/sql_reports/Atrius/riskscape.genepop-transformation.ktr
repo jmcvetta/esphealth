@@ -3140,7 +3140,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
            </partitioning>
     <field_to_use>depression</field_to_use>
     <target_field/>
-    <non_match_default>2</non_match_default>
+    <non_match_default>4</non_match_default>
     <fields>
       <field>
         <source_value>1</source_value>
@@ -3150,11 +3150,15 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <source_value>2</source_value>
         <target_value>2</target_value>
       </field>
+      <field>
+        <source_value>3</source_value>
+        <target_value>3</target_value>
+      </field>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>209</xloc>
-      <yloc>1462</yloc>
+      <yloc>1461</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
