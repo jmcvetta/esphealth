@@ -88,10 +88,10 @@ SELECT '1'::varchar(1) as centerid,
        case 
          when upper(race)='HISPANIC' then 6 
          when ethnicity = 'Y' then 6
-         when UPPER(race) = 'CAUCASIAN' then 5
+         when UPPER(race) in ('CAUCASIAN','WHITE') then 5
          when UPPER(race) in ('ASIAN','INDIAN','NATIVE HAWAI') then 2
          when UPPER(race) = 'BLACK'then 3
-         when UPPER(race) in ('NAT AMERICAN','ALASKAN') then 1
+         when UPPER(race) in ('NAT AMERICAN','ALASKAN','AMERICAN INDIAN/ALASKAN NATIVE') then 1
          else 0
        end as race_ethnicity,
        pat.zip5,
