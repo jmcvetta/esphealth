@@ -491,6 +491,8 @@ def case_list(request, status):
         qs = qs.filter(status='Q')
     elif status == 'sent':
         qs = qs.filter(status='S')
+    elif status == 'requeued':
+        qs = qs.filter(status='RQ')
     search_form = CaseFilterForm(request.GET)
     if search_form.is_valid():
         log.debug(search_form.cleaned_data)

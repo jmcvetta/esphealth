@@ -38,6 +38,7 @@ urlpatterns = patterns('ESP.ui.views',
     url(r'^cases/list/under_review/$', 'case_list', {'status': 'under'}, name='nodis_cases_under_review'),
     url(r'^cases/list/queued/$', 'case_list', {'status': 'queued'}, name='nodis_cases_queued'),
     url(r'^cases/list/sent/$', 'case_list', {'status': 'sent'}, name='nodis_cases_sent'),
+    url(r'^cases/list/requeued/$', 'case_list', {'status': 'requeued'}, name='nodis_cases_requeued'),
     #
     # Case Detail
     #
