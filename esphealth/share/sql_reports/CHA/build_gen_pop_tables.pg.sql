@@ -35,7 +35,6 @@ join
 	  patient_id
 	, MAX(date) AS last_enc_date
 	FROM emr_encounter
-        WHERE date >= (current_date - interval '2 years')
 	GROUP BY patient_id) lastenc
 on pat.id=lastenc.patient_id 
 --
