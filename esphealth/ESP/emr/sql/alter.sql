@@ -619,3 +619,76 @@ ALTER TABLE emr_patient
   ADD COLUMN housing_status character varying(50);
 ALTER TABLE emr_patient
   ADD COLUMN insurance_status character varying(50);
+  
+--2015-07-08 Add tables needed for opioid project
+-- Table: static_rx_type
+
+-- DROP TABLE static_rx_type;
+
+CREATE TABLE static_rx_type
+(
+  id serial NOT NULL,
+  type character varying(50),
+  CONSTRAINT static_rx_type_pkey PRIMARY KEY (id),
+  CONSTRAINT static_rx_type_type UNIQUE (type)
+)
+WITH (
+  OIDS=FALSE
+);
+
+-- Table: static_rx_lookup
+
+-- DROP TABLE static_rx_lookup;
+
+CREATE TABLE static_rx_lookup
+(
+  id serial NOT NULL,
+  name text NOT NULL,
+  rx_dose text,
+  conversion_factor real,
+  dosage_strength real,
+  type integer,
+  CONSTRAINT static_rx_lookup_pkey PRIMARY KEY (id),
+  CONSTRAINT static_rx_type_fkey FOREIGN KEY (type)
+      REFERENCES static_rx_type (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT static_rx_lookup_name_rx_dose_key UNIQUE (name, rx_dose)
+)
+WITH (
+  OIDS=FALSE
+);
+
+-- Index: fki_static_rx_type_fkey
+
+-- DROP INDEX fki_static_rx_type_fkey;
+
+CREATE INDEX fki_static_rx_type_fkey
+  ON static_rx_lookup
+  USING btree
+  (type);
+
+-- Table: esp_condition
+
+-- DROP TABLE esp_condition;
+
+CREATE TABLE esp_condition
+(
+  centerid character varying(1),
+  patid character varying(128) NOT NULL,
+  condition character varying(100) NOT NULL,
+  date integer NOT NULL,
+  age_at_detect_year integer,
+  age_group_5yr character varying(5),
+  age_group_10yr character varying(5),
+  age_group_ms character varying(5),
+  criteria character varying(2000),
+  status character varying(32),
+  notes text,
+  CONSTRAINT esp_condition_r_pkey1 PRIMARY KEY (patid, condition, date)
+)
+WITH (
+  OIDS=FALSE
+);
+
+insert into static_rx_type values (1, 'opioid');
+insert into static_rx_type values (2, 'benzodiazepine');
