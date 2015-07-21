@@ -7,10 +7,10 @@ drop table if exists mdphnet_updated_patients;
 drop table if exists esp_demographic_u;
 drop table if exists esp_encounter_u;
 drop table if exists esp_diagnosis_u;
-drop table if exists esp_disease_u;
+--drop table if exists esp_disease_u;
 drop table if exists mdphnet_updated_patients;
 drop table if exists mdphnet_updated_encounters;
-drop table if exists mdphnet_updated_diseases;
+--drop table if exists mdphnet_updated_diseases;
 
 create temp table starttime as select current_timestamp starttime;
  
@@ -136,35 +136,6 @@ SELECT '1'::varchar(1) centerid,
          inner join mdphnet_updated_encounters updtencs on updtencs.encounterid=enc.natural_key
          inner join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
          where prvn.source ilike 'epicmem%';
-
---create the table of disease pkey vars (patid, condition, date) that have been updated
-create table mdphnet_updated_diseases as select t2.natural_key as patid, t0.condition, t0.date
-  from public.nodis_case t0
-  inner join (select max(latest_update_start) as updated_timestamp from mdphnet_schema_update_history where latest_update_complete is not null) t1 
-  on t0.updated_timestamp>=t1.updated_timestamp
-  inner join public.emr_patient t2 on t0.patient_id=t2.id;
-alter table mdphnet_updated_diseases 
-  add constraint mdphnet_updated_diseases_pkey primary key (patid, condition, date);
-vacuum analyze mdphnet_updated_diseases;
-
-CREATE table esp_disease_u AS
-SELECT '1'::varchar(1) centerid,
-       pat.natural_key patid,
-       disease.condition,
-       disease.date - ('1960-01-01'::date) date,
-       age_at_year_start(disease.date, pat.date_of_birth::date) age_at_detect_year,
-       age_group_5yr(disease.date, pat.date_of_birth::date)::varchar(5) age_group_5yr,
-       age_group_10yr(disease.date, pat.date_of_birth::date)::varchar(5) age_group_10yr,
-       age_group_ms(disease.date, pat.date_of_birth::date)::varchar(5) age_group_ms,
-       disease.criteria,
-       disease.status,
-       disease.notes
-  FROM public.nodis_case disease
-         INNER JOIN public.emr_patient pat ON disease.patient_id = pat.id
-	 inner join mdphnet_updated_diseases updt on 
-                 updt.condition=disease.condition and updt.date=disease.date
-         inner join public.emr_provenance prvn on pat.provenance_id=prvn.provenance_id 
-         where updt.patid=pat.natural_key and prvn.source ilike 'epicmem%';
 
 
 --now update the UVTs with primary>>foreign keys 
@@ -347,46 +318,6 @@ SELECT '1'::varchar(1) centerid,
         WHERE diag.dx_code_5dig is not null and icd9.name not like '%load_epic%' and icd9.type='icd9'
           and not exists (select null from uvt_dx_5dig t0 where t0.item_code=diag.dx_code_5dig);
 
---    UVT_DETECTED_CONDITION
-      insert into UVT_DETECTED_CONDITION 
-      SELECT DISTINCT
-             disease.condition item_code,
-             disease.condition item_text
-        FROM esp_disease_u disease
-         where not exists (select null from uvt_detected_condition t0 where t0.item_code=disease.condition);
- 
---    UVT_DETECTED_CRITERIA
-      insert into UVT_DETECTED_CRITERIA
-      SELECT DISTINCT
-             disease.criteria item_code,
-             disease.criteria item_text
-        FROM esp_disease_u disease
-          where disease.criteria is not null
-            and not exists (select null from uvt_detected_criteria t0 where t0.item_code=disease.criteria);
-      
---    UVT_DETECTED_STATUS
-      insert into UVT_DETECTED_STATUS 
-      SELECT DISTINCT
-             disease.status item_code,
-             CASE
-               WHEN disease.status = 'AR' THEN 'Awaiting Review'::varchar(80)
-               WHEN disease.status = 'UR' THEN 'Under Review'::varchar(80)
-               WHEN disease.status = 'RM' THEN 'Review By MD'::varchar(80)
-               WHEN disease.status = 'FP' THEN 'False Positive - Do Not Process'::varchar(80)
-               WHEN disease.status = 'Q'  THEN 'Confirmed Case, Transmit to Health Department'::varchar(80)
-               WHEN disease.status = 'S'  THEN 'Transmitted to Health Department'::varchar(80)
-               ELSE 'Not Mapped'::varchar(80)
-             END item_text
-        FROM esp_disease_u disease
-          where not exists (select null from uvt_detected_status t0 where t0.item_code=disease.status);
-
---now clear out the old patient data from each of the main tables
--- NB: dropping and recreating indexes takes more time than just loading a day or two's updates
-delete from esp_disease
-  where exists(select null from mdphnet_updated_diseases
-               where mdphnet_updated_diseases.patid=esp_disease.patid
-                     and mdphnet_updated_diseases.condition=esp_disease.condition
-                     and mdphnet_updated_diseases.date - ('1960-01-01'::date)=esp_disease.date);
 
 delete from esp_diagnosis
   where exists(select null from mdphnet_updated_encounters 
@@ -415,7 +346,7 @@ insert into esp_demographic (centerid, patid, sex, hispanic, race, zip5, birth_d
    t0 where not exists (select null from esp_demographic t1 where t1.patid=t0.patid));
 insert into esp_encounter select * from esp_encounter_u;
 insert into esp_diagnosis select * from esp_diagnosis_u;
-insert into esp_disease select * from esp_disease_u;
+--insert into esp_disease select * from esp_disease_u;
 
 --now get the smoking data
 drop table if exists esp_temp_smoking cascade;
@@ -468,8 +399,8 @@ set smoking = (select smoking from esp_temp_smoking t0 where t0.patid=esp_demogr
 --now vacuum analyze each table
 vacuum analyze esp_demographic;
 vacuum analyze esp_encounter;
-vacuum analyse esp_diagnosis;
-vacuum analyse esp_disease;
+vacuum analyze esp_diagnosis;
+--vacuum analyse esp_disease;
 
 --Now that update sets are pulled,
 --add timestamp to current history as the point where the updates completed
@@ -477,206 +408,123 @@ update mdphnet_schema_update_history
   set latest_update_complete= current_timestamp, patients_replaced = (select count(*) from mdphnet_updated_patients)
   where latest_update_start = (select starttime from starttime);
 
-/*
---now rerun the summary table creation.  This actually takes the longest of all the 
---Create the summary table for 3-digit ICD9 codes and populate it with information for the 5 year age groups
-drop table if exists esp_diagnosis_icd9_3dig_new;
-CREATE TABLE esp_diagnosis_icd9_3dig_new AS
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group 5yr'::varchar(15) age_group_type, diag.age_group_5yr age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_3dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_3dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9 
-                 ON t1.code_ = replace(icd9.code, '.', '')
-UNION
--- Add the summary information for the 10 year age groups
--- INSERT INTO esp_diagnosis_icd9_3dig
---        (centerid, age_group_type, age_group, sex, period, code_, setting, members, events, dx_name)
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group 10yr'::varchar(15) age_group_type, diag.age_group_10yr age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_3dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_3dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '')
-UNION
--- Add the summary information for the mini-Sentinel age groups
--- INSERT INTO esp_diagnosis_icd9_3dig
---        (centerid, age_group_type, age_group, sex, period, code_, setting, members, events, dx_name)
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group MS'::varchar(15) age_group_type, diag.age_group_ms age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_3dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_3dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '');
-create index diag3dig_centerid_idx_new on esp_diagnosis_icd9_3dig_new (centerid);
-create index diag3dig_age_group_type_idx_new on esp_diagnosis_icd9_3dig_new (age_group_type);
-create index diag3dig_age_group_idx_new on esp_diagnosis_icd9_3dig_new (age_group);
-create index diag3dig_sex_idx_new on esp_diagnosis_icd9_3dig_new (sex);
-create index diag3dig_period_idx_new on esp_diagnosis_icd9_3dig_new (period);
-create index diag3dig_code_idx_new on esp_diagnosis_icd9_3dig_new (code_);
-create index diag3dig_setting_idx_new on esp_diagnosis_icd9_3dig_new (setting);
-drop table if exists esp_diagnosis_icd9_3dig;
-alter table esp_diagnosis_icd9_3dig_new rename to esp_diagnosis_icd9_3dig;
-alter index diag3dig_centerid_idx_new rename to diag3dig_centerid_idx;
-alter index diag3dig_age_group_type_idx_new rename to diag3dig_age_group_type_idx;
-alter index diag3dig_age_group_idx_new rename to diag3dig_age_group_idx;
-alter index diag3dig_sex_idx_new rename to diag3dig_sex_idx;
-alter index diag3dig_period_idx_new rename to diag3dig_period_idx;
-alter index diag3dig_code_idx_new rename to diag3dig_code_idx;
-alter index diag3dig_setting_idx_new rename to diag3dig_setting_idx;
 
--- Create the summary table for 4-digit ICD9 codes and populate it with information for the 5 year age groups
-drop table if exists esp_diagnosis_icd9_4dig_new;
-CREATE TABLE esp_diagnosis_icd9_4dig_new AS
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group 5yr'::varchar(15) age_group_type, diag.age_group_5yr age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_4dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_4dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '')
-UNION
--- Add the summary information for the 10 year age groups
--- INSERT INTO esp_diagnosis_icd9_4dig
---        (centerid, age_group_type, age_group, sex, period, code_, setting, members, events, dx_name)
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group 10yr'::varchar(15) age_group_type, diag.age_group_10yr age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_4dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_4dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '')
-UNION
--- Add the summary information for the mini-Sentinel age groups
--- INSERT INTO esp_diagnosis_icd9_4dig
---        (centerid, age_group_type, age_group, sex, period, code_, setting, members, events, dx_name)
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group MS'::varchar(15) age_group_type, diag.age_group_ms age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_4dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_4dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '');
-create index diag4dig_centerid_idx_new on esp_diagnosis_icd9_4dig_new (centerid);
-create index diag4dig_age_group_type_idx_new on esp_diagnosis_icd9_4dig_new (age_group_type);
-create index diag4dig_age_group_idx_new on esp_diagnosis_icd9_4dig_new (age_group);
-create index diag4dig_sex_idx_new on esp_diagnosis_icd9_4dig_new (sex);
-create index diag4dig_period_idx_new on esp_diagnosis_icd9_4dig_new (period);
-create index diag4dig_code_idx_new on esp_diagnosis_icd9_4dig_new (code_);
-create index diag4dig_setting_idx_new on esp_diagnosis_icd9_4dig_new (setting);
-drop table if exists esp_diagnosis_icd9_4dig;
-alter table esp_diagnosis_icd9_4dig_new rename to esp_diagnosis_icd9_4dig;
-alter index diag4dig_centerid_idx_new rename to diag4dig_centerid_idx;
-alter index diag4dig_age_group_type_idx_new rename to diag4dig_age_group_type_idx;
-alter index diag4dig_age_group_idx_new rename to diag4dig_age_group_idx;
-alter index diag4dig_sex_idx_new rename to diag4dig_sex_idx;
-alter index diag4dig_period_idx_new rename to diag4dig_period_idx;
-alter index diag4dig_code_idx_new rename to diag4dig_code_idx;
-alter index diag4dig_setting_idx_new rename to diag4dig_setting_idx;
+--NOW rebuild the esp_disease table and UVT tables from scratch
 
--- Create the summary table for 5-digit ICD9 codes and populate it with information for the 5 year age groups
-drop table if exists esp_diagnosis_icd9_5dig_new;
-CREATE TABLE esp_diagnosis_icd9_5dig_new
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group 5yr'::varchar(15) age_group_type, diag.age_group_5yr age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_5dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_5yr, pat.sex, diag.enc_year, diag.dx_code_5dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '')
-UNION
--- Add the summary information for the 10 year age groups
--- INSERT INTO esp_diagnosis_icd9_5dig
---        (centerid, age_group_type, age_group, sex, period, code_, setting, members, events, dx_name)
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group 10yr'::varchar(15) age_group_type, diag.age_group_10yr age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_5dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_10yr, pat.sex, diag.enc_year, diag.dx_code_5dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '')
-UNION
--- Add the summary information for the mini-Sentinel age groups
--- INSERT INTO esp_diagnosis_icd9_5dig
---        (centerid, age_group_type, age_group, sex, period, code_, setting, members, events, dx_name)
-SELECT t1.*, icd9.name dx_name
-  FROM (SELECT diag.centerid, 'Age Group MS'::varchar(15) age_group_type, diag.age_group_ms age_group,
-               pat.sex, diag.enc_year period, diag.dx_code_5dig code_, diag.enc_type setting,
-               count(distinct diag.patid) members,
-               count(distinct diag.encounterid) events
-          FROM esp_diagnosis diag
-                 INNER JOIN esp_demographic pat ON diag.patid = pat.patid
-        GROUP BY diag.centerid, diag.age_group_ms, pat.sex, diag.enc_year, diag.dx_code_5dig,
-                 diag.enc_type) t1
-         LEFT JOIN (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9
-                 ON t1.code_ = replace(icd9.code, '.', '');
-create index diag5dig_centerid_idx_new on esp_diagnosis_icd9_5dig_new (centerid);
-create index diag5dig_age_group_type_idx_new on esp_diagnosis_icd9_5dig_new (age_group_type);
-create index diag5dig_age_group_idx_new on esp_diagnosis_icd9_5dig_new (age_group);
-create index diag5dig_sex_idx_new on esp_diagnosis_icd9_5dig_new (sex);
-create index diag5dig_period_idx_new on esp_diagnosis_icd9_5dig_new (period);
-create index diag5dig_code_idx_new on esp_diagnosis_icd9_5dig_new (code_);
-create index diag5dig_setting_idx_new on esp_diagnosis_icd9_5dig_new (setting);
-drop table if exists esp_diagnosis_icd9_5dig;
-alter table esp_diagnosis_icd9_5dig_new rename to esp_diagnosis_icd9_5dig;
-alter index diag5dig_centerid_idx_new rename to diag5dig_centerid_idx;
-alter index diag5dig_age_group_type_idx_new rename to diag5dig_age_group_type_idx;
-alter index diag5dig_age_group_idx_new rename to diag5dig_age_group_idx;
-alter index diag5dig_sex_idx_new rename to diag5dig_sex_idx;
-alter index diag5dig_period_idx_new rename to diag5dig_period_idx;
-alter index diag5dig_code_idx_new rename to diag5dig_code_idx;
-alter index diag5dig_setting_idx_new rename to diag5dig_setting_idx;
-*/
+drop table if exists esp_current_asthma_cases cascade;
+create table esp_current_asthma_cases AS
+select id, patient_id from
+(select max(public.hef_event.date) as MAXEVTDT, public.nodis_case.patient_id, public.nodis_case.id from hef_event, public.nodis_case where 
+condition = 'asthma'
+and
+public.hef_event.patient_id = public.nodis_case.patient_id
+and public.hef_event.name in ('dx:asthma', 'rx:albuterol', 'rx:alvesco', 'rx:pulmicort', 'rx:flovent', 'rx:asmanex', 'rx:aerobid', 'rx:montelukast','rx:intal','rx:zafirlukast', 'rx:zileuton', 'rx:ipratropium','rx:tiotropium','rx:omalizumab', 'rx:fluticasone-inh', 'rx:mometasone-inh','rx:budesonide-inh','rx:ciclesonide-inh','rx:flunisolide-inh','rx:cromolyn-inh','rx:pirbuterol','rx:levalbuterol','rx:arformoterol','rx:formeterol','rx:indacaterol','rx:salmeterol',
+'rx:beclomethasone','rx:fluticasone-salmeterol:generic','rx:albuterol-ipratropium:generic','rx:mometasone-formeterol:generic',
+'rx:budesonide-formeterol:generic', 'rx:fluticasone-salmeterol:trade','rx:albuterol-ipratropium:trade','rx:mometasone-formeterol:trade','rx:budesonide-formeterol:trade') group by public.nodis_case.patient_id, public.nodis_case.id) A 
+where
+current_date - MAXEVTDT <= (365.25*2);
+
+create index esp_current_asthma_cases_caseid_idx on esp_current_asthma_cases (id);
+vacuum analyze esp_current_asthma_cases;
+
+CREATE or replace VIEW esp_disease_v AS
+SELECT pat.center_id centerid,
+       pat.natural_key patid,
+       disease.condition,
+       disease.date - ('1960-01-01'::date) date,
+       age_at_year_start(disease.date, pat.date_of_birth::date) age_at_detect_year,
+       age_group_5yr(disease.date, pat.date_of_birth::date)::varchar(5) age_group_5yr,
+       age_group_10yr(disease.date, pat.date_of_birth::date)::varchar(5) age_group_10yr,
+       age_group_ms(disease.date, pat.date_of_birth::date)::varchar(5) age_group_ms,
+       disease.criteria,
+       disease.status,
+       disease.notes
+  FROM public.nodis_case disease
+         INNER JOIN public.emr_patient pat ON disease.patient_id = pat.id
+         INNER JOIN public.emr_provenance prvn on pat.provenance_id = prvn.provenance_id
+  WHERE prvn.source like 'epicmem%'
+	and (disease.condition in ('depression', 'ili', 'diabetes:type-1', 'diabetes:type-2', 'diabetes:gestational', 'diabetes:prediabetes')
+        or disease.id in (select id from esp_current_asthma_cases));
+
+drop table if exists esp_disease_r cascade;
+create table esp_disease_r as select t0.* from esp_disease_v
+	as t0 inner join esp_demographic as t1
+	on t0.patid=t1.patid;
+
+INSERT INTO esp_disease_r (select t0.* from esp_condition
+       as t0 inner join esp_demographic as t1
+       on t0.patid=t1.patid
+       where (current_date-('1960-01-01'::date) - t0.date <= 365) and t0.condition in ('benzodiarx', 'opioidrx', 'benzopiconcurrent'));
+
+create index esp_disease_age_group_10yr_idx_r on esp_disease_r (age_group_10yr);
+create index esp_disease_age_group_5yr_idx_r on esp_disease_r (age_group_5yr);
+create index esp_disease_age_group_ms_idx_r on esp_disease_r (age_group_ms);
+create index esp_disease_centerid_idx_r on esp_disease_r (centerid);
+create index esp_disease_patid_idx_r on esp_disease_r (patid);
+create index esp_disease_condition_idx_r on esp_disease_r (condition);
+create index esp_disease_date_idx_r on esp_disease_r (date);
+create index esp_disease_age_at_detect_year_idx_r on esp_disease_r (age_at_detect_year);
+create index esp_disease_criteria_idx_r on esp_disease_r (criteria);
+create index esp_disease_status_idx_r on esp_disease_r (status);
+alter table esp_disease_r add primary key (patid, condition, date);
+alter table esp_disease_r add foreign key (patid) references esp_demographic (patid);
+drop view if exists esp_disease_v;
+
+--    UVT_DETECTED_CONDITION
+      DROP TABLE if exists UVT_DETECTED_CONDITION_r;
+	 CREATE TABLE UVT_DETECTED_CONDITION_r AS
+		SELECT DISTINCT disease.condition as item_code,
+           disease.condition as item_text 
+		FROM esp_disease_r disease;
+ALTER TABLE UVT_DETECTED_CONDITION_r ADD PRIMARY KEY (item_code);
+
+--    UVT_DETECTED_CRITERIA
+	DROP TABLE if exists UVT_DETECTED_CRITERIA_r;
+	 CREATE TABLE UVT_DETECTED_CRITERIA_r AS
+      	SELECT DISTINCT
+           disease.criteria as item_code,
+           disease.criteria as item_text
+       	FROM esp_disease_r disease
+		WHERE criteria is not null;
+ALTER TABLE UVT_DETECTED_CRITERIA_r ADD PRIMARY KEY (item_code);
+
+--    UVT_DETECTED_STATUS
+	DROP TABLE if exists UVT_DETECTED_STATUS_r;
+	CREATE TABLE UVT_DETECTED_STATUS_r AS
+      SELECT DISTINCT disease.status as item_code,
+    CASE
+WHEN disease.status = 'AR' THEN 'Awaiting Review'::varchar(80)
+WHEN disease.status = 'UR' THEN 'Under Review'::varchar(80)
+WHEN disease.status = 'RM' THEN 'Review By MD'::varchar(80)
+WHEN disease.status = 'FP' THEN 'False Positive - Do Not Process'::varchar(80)
+WHEN disease.status = 'Q'  THEN 'Confirmed Case, Transmit to Health Department'::varchar(80)
+WHEN disease.status = 'S'  THEN 'Transmitted to Health Department'::varchar(80) ELSE 'Not Mapped'::varchar(80)
+ END as item_text
+ FROM esp_disease_r disease;
+ ALTER TABLE UVT_DETECTED_STATUS_r ADD PRIMARY KEY (item_code);
+
+drop table if exists esp_disease cascade; alter table esp_disease_r rename to esp_disease;
+
+alter index esp_disease_age_group_10yr_idx_r rename to esp_disease_age_group_10yr_idx;
+
+alter index esp_disease_age_group_5yr_idx_r rename to esp_disease_age_group_5yr_idx;
+
+alter index esp_disease_age_group_ms_idx_r rename to esp_disease_age_group_ms_idx;
+
+alter index esp_disease_centerid_idx_r rename to esp_disease_centerid_idx;
+
+alter index esp_disease_patid_idx_r rename to esp_disease_patid_idx;
+
+alter index esp_disease_condition_idx_r rename to esp_disease_condition_idx;
+
+alter index esp_disease_date_idx_r rename to esp_disease_date_idx;
+
+alter index esp_disease_age_at_detect_year_idx_r rename to esp_disease_age_at_detect_year_idx;
+
+alter index esp_disease_criteria_idx_r rename to esp_disease_criteria_idx;
+
+alter index esp_disease_status_idx_r rename to esp_disease_status_idx;
+
+vacuum analyze esp_disease;
+
+
