@@ -10,65 +10,48 @@
 BEGIN;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_6 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_6 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_7 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_7 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_8 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_8 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_9 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_9 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_10 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_10 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_11 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_11 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_12 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_12 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_13 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_13 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_14 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_14 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_15 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_15 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_16 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_16 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_17 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_17 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_18 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_18 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_19 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_19 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_20 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_20 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_21 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_21 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_22 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_22 CASCADE;
 
 DROP TABLE IF EXISTS public.opi_a_100013_s_23 CASCADE;
-DROP VIEW IF EXISTS public.opi_a_100013_s_23 CASCADE;
 
 DROP TABLE IF EXISTS ccda_opibenzo CASCADE;
-DROP VIEW IF EXISTS ccda_opibenzo CASCADE;
 
 --
 -- Script body 
 --
+
+--Steps 1-5: Part of initial access for script build and not required in production.
 
 -- Step 6: Join - BASE Prescription Records for the Last Year -- Join the prescription table on the patient table. Limit by records with a start_date within the last year AND prescription status is valid
 CREATE TABLE public.opi_a_100013_s_6  AS SELECT T1.patient_id,T1.name,T2.date_of_birth,T2.cdate_of_birth,T1.start_date,T2.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,CASE WHEN refills~E'^\\d+$' THEN refills::real ELSE 0 END  refills FROM public.emr_prescription T1 INNER JOIN public.emr_patient T2 ON ((T1.patient_id = T2.id))  WHERE T1.status not in ('Discontinued', 'DISCONTINUED', 'Completed', 'COMPLETED', 'Verified', 'VERIFIED', 'Dispensed', 'DISPENSED') and (start_date >= '2014-01-01' and start_date < '2014-07-09'); 
@@ -79,13 +62,13 @@ CREATE TABLE public.opi_a_100013_s_7  AS SELECT T1.patient_id,T2.name,T2.type,T1
 -- Step 8: Join - BenzOpiConcurrent Find patients who have a prescription for BOTH an opioid and a benzo within 30 days of each other
 CREATE TABLE public.opi_a_100013_s_8  AS SELECT T1.patient_id,T1.type,T1.natural_key,CASE WHEN (T1.start_date < TSELF.start_date) THEN T1.start_date ELSE TSELF.start_date END disease_date,T1.date_of_birth FROM public.opi_a_100013_s_7 T1 INNER JOIN public.opi_a_100013_s_7 TSELF ON ((T1.patient_id = TSELF.patient_id))  WHERE (T1.type =1 and TSELF.type = 2) and ((T1.start_date - TSELF.start_date) BETWEEN -30 and 30);
 
--- Step 9: SQL - MOD BenzOpiConcurrent - Just select the earliest matching prescription
+-- Step 9: SQL - BenzOpiConcurrent - Just select the earliest matching prescription
 CREATE TABLE public.opi_a_100013_s_9  AS SELECT patient_id,  type, natural_key, date_of_birth, disease_date as disease_date FROM public.opi_a_100013_s_8 GROUP BY patient_id, type, natural_key, date_of_birth, disease_date;
 
 -- Step 10: Derive Columns - BenzOpiConcurrent - Assign Condition Name, Criteria, Status, Notes, & Start Date in mdphnet format
 CREATE TABLE public.opi_a_100013_s_10  AS SELECT T1.*,text('benzopiconcurrent') local_condition,text('a prescription for a benzodiazepine within 30 days before or after a prescription for an opioid within the past year') local_criteria,disease_date  - ('1960-01-01'::date) start_date_mdphnet FROM public.opi_a_100013_s_9 T1;
 
--- Step 11: SQL - MOD OpioidRx, BenzodiaenzoRx - Query for only the record with the earliest date for the first prescription (disease_date) 
+-- Step 11: SQL - OpioidRx, BenzodiaenzoRx - Query for only the record with the earliest date for the first prescription (disease_date) 
 CREATE TABLE public.opi_a_100013_s_11  AS SELECT patient_id,  type, natural_key, date_of_birth, start_date AS "disease_date" FROM public.opi_a_100013_s_7 GROUP BY patient_id, type, natural_key, date_of_birth, start_date;
 
 -- Step 12: Filter - OpioidRx, BenzodiaRx - Prescription for Opioid or Benzo 
@@ -99,7 +82,7 @@ when (type) = 2  THEN  text('>= 1 prescription for benzodiazepine within the las
 END local_criteria,disease_date  - ('1960-01-01'::date)  start_date_mdphnet FROM public.opi_a_100013_s_12 T1;
 
 -- Step 14: Filter - HighOpioidDose - Just get the opioid prescriptions with valid quantity_types
-CREATE TABLE public.opi_a_100013_s_14  AS SELECT * FROM public.opi_a_100013_s_7 WHERE  type = 1 and (quantity_type similar to '%(cc|cap|count|each|film|lozenge|ml|patch|pill|strip|suppos|tab|unit)%'  or quantity_type is null or quantity_type = '');
+CREATE TABLE public.opi_a_100013_s_14  AS SELECT * FROM public.opi_a_100013_s_7 WHERE  type = 1 and (quantity_type similar to '%(cc|cap|count|each|film|lozenge|ml|patch|pill|strip|suppos|tab|unit)%' or quantity_type is null or quantity_type = '') and dosage_strength is not null and quantity_float > 0;
 
 -- Step 15: Derive Columns - HighOpioidUse - Compute script_days & proper refill amount (1 refill means 2 prescriptions)
 CREATE TABLE public.opi_a_100013_s_15  AS SELECT T1.*,CASE when (cast(refills as real) = 0) then 1 else (cast(refills as real) + 1) end mod_refills,CASE when ((end_date - start_date) > 0) then (end_date - start_date) else 30 end script_days FROM public.opi_a_100013_s_14 T1;
