@@ -454,7 +454,7 @@ create table esp_disease_r as select t0.* from esp_disease_v
 INSERT INTO esp_disease_r (select t0.* from esp_condition
        as t0 inner join esp_demographic as t1
        on t0.patid=t1.patid
-       where (current_date-('1960-01-01'::date) - t0.date <= 365) and t0.condition in ('benzodiarx', 'opioidrx', 'benzopiconcurrent'));
+       where (current_date-('1960-01-01'::date) - t0.date <= 365));
 
 create index esp_disease_age_group_10yr_idx_r on esp_disease_r (age_group_10yr);
 create index esp_disease_age_group_5yr_idx_r on esp_disease_r (age_group_5yr);
