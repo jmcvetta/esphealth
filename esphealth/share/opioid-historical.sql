@@ -54,7 +54,7 @@ DROP TABLE IF EXISTS ccda_opibenzo CASCADE;
 --Steps 1-5: Part of initial access for script build and not required in production.
 
 -- Step 6: Join - BASE Prescription Records for the Last Year -- Join the prescription table on the patient table. Limit by records with a start_date within the last year AND prescription status is valid
-CREATE TABLE public.opi_a_100013_s_6  AS SELECT T1.patient_id,T1.name,T2.date_of_birth,T2.cdate_of_birth,T1.start_date,T2.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,CASE WHEN refills~E'^\\d+$' THEN refills::real ELSE 0 END  refills FROM public.emr_prescription T1 INNER JOIN public.emr_patient T2 ON ((T1.patient_id = T2.id))  WHERE T1.status not in ('Discontinued', 'DISCONTINUED') and (start_date >= '2014-01-01' and start_date < '2014-07-09'); 
+CREATE TABLE public.opi_a_100013_s_6  AS SELECT T1.patient_id,T1.name,T2.date_of_birth,T2.cdate_of_birth,T1.start_date,T2.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,CASE WHEN refills~E'^\\d+$' THEN refills::real ELSE 0 END  refills FROM public.emr_prescription T1 INNER JOIN public.emr_patient T2 ON ((T1.patient_id = T2.id))  WHERE (start_date >= '2014-01-01' and start_date < '2014-07-09'); 
 
 -- Step 7: Join - BASE Join (limit) on drugs in the drug_lookup table
 CREATE TABLE public.opi_a_100013_s_7  AS SELECT T1.patient_id,T2.name,T2.type,T1.date_of_birth,T1.start_date,T1.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,T2.conversion_factor,T2.dosage_strength,T1.refills FROM public.opi_a_100013_s_6 T1 INNER JOIN public.static_rx_lookup T2 ON ((T1.name = T2.name)) ;
