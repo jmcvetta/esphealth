@@ -258,7 +258,7 @@ class Case(models.Model):
     
     @property
     def reportable_dx_codes(self):
-        return Dx_code.objects.filter(encounter__in=self.reportable_encounters[0])
+        return Dx_code.objects.filter(encounter__in=self.reportable_encounters[0], reportabledx_code__condition= self.condition_config)
 
     #reporting the dx from the detection and the reportable conditions and they will all be affected by the date
     def __get_reportable_encounters(self):
