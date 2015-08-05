@@ -82,6 +82,10 @@ SELECT
 , gpr_smoking.smoking
 , gpr_enc.nvis
 , gpr_depression.depression
+, gpr_opi.any_opi
+, gpr_opi.any_benzo
+, gpr_opi.concur_opi_benzo
+, gpr_opi.high_dose_opi
 FROM gen_pop_tools.gpr_pat 
 --
 -- Max blood pressure between two and three years
@@ -265,6 +269,11 @@ LEFT JOIN gen_pop_tools.gpr_enc
 --
 LEFT JOIN gen_pop_tools.gpr_depression
         on gpr_depression.patient_id = gpr_pat.patient_id
+--
+-- Opioid
+--
+LEFT JOIN gen_pop_tools.gpr_opi
+        on gpr_opi.patient_id = gpr_pat.patient_id
 --
 -- Ordering
 --

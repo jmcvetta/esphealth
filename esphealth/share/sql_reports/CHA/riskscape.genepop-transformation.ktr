@@ -101,7 +101,7 @@
     </attributes>
   </connection>
   <order>
-  <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>bmi_pctl</to><enabled>Y</enabled> </hop>  <hop> <from>bmi_pctl</from><to>rec_syspct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct</from><to>rec_diapct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 1</from><to>rec_diapct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct</from><to>rec_syspct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 2</from><to>rec_diapct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 3</from><to>rec_diapct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 1</from><to>rec_syspct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 2</from><to>rec_syspct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 3</from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Recent Chlamydia</to><enabled>Y</enabled> </hop>  <hop> <from>Recent Chlamydia</from><to>asthma</to><enabled>Y</enabled> </hop>  <hop> <from>asthma</from><to>smoking</to><enabled>Y</enabled> </hop>  <hop> <from>smoking</from><to>nvis</to><enabled>Y</enabled> </hop>  <hop> <from>nvis</from><to>depression</to><enabled>Y</enabled> </hop>  <hop> <from>depression</from><to>Select values</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>bmi_pctl</to><enabled>Y</enabled> </hop>  <hop> <from>bmi_pctl</from><to>rec_syspct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct</from><to>rec_diapct</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 1</from><to>rec_diapct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct</from><to>rec_syspct year 1</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 2</from><to>rec_diapct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_syspct year 3</from><to>rec_diapct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 1</from><to>rec_syspct year 2</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 2</from><to>rec_syspct year 3</to><enabled>Y</enabled> </hop>  <hop> <from>rec_diapct year 3</from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Recent Chlamydia</to><enabled>Y</enabled> </hop>  <hop> <from>Recent Chlamydia</from><to>asthma</to><enabled>Y</enabled> </hop>  <hop> <from>asthma</from><to>smoking</to><enabled>Y</enabled> </hop>  <hop> <from>smoking</from><to>nvis</to><enabled>Y</enabled> </hop>  <hop> <from>nvis</from><to>depression</to><enabled>Y</enabled> </hop>  <hop> <from>depression</from><to>Any Opioid Prescription</to><enabled>Y</enabled> </hop>  <hop> <from>Any Opioid Prescription</from><to>Any Benzo Prescription</to><enabled>Y</enabled> </hop>  <hop> <from>Any Benzo Prescription</from><to>Concurrent Benzos and Opioids</to><enabled>Y</enabled> </hop>  <hop> <from>Concurrent Benzos and Opioids</from><to>High Dose Opioid Prescriptions</to><enabled>Y</enabled> </hop>  <hop> <from>High Dose Opioid Prescriptions</from><to>Select values</to><enabled>Y</enabled> </hop>  </order>
   <step>
     <name>A1C 2ago</name>
     <type>NumberRange</type>
@@ -2042,7 +2042,67 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <name>depression</name>
         <type>String</type>
         <format/>
-        <currency/>
+        <currency>$</currency>
+        <decimal>.</decimal>
+        <group>,</group>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>15</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_opi</name>
+        <type>String</type>
+        <format/>
+        <currency>$</currency>
+        <decimal>.</decimal>
+        <group>,</group>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>15</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_benzo</name>
+        <type>String</type>
+        <format/>
+        <currency>$</currency>
+        <decimal>.</decimal>
+        <group>,</group>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>15</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>concur_opi_benzo</name>
+        <type>String</type>
+        <format/>
+        <currency>$</currency>
+        <decimal>.</decimal>
+        <group>,</group>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>15</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>high_dose_opi</name>
+        <type>String</type>
+        <format/>
+        <currency>$</currency>
         <decimal>.</decimal>
         <group>,</group>
         <nullif/>
@@ -2365,11 +2425,27 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>AT</rename>
         <length>-2</length>
         <precision>-2</precision>
+      </field>      <field>        <name>any_opi</name>
+        <rename>AU</rename>
+        <length>-2</length>
+        <precision>-2</precision>
+      </field>      <field>        <name>any_benzo</name>
+        <rename>AV</rename>
+        <length>-2</length>
+        <precision>-2</precision>
+      </field>      <field>        <name>concur_opi_benzo</name>
+        <rename>AW</rename>
+        <length>-2</length>
+        <precision>-2</precision>
+      </field>      <field>        <name>high_dose_opi</name>
+        <rename>AX</rename>
+        <length>-2</length>
+        <precision>-2</precision>
       </field>        <select_unspecified>N</select_unspecified>
     </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>402</xloc>
-      <yloc>1477</yloc>
+      <xloc>196</xloc>
+      <yloc>1639</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -3043,8 +3119,8 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>510</xloc>
-      <yloc>1477</yloc>
+      <xloc>361</xloc>
+      <yloc>1642</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -3727,6 +3803,162 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>400</xloc>
       <yloc>1358</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Any Opioid Prescription</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>any_opi</field_to_use>
+    <target_field/>
+    <non_match_default>4</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+      <field>
+        <source_value>3</source_value>
+        <target_value>3</target_value>
+      </field>
+      <field>
+        <source_value>4</source_value>
+        <target_value>4</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>283</xloc>
+      <yloc>1489</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Any Benzo Prescription</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>any_benzo</field_to_use>
+    <target_field/>
+    <non_match_default>4</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+      <field>
+        <source_value>3</source_value>
+        <target_value>3</target_value>
+      </field>
+      <field>
+        <source_value>4</source_value>
+        <target_value>4</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>409</xloc>
+      <yloc>1486</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Concurrent Benzos and Opioids</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>concur_opi_benzo</field_to_use>
+    <target_field/>
+    <non_match_default>4</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+      <field>
+        <source_value>3</source_value>
+        <target_value>3</target_value>
+      </field>
+      <field>
+        <source_value>4</source_value>
+        <target_value>4</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>562</xloc>
+      <yloc>1485</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>High Dose Opioid Prescriptions</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>high_dose_opi</field_to_use>
+    <target_field/>
+    <non_match_default>4</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>2</source_value>
+        <target_value>2</target_value>
+      </field>
+      <field>
+        <source_value>3</source_value>
+        <target_value>3</target_value>
+      </field>
+      <field>
+        <source_value>4</source_value>
+        <target_value>4</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>732</xloc>
+      <yloc>1479</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
