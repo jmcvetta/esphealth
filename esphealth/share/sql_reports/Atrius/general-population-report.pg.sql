@@ -80,6 +80,11 @@ SELECT
 , gpr_asthma.asthma
 , gpr_smoking.smoking
 , gpr_enc.nvis
+, gpr_depression.depression
+, gpr_opi.any_opi
+, gpr_opi.any_benzo
+, gpr_opi.concur_opi_benzo
+, gpr_opi.high_dose_opi
 FROM gpr_pat 
 --
 -- Max blood pressure between two and three years
@@ -257,8 +262,21 @@ LEFT JOIN gpr_asthma
         on gpr_asthma.patient_id = gpr_pat.patient_id
 --
 -- n visits
+--
 LEFT JOIN gpr_enc
         on gpr_enc.patient_id = gpr_pat.patient_id
+--
+-- depression
+--
+LEFT JOIN gpr_depression
+        on gpr_depression.patient_id = gpr_pat.patient_id
+
+--
+-- Opioid
+--
+LEFT JOIN gpr_opi
+        on gpr_opi.patient_id = gpr_pat.patient_id
+
 --
 -- Ordering
 --
