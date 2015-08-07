@@ -792,27 +792,27 @@ DROP TABLE if EXISTS gen_pop_tools.gpr_opi;
 CREATE TABLE gen_pop_tools.gpr_opi_in_progress AS
     SELECT T2.id as patient_id,
     case
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' ) and condition = 'opioidrx' then '1'
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '2 year' ) and condition = 'opioidrx' then '2'
-        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '2 year' ) and condition = 'opioidrx' then '3'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' ) and condition = 'opioidrx' then '1'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' )and condition = 'opioidrx' then '2'
+        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '1 year' - interval '1 day' ) and condition = 'opioidrx' then '3'
         else '4'
         end any_opi,
     case
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' ) and condition = 'benzodiarx' then '1'
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '2 year' ) and condition = 'benzodiarx' then '2'
-        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '2 year' ) and condition = 'benzodiarx' then '3'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' ) and condition = 'benzodiarx' then '1'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' ) and condition = 'benzodiarx' then '2'
+        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '1 year' - interval '1 day' ) and condition = 'benzodiarx' then '3'
         else '4'
         end any_benzo,
     case
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' ) and condition = 'benzopiconcurrent' then '1'
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '2 year' ) and condition = 'benzopiconcurrent' then '2'
-        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '2 year' ) and condition = 'benzopiconcurrent' then '3'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' )and condition = 'benzopiconcurrent' then '1'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' ) and condition = 'benzopiconcurrent' then '2'
+        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '1 year' - interval '1 day' ) and condition = 'benzopiconcurrent' then '3'
         else '4'
         end  concur_opi_benzo,
     case
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' ) and condition = 'highopioiduse' then '1'
-        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '2 year' ) and condition = 'highopioiduse' then '2'
-        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '2 year' ) and condition = 'highopioiduse'  then '3'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' ) and condition = 'highopioiduse' then '1'
+        when (max(T1.date) + '1960-01-01'::date) >= ( now() - interval '1 year' - interval '1 day' ) and condition = 'highopioiduse' then '2'
+        when (max(T1.date) + '1960-01-01'::date) < ( now() - interval '1 year' - interval '1 day' ) and condition = 'highopioiduse'  then '3'
         else '4'
         end   high_dose_opi
     FROM public.esp_condition T1
@@ -830,4 +830,3 @@ CREATE TABLE gen_pop_tools.gpr_opi AS
     GROUP BY T1.patient_id;
 
 DROP TABLE gen_pop_tools.gpr_opi_in_progress;
-
