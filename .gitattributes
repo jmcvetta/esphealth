@@ -514,6 +514,7 @@ esphealth/share/genpop.sh -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 esphealth/share/opioid-daily.sql -text
 esphealth/share/opioid-historical.sql -text
+esphealth/share/opioid_mdphnet_surveil.sql -text
 esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
