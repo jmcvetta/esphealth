@@ -72,6 +72,10 @@ class Syphilis(DiseaseDefinition):
                 Dx_CodeQuery(starts_with='095', type='icd9'),
                 Dx_CodeQuery(starts_with='096', type='icd9'),
                 Dx_CodeQuery(starts_with='097', type='icd9'),
+                Dx_CodeQuery(starts_with='A50', type='icd10'),
+                Dx_CodeQuery(starts_with='A51', type='icd10'),
+                Dx_CodeQuery(starts_with='A52', type='icd10'),
+                Dx_CodeQuery(starts_with='A53', type='icd10'),
                 ]
             ))
         #
