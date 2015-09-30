@@ -59,12 +59,14 @@ class Pertussis(DiseaseDefinition):
             name = 'pertussis',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with='033.0', type='icd9'),
+                Dx_CodeQuery(starts_with='A37.0', type='icd10'),
                 ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'cough',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with='033.9', type='icd9'),
+                DX_CodeQuery(starts_with='A37.9', type='icd10'),
                 ]
             ))
         #
