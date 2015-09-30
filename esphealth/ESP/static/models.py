@@ -20,6 +20,10 @@
 
 
 from django.db import models
+from django.db.models import Q
+import operator
+
+
 
 class FakeMeds (models.Model):
     '''
@@ -66,16 +70,16 @@ class DrugSynonym (models.Model):
         return '%s -- %s' % (self.drugynonym_id, self.generic_name)        
     
     @staticmethod
-    def generics_plus_synonyms(drugnames):
         
-        alldrugnames = []
-        for drug in drugnames:
-            allotherdrugsqs= DrugSynonym.objects.filter(generic_name__icontains = drug).values_list('other_name', flat=True)
-            for otherdrug in allotherdrugsqs:
-                alldrugnames.append(otherdrug)
-            if len(allotherdrugsqs) == 0:
-                return drugnames
-        return alldrugnames   
+    def generics_plus_synonyms(drugnames):
+        alldrugs = set(drugnames)
+        alldrugs.update(DrugSynonym.objects.filter(reduce(operator.or_,
+                                                        (Q(generic_name__icontains = drug)
+                                                            for drug in alldrugs ))).values_list('other_name',
+                                                                                                  flat=True))
+ 
+        return list(alldrugs)
+
      
 class FakeDx_Codes (models.Model):
     fakedx_code_id = models.AutoField(primary_key=True)
