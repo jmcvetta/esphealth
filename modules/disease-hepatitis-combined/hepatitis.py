@@ -79,18 +79,21 @@ class HepatitisCombined(DiseaseDefinition):
         heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_b:chronic',
             dx_code_queries = [
+            Dx_CodeQuery(starts_with='B18.1', type='icd10'),
             Dx_CodeQuery(starts_with='070.32', type='icd9'),
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_c:chronic',
             dx_code_queries = [
+            Dx_CodeQuery(starts_with='B18.2', type='icd10'),
             Dx_CodeQuery(starts_with='070.54', type='icd9'),
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_c:unspecified',
             dx_code_queries = [
+            Dx_CodeQuery(starts_with='B19.20', type='icd10'),
             Dx_CodeQuery(starts_with='070.70', type='icd9'),
             ]
             ))
