@@ -228,12 +228,6 @@ create index esp_diagnosis_patid_idx_r on esp_diagnosis_r (patid);
 create index esp_diagnosis_encounterid_idx_r on esp_diagnosis_r (encounterid);
 create index esp_diagnosis_provider_idx_r on esp_diagnosis_r (provider);
 create index esp_diagnosis_enc_type_idx_r on esp_diagnosis_r (enc_type);
-create index esp_diagnosis_dx_code_3dig_idx_r on esp_diagnosis_r (dx_code_3dig);
-create index esp_diagnosis_dx_code_4dig_idx_r on esp_diagnosis_r (dx_code_4dig);
-create index esp_diagnosis_dx_code_5dig_idx_r on esp_diagnosis_r (dx_code_5dig);
-create index esp_diagnosis_dx_code_4dig_with_dec_idx_r on esp_diagnosis_r (dx_code_4dig_with_dec);
-create index esp_diagnosis_dx_code_5dig_with_dec_idx_r on esp_diagnosis_r (dx_code_5dig_with_dec);
-create index esp_diagnosis_dx_code_5dig_like_idx_r on esp_diagnosis_r using btree (dx_code_5dig varchar_pattern_ops);
 create index esp_diagnosis_facility_loc_idx_r on esp_diagnosis_r (facility_location);
 create index esp_diagnosis_facility_code_idx_r on esp_diagnosis_r (facility_code);
 create index esp_diagnosis_enc_year_idx_r on esp_diagnosis_r (enc_year);
@@ -414,57 +408,6 @@ drop view if exists esp_demographic_v;
       WHERE enc.age_group_ms is not null;
         ALTER TABLE UVT_AGEGROUP_MS_r ADD PRIMARY KEY (item_code);
 
---    UVT_DX
-      DROP TABLE if exists UVT_DX_r;
-      CREATE TABLE UVT_DX_r AS
-      SELECT DISTINCT
-             diag.dx as item_code,
-             icd9.name as item_text
-        FROM esp_diagnosis_r diag
-               INNER JOIN public.static_dx_code icd9 ON diag.dx = icd9.code;
-        ALTER TABLE UVT_DX_r ADD PRIMARY KEY (item_code);
-
---    UVT_DX_3DIG
-      DROP TABLE if exists UVT_DX_3DIG_r;
-      CREATE TABLE UVT_DX_3DIG_r AS
-      SELECT DISTINCT
-             diag.dx_code_3dig as item_code,
-             icd9.name as item_text
-        FROM esp_diagnosis_r diag
-               LEFT OUTER JOIN  (select * from public.static_dx_code
-                    where   strpos(trim(code),'.')<>3
-                       and length(trim(code))>=3 ) icd9 
-               ON diag.dx_code_3dig = REPLACE(icd9.code, '.', '')
-        WHERE diag.dx_code_3dig is not null;
-        ALTER TABLE UVT_DX_3DIG_r ADD PRIMARY KEY (item_code);
-
---    UVT_DX_4DIG
-      DROP TABLE if exists UVT_DX_4DIG_r;
-      CREATE TABLE UVT_DX_4DIG_r AS
-      SELECT DISTINCT
-             diag.dx_code_4dig as item_code,
-             diag.dx_code_4dig_with_dec as item_code_with_dec,
-             icd9.name as item_text
-        FROM esp_diagnosis_r diag
-               LEFT OUTER JOIN  public.static_dx_code icd9
-               ON diag.dx_code_4dig_with_dec = icd9.code
-        WHERE diag.dx_code_4dig is not null;
-        ALTER TABLE UVT_DX_4DIG_r ADD PRIMARY KEY (item_code_with_dec);
-        create index uvt_dx_code_4dig_idx_r on uvt_dx_4dig_r (item_code);
-
---    UVT_DX_5DIG
-      DROP TABLE if exists UVT_DX_5DIG_r;
-      CREATE TABLE UVT_DX_5DIG_r AS
-      SELECT DISTINCT
-             diag.dx_code_5dig as item_code,
-             diag.dx_code_5dig_with_dec as item_code_with_dec,
-             icd9.name as item_text
-        FROM esp_diagnosis_r diag
-               LEFT OUTER JOIN  public.static_dx_code icd9
-               ON diag.dx_code_5dig_with_dec = icd9.code
-        WHERE diag.dx_code_5dig is not null;
-        ALTER TABLE UVT_DX_5DIG_r ADD PRIMARY KEY (item_code_with_dec);
-        create index uvt_dx_code_5dig_idx_r on uvt_dx_5dig_r (item_code);
 
 --    UVT_DETECTED_CONDITION
       DROP TABLE if exists UVT_DETECTED_CONDITION_r;
@@ -537,16 +480,10 @@ drop view if exists esp_demographic_v;
         alter index esp_diagnosis_centerid_idx_r rename to esp_diagnosis_centerid_idx;
         alter index esp_diagnosis_patid_idx_r rename to esp_diagnosis_patid_idx;
         alter index esp_diagnosis_encounterid_idx_r rename to esp_diagnosis_encounterid_idx;
-        alter index esp_diagnosis_provider_idx_r rename to esp_diagnosis_provider_idx;
         alter index esp_diagnosis_enc_type_idx_r rename to esp_diagnosis_enc_type_idx;
-        alter index esp_diagnosis_dx_code_3dig_idx_r rename to esp_diagnosis_dx_code_3dig_idx;
-        alter index esp_diagnosis_dx_code_4dig_idx_r rename to esp_diagnosis_dx_code_4dig_idx;
-        alter index esp_diagnosis_dx_code_5dig_idx_r rename to esp_diagnosis_dx_code_5dig_idx;
-        alter index esp_diagnosis_dx_code_4dig_with_dec_idx_r rename to esp_diagnosis_dx_code_4dig_with_dec_idx;
-        alter index esp_diagnosis_dx_code_5dig_with_dec_idx_r rename to esp_diagnosis_dx_code_5dig_with_dec_idx;
-        alter index esp_diagnosis_dx_code_5dig_like_idx_r rename to esp_diagnosis_dx_code_5dig_like_idx;
-        alter index esp_diagnosis_facility_loc_idx_r rename to esp_diagnosis_facility_loc_idx;
+        alter index esp_diagnosis_provider_idx_r rename to esp_diagnosis_provider_idx;
         alter index esp_diagnosis_facility_code_idx_r rename to esp_diagnosis_facility_code_idx;
+        alter index esp_diagnosis_facility_loc_idx_r rename to esp_diagnosis_facility_loc_idx;
         alter index esp_diagnosis_enc_year_idx_r rename to esp_diagnosis_enc_year_idx;
         alter index esp_diagnosis_age_at_enc_year_idx_r rename to esp_diagnosis_age_at_enc_year_idx;
         alter index esp_diagnosis_age_group_5yr_idx_r rename to esp_diagnosis_age_group_5yr_idx;
@@ -590,16 +527,6 @@ drop view if exists esp_demographic_v;
         alter table UVT_AGEGROUP_10YR_r rename to UVT_AGEGROUP_10YR;
         drop table if exists UVT_AGEGROUP_MS;
         alter table UVT_AGEGROUP_MS_r rename to UVT_AGEGROUP_MS;
-        drop table if exists UVT_DX;
-        alter table UVT_DX_r rename to UVT_DX;
-        drop table if exists UVT_DX_3DIG;
-        alter table UVT_DX_3DIG_r rename to UVT_DX_3DIG;
-        drop table if exists UVT_DX_4DIG;
-        alter table UVT_DX_4DIG_r rename to UVT_DX_4DIG;
-        alter index uvt_dx_code_4dig_idx_r rename to uvt_dx_code_4dig_idx;
-        drop table if exists UVT_DX_5DIG;
-        alter table UVT_DX_5DIG_r rename to UVT_DX_5DIG;
-        alter index uvt_dx_code_5dig_idx_r rename to uvt_dx_code_5dig_idx;
         drop table if exists UVT_DETECTED_CONDITION;
         alter table UVT_DETECTED_CONDITION_r rename to UVT_DETECTED_CONDITION;
         drop table if exists UVT_DETECTED_CRITERIA;
@@ -621,10 +548,6 @@ drop view if exists esp_demographic_v;
         GRANT SELECT ON uvt_detected_criteria TO mdphnet_user;
         GRANT SELECT ON uvt_detected_status TO mdphnet_user;
         GRANT SELECT ON uvt_site TO mdphnet_user;
-        GRANT SELECT ON uvt_dx TO mdphnet_user;
-        GRANT SELECT ON uvt_dx_3dig TO mdphnet_user;
-        GRANT SELECT ON uvt_dx_4dig TO mdphnet_user;
-        GRANT SELECT ON uvt_dx_5dig TO mdphnet_user;
         GRANT SELECT ON uvt_encounter TO mdphnet_user;
         GRANT SELECT ON uvt_period TO mdphnet_user;
         GRANT SELECT ON uvt_provider TO mdphnet_user;
@@ -647,14 +570,6 @@ drop view if exists esp_demographic_v;
                   REFERENCES uvt_agegroup_10yr (item_code);
       ALTER TABLE esp_encounter ADD FOREIGN KEY (age_group_ms) 
                   REFERENCES uvt_agegroup_ms (item_code);
-      ALTER TABLE esp_diagnosis ADD FOREIGN KEY (dx) REFERENCES uvt_dx (item_code);
-
-      ALTER TABLE esp_diagnosis ADD FOREIGN KEY (dx_code_3dig)
-                  REFERENCES uvt_dx_3dig (item_code);
-      ALTER TABLE esp_diagnosis ADD FOREIGN KEY (dx_code_4dig_with_dec)
-                  REFERENCES uvt_dx_4dig (item_code_with_dec);
-      ALTER TABLE esp_diagnosis ADD FOREIGN KEY (dx_code_5dig_with_dec)
-                  REFERENCES uvt_dx_5dig (item_code_with_dec);
 
       ALTER TABLE esp_disease ADD FOREIGN KEY (condition) 
                   REFERENCES uvt_detected_condition (item_code);
