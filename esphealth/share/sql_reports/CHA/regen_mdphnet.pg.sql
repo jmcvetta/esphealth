@@ -133,20 +133,8 @@ SELECT '1'::varchar(1) as centerid,
        enc.date - ('1960-01-01'::date) as a_date,
        prov.natural_key as provider,
        'AV'::varchar(10) as enc_type, --this is initial value for Mass League data
-       substr(diag.dx_code_id,6) as dx,
-       esp_mdphnet.icd9_prefix(diag.dx_code_id, 3)::varchar(4) as dx_code_3dig,
-       esp_mdphnet.icd9_prefix(diag.dx_code_id, 4)::varchar(5) as dx_code_4dig,
-       case 
-         when length(esp_mdphnet.icd9_prefix(diag.dx_code_id, 4))=5
-	   then substr(diag.dx_code_id,6,6)
-         else substr(diag.dx_code_id,6,5)
-       end as dx_code_4dig_with_dec,
-       esp_mdphnet.icd9_prefix(diag.dx_code_id, 5)::varchar(6) as dx_code_5dig,
-       case 
-         when length(esp_mdphnet.icd9_prefix(diag.dx_code_id, 4))=6
-	   then substr(diag.dx_code_id,6,7)
-         else substr(diag.dx_code_id,6,6)
-       end as dx_code_5dig_with_dec,
+       split_part(dx_code_id,':', 2) dx,
+       split_part(dx_code_id, ':', 1) dx_type,
        enc.site_name as facility_location,
        enc.site_natural_key as facility_code,
        date_part('year', enc.date)::integer as enc_year,
@@ -157,9 +145,6 @@ SELECT '1'::varchar(1) as centerid,
   FROM public.emr_encounter enc
          INNER JOIN public.emr_patient pat ON enc.patient_id = pat.id
          INNER JOIN public.emr_provenance prvn ON pat.provenance_id = prvn.provenance_id
-         INNER JOIN (select * from public.emr_encounter_dx_codes 
-                     where strpos(trim(dx_code_id),'.')<>8
-                       and length(trim(dx_code_id))>=8 ) diag ON enc.id = diag.encounter_id
          LEFT JOIN public.emr_provider prov ON enc.provider_id = prov.id
   WHERE prvn.source ilike 'epicmem%';
 
