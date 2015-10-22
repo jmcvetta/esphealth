@@ -66,7 +66,7 @@ class Pertussis(DiseaseDefinition):
             name = 'cough',
             dx_code_queries = [
                 Dx_CodeQuery(starts_with='033.9', type='icd9'),
-                DX_CodeQuery(starts_with='A37.9', type='icd10'),
+                Dx_CodeQuery(starts_with='A37.9', type='icd10'),
                 ]
             ))
         #
