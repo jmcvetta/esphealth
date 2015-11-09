@@ -74,7 +74,7 @@ class AsthmaNew(DiseaseDefinition):
         heuristic_list.append( PrescriptionHeuristic(
             name = 'albuterol',
             drugs = DrugSynonym.generics_plus_synonyms(['Albuterol', ]),
-            exclude = ['Levalbuterol','Ipratropium'],
+            exclude = ['Levalbuterol','Ipratropium', 'Xopenex'],
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'levalbuterol',
@@ -89,8 +89,8 @@ class AsthmaNew(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Arformoterol',]),
             ))    
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'formeterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Formeterol',]),
+            name = 'formoterol',
+            drugs =  DrugSynonym.generics_plus_synonyms(['Formoterol',]),
             exclude = ['Arformoterol','Mometasone','Budesonide'],
             ))   
         heuristic_list.append( PrescriptionHeuristic(
@@ -111,7 +111,7 @@ class AsthmaNew(DiseaseDefinition):
             name = 'budesonide-inh',
             drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide',]),
             qualifiers = ['INH',' NEB', 'AER'],
-            exclude = ['Formeterol','Pulmicort'],
+            exclude = ['Formoterol','Pulmicort'],
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'pulmicort',
@@ -151,7 +151,7 @@ class AsthmaNew(DiseaseDefinition):
             name = 'mometasone-inh',
             drugs =  DrugSynonym.generics_plus_synonyms(['Mometasone',]),
             qualifiers = ['INH',' NEB', 'AER'],
-            exclude = ['Formeterol','Asmanex'],
+            exclude = ['Formoterol','Dulera', 'Zenhale', 'Asmanex'],
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'asmanex',
@@ -215,28 +215,54 @@ class AsthmaNew(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Combivent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'mometasone-formeterol:generic', 
+            name = 'mometasone-formoterol:generic', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Mometasone',]),
-            require = ['Mometasone','Formeterol'],
+            require = ['Mometasone','Formoterol'],
             exclude = ['Dulera', 'Zenhale']
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'mometasone-formeterol:trade', 
+            name = 'mometasone-formoterol:trade', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Dulera',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'budesonide-formeterol:generic', 
+            name = 'budesonide-formoterol:generic', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide',]),
-            require = ['Budesonide','Formeterol'],
+            require = ['Budesonide','Formoterol'],
             exclude = ['Symbicort']
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'budesonide-formeterol:trade', 
+            name = 'budesonide-formoterol:trade', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Symbicort',]),
             ))        
                
         return heuristic_list
-              
+        
+    def process_existing_cases(self, relevant_patients,dx_patient_events,rx_patient_rxevents):
+        
+        # Non-recurring condition - once you have it, you've always 
+        existing_cases = Case.objects.filter(
+                patient__in = relevant_patients ,
+                condition = self.conditions[0],
+                ).select_related().order_by('date')
+
+        #get distinct patients 
+        patients = set()
+        for case in existing_cases:
+            events = []
+            patients.add(case.patient)
+            try:
+                events += rx_patient_rxevents[case.patient.id]
+            except KeyError:
+                pass
+            try:
+                if dx_patient_events:
+                    events += dx_patient_events[case.patient.id]
+            except:
+                pass                
+            self._update_case_from_event_list(case,
+                            relevant_events = events )
+        return patients
+        
     def generate_def_ab (self):
     #
     # criteria 1
@@ -250,7 +276,7 @@ class AsthmaNew(DiseaseDefinition):
             'rx:levalbuterol',
             'rx:pirbuterol',
             'rx:arformoterol',
-            'rx:formeterol',
+            'rx:formoterol',
             'rx:indacaterol',
             'rx:salmeterol',
             'rx:beclomethasone',
@@ -277,12 +303,12 @@ class AsthmaNew(DiseaseDefinition):
         rx_comb_ev_names = [
              'rx:fluticasone-salmeterol:generic',
              'rx:albuterol-ipratropium:generic', 
-             'rx:mometasone-formeterol:generic',
-             'rx:budesonide-formeterol:generic',
+             'rx:mometasone-formoterol:generic',
+             'rx:budesonide-formoterol:generic',
              'rx:fluticasone-salmeterol:trade',
              'rx:albuterol-ipratropium:trade', 
-             'rx:mometasone-formeterol:trade',
-             'rx:budesonide-formeterol:trade',
+             'rx:mometasone-formoterol:trade',
+             'rx:budesonide-formoterol:trade',
             ]
         log.info('Generating cases for Asthma new Definition (a)')
         counter_a = 0
