@@ -91,7 +91,7 @@ class AsthmaNew(DiseaseDefinition):
         heuristic_list.append( PrescriptionHeuristic(
             name = 'formoterol',
             drugs =  DrugSynonym.generics_plus_synonyms(['Formoterol',]),
-            exclude = ['Arformoterol','Mometasone','Budesonide'],
+            exclude = ['Arformoterol','Mometasone','Budesonide', 'Brovana'],
             ))   
         heuristic_list.append( PrescriptionHeuristic(
             name = 'indacaterol',
