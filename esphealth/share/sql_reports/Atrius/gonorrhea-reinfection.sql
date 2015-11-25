@@ -210,7 +210,7 @@ CREATE TABLE kregonrein_a_100027_s_25  AS SELECT
 T1.id esp_patient_id,T1.mrn,date_part('year', age(T2.first_pos_date, T1.date_of_birth )) age,T1.gender,T1.race,T2.known_pregnant_14days,T2.known_hiv_per_esp,T2.hiv_test_14days,T2.provider_id_index,T2.provider_location, T2.first_pos_date,T2.specimen_source,T2.second_pos_specimen_source,T2.ceftriaxone_given,T2.ceftriaxone_dose,T2.ceftriaxone_date,T2.azithromycin_given,T2.azithromycin_dose,T2.azithromycin_date,T2.cefixime_given,T2.cefixime_dose,T2.cefixime_date,T2.ceftizoxime_given,T2.ceftizoxime_dose,T2.ceftizoxime_date,T2.cefoxitin_given,T2.cefoxitin_dose,T2.cefoxitin_date,T2.levofloxacin_given,T2.levofloxacin_dose,T2.levofoxacin_date,T2.cefotaxim_given,T2.cefotaxim_dose,T2.cefotaxim_date,T2.doxycycline_given,T2.doxycycline_dose,T2.doxycycline_date,T2.gentamicin_given,T2.gentamicin_dose,T2.gentamicin_date,T2.gemifloxacin_given,T2.gemifloxacin_dose,T2.gemifloxacin_date,T2.cemifloxacin_given,T2.cemifloxacin_dose,T2.cemifloxacin_date,T2.ciprofloxacin_given,T2.ciprofloxacin_dose,T2.ciprofloxacin_date,T2.spectinomycin_given,T2.spectinomycin_dose,T2.spectinomycin_date, T2.other_rx, T2.appropriate_treatment,T2.first_repeat,T2.first_repeat_date,T2.first_repeat_specimen_source,T2.first_repeat_result,T2.first_repeat_treatment, T2.second_repeat,T2.second_repeat_date,T2.second_repeat_specimen_source,T2.second_repeat_specimen_result, T2.second_repeat_treatment FROM public.emr_patient T1 INNER JOIN kregonrein_a_100027_s_24 T2 ON ((T1.id = T2.patient_id)) ;
 
 
-\COPY (select * from kregonrein_a_100027_s_25) TO '/home/esp3test/scripts/gonorrhea-reinfection.csv' WITH CSV HEADER
+\COPY (select * from kregonrein_a_100027_s_25) TO '/tmp/gonorrhea-reinfection.csv' WITH CSV HEADER
 
 --
 -- Script shutdown section 
