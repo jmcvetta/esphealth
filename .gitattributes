@@ -531,6 +531,7 @@ esphealth/share/sql_reports/Atrius/generate_mdphnet_functions.psql -text
 esphealth/share/sql_reports/Atrius/generate_mdphnet_views_table.pg.sql -text
 esphealth/share/sql_reports/Atrius/generate_mdphnet_views_table.psql -text
 esphealth/share/sql_reports/Atrius/genpop.sh -text
+esphealth/share/sql_reports/Atrius/gonorrhea-reinfection.sql -text
 esphealth/share/sql_reports/Atrius/ili_report.sh -text
 esphealth/share/sql_reports/Atrius/insert_smoking_mdphnet.pg.sql -text
 esphealth/share/sql_reports/Atrius/insert_static_sites.pg.sql -text
