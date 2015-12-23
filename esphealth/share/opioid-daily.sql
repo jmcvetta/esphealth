@@ -10,40 +10,29 @@
 BEGIN;
 
 DROP TABLE IF EXISTS public.opi_a_100007_s_6 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_7 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_8 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_9 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_10 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_11 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_12 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_13 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_14 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_15 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_16 CASCADE;
-
-DROP TABLE IF EXISTS public.opi_a_100007_s_17 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_18 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_19 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_20 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_21 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_22 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_23 CASCADE;
+DROP TABLE IF EXISTS public.highopi_temp_1;
+DROP TABLE IF EXISTS public.highopi_temp_2;
+DROP TABLE IF EXISTS public.highopi_temp_3;
+DROP TABLE IF EXISTS public.highopi_temp_4;
+DROP TABLE IF EXISTS public.highopi_temp_5;
+DROP TABLE IF EXISTS public.highopi_temp_6;
+
 
 DROP TABLE IF EXISTS ccda_opibenzo CASCADE;
 
@@ -54,10 +43,12 @@ DROP TABLE IF EXISTS ccda_opibenzo CASCADE;
 --Steps 1-5: Part of initial access for script build and not required in production.
 
 -- Step 6: Join - BASE Prescription Records for the Last Year -- Join the prescription table on the patient table. Limit by records with a start_date within the last year and have a valid status
-CREATE TABLE public.opi_a_100007_s_6  AS SELECT T1.patient_id,T1.name,T2.date_of_birth,T2.cdate_of_birth,T1.start_date,T2.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,CASE WHEN refills~E'^\\d+$' THEN refills::real ELSE 0 END  refills FROM public.emr_prescription T1 INNER JOIN public.emr_patient T2 ON ((T1.patient_id = T2.id))  WHERE (start_date >= date ( current_date) -integer '365')  ;
+CREATE TABLE public.opi_a_100007_s_6  AS SELECT T1.patient_id,T1.name,T2.date_of_birth,T2.cdate_of_birth,T1.start_date,T2.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,CASE WHEN refills~E'^\\d+$' THEN refills::real ELSE 0 END  refills, T1.natural_key rx_natural_key FROM public.emr_prescription T1 INNER JOIN public.emr_patient T2 ON ((T1.patient_id = T2.id)) 
+WHERE (start_date >= date ( current_date) -integer '365') 
+and (T1.patient_class is null or T1.patient_class = '1');
 
 -- Step 7: Join - BASE Join (limit) on drugs in the drug_lookup table
-CREATE TABLE public.opi_a_100007_s_7  AS SELECT T1.patient_id,T2.name,T2.type,T1.date_of_birth,T1.start_date,T1.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,T2.conversion_factor,T2.dosage_strength,T1.refills FROM public.opi_a_100007_s_6 T1 INNER JOIN public.static_rx_lookup T2 ON ((T1.name = T2.name)) ;
+CREATE TABLE public.opi_a_100007_s_7  AS SELECT T1.patient_id,T2.name,T2.type,T1.date_of_birth,T1.start_date,T1.natural_key,T1.end_date,T1.quantity_float,T1.quantity,T1.quantity_type,T2.conversion_factor,T2.dosage_strength,T1.refills, T1.rx_natural_key FROM public.opi_a_100007_s_6 T1 INNER JOIN public.static_rx_lookup T2 ON ((T1.name = T2.name)) ;
 
 -- Step 8: Join - BenzOpiConcurrent Find patients who have a prescription for BOTH an opioid and a benzo within 30 days of each other
 CREATE TABLE public.opi_a_100007_s_8  AS SELECT T1.patient_id,T1.type,T1.natural_key,CASE WHEN (T1.start_date < TSELF.start_date) THEN T1.start_date ELSE TSELF.start_date END disease_date,T1.date_of_birth FROM public.opi_a_100007_s_7 T1 INNER JOIN public.opi_a_100007_s_7 TSELF ON ((T1.patient_id = TSELF.patient_id))  WHERE (T1.type =1 and TSELF.type = 2) and ((T1.start_date - TSELF.start_date) BETWEEN -30 and 30);
@@ -92,10 +83,77 @@ CREATE TABLE public.opi_a_100007_s_15  AS SELECT T1.*,CASE when (cast(refills as
 CREATE TABLE public.opi_a_100007_s_16  AS SELECT T1.*,(((quantity_float*dosage_strength)*conversion_factor)*mod_refills) /  script_days  morphine_equiv FROM public.opi_a_100007_s_15 T1;
 
 -- Step 17: Aggregate - HighOpioidUse - Patients prescribed ≥100 milligrams of morphine equivalents per day for ≥90 days within the past year
-CREATE TABLE public.opi_a_100007_s_17  AS SELECT T1.patient_id,sum(script_days) total_days,sum( morphine_equiv) total_morph_equiv,min(T1.start_date) disease_date,T1.date_of_birth,T1.natural_key FROM  public.opi_a_100007_s_16 T1   GROUP BY T1.patient_id,T1.date_of_birth,T1.natural_key HAVING sum(morphine_equiv) >= 100 and sum(script_days) >=90;
+CREATE TABLE public.highopi_temp_1 AS SELECT patient_id, name, date_of_birth, natural_key, rx_natural_key, start_date, end_date, morphine_equiv FROM  public.opi_a_100007_s_16 where 1=2; --stub table for subsequent inserts
+
+do 
+$$
+  declare
+    currow record;
+    patid integer;
+    enddt date;
+    insrtprfx text;
+  begin
+    insrtprfx:='INSERT INTO public.highopi_temp_1 (patient_id, name, date_of_birth, natural_key, rx_natural_key, start_date, end_date, morphine_equiv) values (';
+    for patid in SELECT DISTINCT patient_id FROM public.opi_a_100007_s_16 
+   loop
+      enddt:=null; --set this values to null for each new patid
+      for currow in execute 'SELECT patient_id, name, natural_key, date_of_birth, rx_natural_key, start_date, start_date + script_days as end_date, morphine_equiv, '
+                            || ' lead(start_date,1) over (partition by patient_id order by start_date, start_date + script_days, rx_natural_key) as next_start '
+                             || ' FROM public.opi_a_100007_s_16 WHERE patient_id = ' || trim(to_char(patid, '9999999999')) || ' and type=1 and morphine_equiv is not null order by start_date, start_date + script_days, rx_natural_key'
+     loop
+       if currow.morphine_equiv>=100 or currow.end_date >= currow.next_start or currow.start_date <= enddt then
+          execute insrtprfx || to_char(patid, '9999999999') || ',
+          ''' || currow.name ||''',
+          ''' || COALESCE(quote_literal(currow.date_of_birth),'1900-01-01')::date ||''' ,
+          ''' || currow.natural_key || ''',
+          ''' || currow.rx_natural_key || ''',
+          ''' || to_char(currow.start_date,'yyyy-mm-dd') || '''::date,
+          ''' || to_char(currow.end_date,'yyyy-mm-dd') || '''::date,
+          ' || to_char(currow.morphine_equiv, '99999.999') || ')';   
+        end if;
+        enddt := greatest(currow.end_date, coalesce(enddt,'1900-01-01'::date));
+      end loop;
+    end loop;
+  end;
+$$ language plpgsql;
+
+CREATE TABLE public.highopi_temp_2 AS
+SELECT generate_series(min(start_date)::date,max(end_date)::date,interval '1 day')::date as dates
+FROM public.highopi_temp_1;
+
+CREATE TABLE public.highopi_temp_3 AS
+SELECT t0.*, t1.dates
+FROM public.highopi_temp_1 t0 JOIN public.highopi_temp_2 t1 ON t1.dates between t0.start_date and t0.end_date;
+
+CREATE TABLE public.highopi_temp_4 AS
+SELECT patient_id, date_of_birth, natural_key, dates, array_agg(rx_natural_key order by rx_natural_key) as keys, sum(morphine_equiv) as morphine_tots
+FROM public.highopi_temp_3
+GROUP BY patient_id, date_of_birth, natural_key, dates
+HAVING SUM(morphine_equiv) >= 100;
+
+CREATE TABLE public.highopi_temp_5 AS
+SELECT patient_id, date_of_birth, natural_key, keys, min(dates) as start_date, max(dates) as end_date, avg(morphine_tots) as morphine_tots
+FROM public.highopi_temp_4
+GROUP BY patient_id, date_of_birth, natural_key, keys;
+
+CREATE TABLE public.highopi_temp_6 as
+SELECT patient_id, sum(end_date-start_date) days
+FROM public.highopi_temp_5 
+GROUP BY patient_id
+HAVING SUM (end_date-start_date) >=90;
 
 -- Step 18: Derive Columns - HighOpioidDose - Assign Condition Name, Criteria, & Start Date in mdphnet format
-CREATE TABLE public.opi_a_100007_s_18  AS SELECT T1.*,text('prescribed >= 100 milligrams of morphine equivalents per day for >= 90 days within the past year') criteria,text('highopioiduse') local_condition,disease_date  - ('1960-01-01'::date)  start_date_mdphnet FROM public.opi_a_100007_s_17 T1;
+CREATE TABLE public.opi_a_100007_s_18 AS
+SELECT T1.patient_id,
+min(start_date) as disease_date,
+T2.date_of_birth,
+T2.natural_key,
+text('prescribed >= 100 milligrams of morphine equivalents per day for >= 90 days within the past year') criteria,
+text('highopioiduse') local_condition,
+min(start_date) - ('1960-01-01'::date)  start_date_mdphnet
+FROM public.highopi_temp_6 T1 INNER JOIN public.highopi_temp_5 T2 ON ((T1.patient_id = T2.patient_id)) 
+group by T1.patient_id, T2.date_of_birth, T2.natural_key
+order by T1.patient_id;
 
 -- Step 19: Union - UNION the results together and exclude duplicates
 CREATE TABLE public.opi_a_100007_s_19  AS (SELECT patient_id,natural_key,date_of_birth,disease_date,local_condition,local_criteria,start_date_mdphnet FROM public.opi_a_100007_s_10) UNION (SELECT patient_id,natural_key,date_of_birth,disease_date,local_condition,local_criteria,start_date_mdphnet FROM public.opi_a_100007_s_13) UNION (SELECT patient_id,natural_key,date_of_birth,disease_date,local_condition,criteria,start_date_mdphnet FROM public.opi_a_100007_s_18);
@@ -104,7 +162,10 @@ CREATE TABLE public.opi_a_100007_s_19  AS (SELECT patient_id,natural_key,date_of
 CREATE TABLE public.opi_a_100007_s_20  AS SELECT T1.patient_id,T1.natural_key,T1.disease_date,T1.date_of_birth,T1.start_date_mdphnet,T1.local_condition,T1.local_criteria FROM public.opi_a_100007_s_19 T1 LEFT OUTER JOIN public.esp_condition T2 ON ((T1.natural_key = T2.patid) AND (T1.start_date_mdphnet = T2.date) AND (T1.local_condition = T2.condition))  WHERE (T2.patid is null) ;
 
 -- Step 21: Derive Columns - STANDARD - local_notes, local_status, age_at_detect_year, centerid
-CREATE TABLE public.opi_a_100007_s_21  AS SELECT T1.*,date_part('year', disease_date) - date_part('year', date_of_birth) age_at_detect_year,'1'::varchar(1) centerid,text('') local_notes,text('NO') local_status FROM public.opi_a_100007_s_20 T1;
+CREATE TABLE public.opi_a_100007_s_21  AS SELECT T1.*,
+case when date_of_birth = '1900-01-01' then null else date_part('year', disease_date) - date_part('year', date_of_birth) end age_at_detect_year,
+'1'::varchar(1) centerid,text('') local_notes,text('NO') local_status 
+FROM public.opi_a_100007_s_20 T1;
 
 -- Step 22: Derive Columns - STANDRD - age_group_10yr, age_group_5yr, age_group_ms
 CREATE TABLE public.opi_a_100007_s_22  AS SELECT T1.*,CASE when (age_at_detect_year <= 9) then '0-9'
@@ -167,41 +228,30 @@ INSERT INTO esp_condition (SELECT * from ccda_opibenzo);
 -- Script shutdown section 
 --
 DROP TABLE IF EXISTS public.opi_a_100007_s_6 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_7 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_8 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_9 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_10 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_11 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_12 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_13 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_14 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_15 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_16 CASCADE;
-
-DROP TABLE IF EXISTS public.opi_a_100007_s_17 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_18 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_19 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_20 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_21 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_22 CASCADE;
-
 DROP TABLE IF EXISTS public.opi_a_100007_s_23 CASCADE;
+DROP TABLE IF EXISTS public.highopi_temp_1;
+DROP TABLE IF EXISTS public.highopi_temp_2;
+DROP TABLE IF EXISTS public.highopi_temp_3;
+DROP TABLE IF EXISTS public.highopi_temp_4;
+DROP TABLE IF EXISTS public.highopi_temp_5;
+DROP TABLE IF EXISTS public.highopi_temp_6;
 
 
 COMMIT;
+
 
